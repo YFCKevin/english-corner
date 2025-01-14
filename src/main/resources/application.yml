@@ -1,0 +1,8 @@
+Spring:
+  profiles:
+    active: dev
+jwt:
+  location: ${jwt-location}
+  alias: gurula
+  password: ${jwt-password}
+  tokenTTL: 30m

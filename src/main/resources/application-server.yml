@@ -1,0 +1,69 @@
+server:
+  port: 8086
+  servlet:
+    contextPath: /talkyo
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+spring:
+  resources:
+    static-locations: file:/opt/talkyo/static/
+  data:
+    mongodb:
+      uri: mongodb://${db-username}:${db-password}@localhost:27017
+      database: talkyo
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            redirect-uri: https://gurula.cc/talkyo/login/oauth2/code/google
+            client-id: ${google-client-id}
+            client-secret: ${google-client-secret}
+            scope:
+              - email
+              - profile
+          line:
+            client-id: ${line-client-id}
+            client-secret: ${line-client-secret}
+            redirect-uri: https://gurula.cc/talkyo/callback
+            scope:
+              - openid
+              - profile
+            authorization-grant-type: authorization_code
+        provider:
+          line:
+            authorization-uri: https://access.line.me/oauth2/v2.1/authorize
+            token-uri: https://api.line.me/oauth2/v2.1/token
+            user-info-uri: https://api.line.me/v2/profile
+            user-name-attribute: userId
+
+logging:
+  level:
+    org:
+      springframework:
+        data:
+          mongodb:
+            core:
+              MongoTemplate: DEBUG
+
+azure:
+  ai:
+    audio:
+      key: ${azure-audio-api-key}
+      region: ${azure-audio-region}
+    text:
+      analytics:
+        key: ${azure-text-analytics-api-key}
+      endpoint: ${azure-text-analytics-endpoint}
+
+config:
+  globalDomain: https://gurula.cc/talkyo/
+  audioSavePath: /opt/talkyo/talkyo_files/audio/
+  picSavePath: /opt/talkyo/talkyo_images/
+  picShowPath: https://gurula.cc/talkyo/image/
+  audioShowPath: https://gurula.cc/talkyo/audio/
+  jsonPath: /opt/talkyo/static/js/
+  openaiApiKey: ${openai-api-key}
+
