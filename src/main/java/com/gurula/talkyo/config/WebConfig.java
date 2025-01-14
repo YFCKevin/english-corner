@@ -1,6 +1,6 @@
 package com.gurula.talkyo.config;
 
-import com.gurula.talkyo.Interceptor.LoginInterceptor;
+import com.gurula.talkyo.interceptor.LoginInterceptor;
 import com.gurula.talkyo.properties.ConfigProperties;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.util.AntPathMatcher;

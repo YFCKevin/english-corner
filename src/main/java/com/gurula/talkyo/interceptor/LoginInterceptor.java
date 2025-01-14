@@ -1,7 +1,6 @@
-package com.gurula.talkyo.Interceptor;
+package com.gurula.talkyo.interceptor;
 
 import com.gurula.talkyo.jwt.JwtTool;
-import com.gurula.talkyo.member.Member;
 import com.gurula.talkyo.member.MemberService;
 import com.gurula.talkyo.properties.ConfigProperties;
 import jakarta.servlet.http.Cookie;
@@ -10,7 +9,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpCookie;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import java.io.IOException;
