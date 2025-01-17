@@ -1,6 +1,7 @@
 package com.gurula.talkyo.interceptor;
 
 import com.gurula.talkyo.jwt.JwtTool;
+import com.gurula.talkyo.member.MemberContext;
 import com.gurula.talkyo.member.MemberService;
 import com.gurula.talkyo.properties.ConfigProperties;
 import jakarta.servlet.http.Cookie;
@@ -52,7 +53,10 @@ public class LoginInterceptor implements HandlerInterceptor{
         final String memberId = jwtTool.parseToken(token);
 
         return memberService.findById(memberId)
-                .map(member -> true)
+                .map(member -> {
+                    MemberContext.setMember(member);
+                    return true;
+                })
                 .orElseGet(() -> {
                     logger.warn("未登入索取的資源是：{}", request.getRequestURI());
                     try {

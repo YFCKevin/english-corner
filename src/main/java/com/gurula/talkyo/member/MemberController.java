@@ -18,15 +18,15 @@ public class MemberController {
     }
 
     @GetMapping("/memberInfo")
-    public Member memberInfo (HttpSession session) {
-        final Member member = (Member) session.getAttribute("member");
+    public Member memberInfo () {
+        final Member member = MemberContext.getMember();
         return Objects.requireNonNullElseGet(member, Member::new);
     }
 
 
     @GetMapping("/logout")
-    public ResponseEntity<?> logout (HttpSession session){
-        session.removeAttribute("member");
+    public ResponseEntity<?> logout (){
+        MemberContext.removeMember();
         ResultStatus resultStatus = new ResultStatus();
         resultStatus.setCode("C000");
         resultStatus.setMessage("成功");
