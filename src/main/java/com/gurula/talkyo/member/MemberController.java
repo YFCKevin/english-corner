@@ -2,25 +2,42 @@ package com.gurula.talkyo.member;
 
 import com.gurula.talkyo.properties.ConfigProperties;
 import com.gurula.talkyo.exception.ResultStatus;
-import jakarta.servlet.http.HttpSession;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Objects;
 
 @RestController
+@RequestMapping("/member")
 public class MemberController {
+    private final Logger logger = LoggerFactory.getLogger(MemberController.class);
     private final ConfigProperties configProperties;
+    private final MemberService memberService;
 
-    public MemberController(ConfigProperties configProperties) {
+    public MemberController(ConfigProperties configProperties, MemberService memberService) {
         this.configProperties = configProperties;
+        this.memberService = memberService;
     }
 
-    @GetMapping("/memberInfo")
-    public Member memberInfo () {
+    @GetMapping("/info")
+    public Member info () {
         final Member member = MemberContext.getMember();
         return Objects.requireNonNullElseGet(member, Member::new);
+    }
+
+
+    @PatchMapping("/choosePartner/{id}")
+    public ResponseEntity<?> choosePartner (@PathVariable String id){
+        final Member member = MemberContext.getMember();
+        logger.info("[{} {}] [choosePartner] [{}]", member.getName(), member.getId(), id);
+
+        ResultStatus<Void> resultStatus = new ResultStatus<>();
+        ResultStatus<Void> result = memberService.choosePartner(id);
+        resultStatus.setCode(result.getCode());
+        resultStatus.setMessage(result.getMessage());
+        return ResponseEntity.ok(resultStatus);
     }
 
 

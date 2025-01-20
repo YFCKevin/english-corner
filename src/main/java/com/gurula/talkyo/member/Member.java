@@ -1,5 +1,7 @@
 package com.gurula.talkyo.member;
 
+import com.gurula.talkyo.member.enums.Provider;
+import com.gurula.talkyo.member.enums.Role;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -11,6 +13,8 @@ public class Member {
     private String pictureUrl;  //line大頭貼
     private String name;
     private String email;
+    private Role role;
+    private String partnerId;
     private String creationDate;
     private Provider provider;
     private String modificationDate;
@@ -86,5 +90,21 @@ public class Member {
 
     public void setPictureUrl(String pictureUrl) {
         this.pictureUrl = pictureUrl;
+    }
+
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
+    }
+
+    public String getPartnerId() {
+        return partnerId;
+    }
+
+    public void setPartnerId(String partnerId) {
+        this.partnerId = partnerId;
     }
 }

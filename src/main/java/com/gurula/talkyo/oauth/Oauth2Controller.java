@@ -1,6 +1,7 @@
 package com.gurula.talkyo.oauth;
 
 import com.gurula.talkyo.jwt.JwtTool;
+import com.gurula.talkyo.member.enums.Role;
 import com.gurula.talkyo.properties.ConfigProperties;
 import com.gurula.talkyo.member.Member;
 import com.gurula.talkyo.member.MemberService;
@@ -81,6 +82,7 @@ public class Oauth2Controller {
             member.setName(userName);
             member.setPictureUrl(pictureUrl);
             member.setUserId(userId);
+            member.setRole(Role.STUDENT);
             memberService.save(member);
         } else {
             member = memberOpt.get();

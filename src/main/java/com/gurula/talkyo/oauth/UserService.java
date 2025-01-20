@@ -2,7 +2,8 @@ package com.gurula.talkyo.oauth;
 
 import com.gurula.talkyo.member.Member;
 import com.gurula.talkyo.member.MemberService;
-import com.gurula.talkyo.member.Provider;
+import com.gurula.talkyo.member.enums.Provider;
+import com.gurula.talkyo.member.enums.Role;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
@@ -36,6 +37,7 @@ public class UserService {
             member.setEmail(email);
             member.setCreationDate(sdf.format(new Date()));
             member.setProvider(authType);
+            member.setRole(Role.STUDENT);
             memberService.save(member);
             System.out.println("尚未註冊");
         } else {

@@ -3,6 +3,7 @@ package com.gurula.talkyo.interceptor;
 import com.gurula.talkyo.jwt.JwtTool;
 import com.gurula.talkyo.member.MemberContext;
 import com.gurula.talkyo.member.MemberService;
+import com.gurula.talkyo.member.enums.Role;
 import com.gurula.talkyo.properties.ConfigProperties;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -54,6 +55,13 @@ public class LoginInterceptor implements HandlerInterceptor{
 
         return memberService.findById(memberId)
                 .map(member -> {
+                    if (Role.ADMIN.equals(member.getRole()) && requestURI.startsWith("/admin/")) {
+                        return true;
+                    }
+                    // 如果角色不是 ADMIN 且訪問 /admin/，拒絕並跳轉
+                    if (!Role.ADMIN.equals(member.getRole()) && requestURI.startsWith("/admin/")) {
+                        return denyAccess(response);
+                    }
                     MemberContext.setMember(member);
                     return true;
                 })
@@ -66,6 +74,18 @@ public class LoginInterceptor implements HandlerInterceptor{
                     }
                     return false;
                 });
+    }
+
+
+    private boolean denyAccess(HttpServletResponse response) {
+        logger.warn("非管理員嘗試訪問受限資源");
+        try {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // 設定 401
+            response.getWriter().write("Unauthorized access");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return false;
     }
 
 }
