@@ -89,4 +89,60 @@ public class ConfigProperties {
     public String getCloudTranslateApiKey() {
         return cloudTranslateApiKey;
     }
+
+    public void setOpenaiApiKey(String openaiApiKey) {
+        this.openaiApiKey = openaiApiKey;
+    }
+
+    public void setJsonPath(String jsonPath) {
+        this.jsonPath = jsonPath;
+    }
+
+    public void setPicSavePath(String picSavePath) {
+        this.picSavePath = picSavePath;
+    }
+
+    public void setPicShowPath(String picShowPath) {
+        this.picShowPath = picShowPath;
+    }
+
+    public void setAudioSavePath(String audioSavePath) {
+        this.audioSavePath = audioSavePath;
+    }
+
+    public void setAudioShowPath(String audioShowPath) {
+        this.audioShowPath = audioShowPath;
+    }
+
+    public void setGlobalDomain(String globalDomain) {
+        this.globalDomain = globalDomain;
+    }
+
+    public void setMongodbUri(String mongodbUri) {
+        this.mongodbUri = mongodbUri;
+    }
+
+    public void setClientId(String clientId) {
+        this.clientId = clientId;
+    }
+
+    public void setClientSecret(String clientSecret) {
+        this.clientSecret = clientSecret;
+    }
+
+    public void setTokenUri(String tokenUri) {
+        this.tokenUri = tokenUri;
+    }
+
+    public void setUserInfoUri(String userInfoUri) {
+        this.userInfoUri = userInfoUri;
+    }
+
+    public void setGeminiApiKey(String geminiApiKey) {
+        this.geminiApiKey = geminiApiKey;
+    }
+
+    public void setCloudTranslateApiKey(String cloudTranslateApiKey) {
+        this.cloudTranslateApiKey = cloudTranslateApiKey;
+    }
 }
