@@ -5,6 +5,7 @@ import cn.hutool.jwt.JWT;
 import cn.hutool.jwt.JWTValidator;
 import cn.hutool.jwt.signers.JWTSigner;
 import cn.hutool.jwt.signers.JWTSignerUtil;
+import com.gurula.talkyo.exception.InvalidTokenException;
 import org.springframework.stereotype.Component;
 
 import java.security.KeyPair;
@@ -43,44 +44,44 @@ public class JwtTool {
     public String parseToken(String token) {
         // 1.檢驗token是否為空值
         if (token == null) {
-            System.out.println("未登錄");
-            throw new RuntimeException("未登錄");
+            System.out.println("Token 未提供");
+            throw new InvalidTokenException("Token 未提供");
         }
         // 2.檢驗並解析JWT
         JWT jwt;
         try {
             jwt = JWT.of(token).setSigner(jwtSigner);
         } catch (Exception e) {
-            System.out.println("無效token");
-            throw new RuntimeException("無效token", e);
+            System.out.println("無效的 Token 格式或簽名錯誤");
+            throw new InvalidTokenException("無效的 Token 格式或簽名錯誤");
         }
         // 2.檢驗JWT是否有效
         if (!jwt.verify()) {
             // 驗證失敗
-            System.out.println("無效token");
-            throw new RuntimeException("無效token");
+            System.out.println("Token 驗證失敗");
+            throw new InvalidTokenException("Token 驗證失敗");
         }
         // 3.檢驗是否過期
         try {
             JWTValidator.of(jwt).validateDate();
         } catch (ValidateException e) {
-            System.out.println("token已經過期");
-            throw new RuntimeException("token已經過期");
+            System.out.println("Token 已過期");
+            throw new InvalidTokenException("Token 已過期");
         }
         // 4.data格式檢查
         Object userPayload = jwt.getPayload("member");
         if (userPayload == null) {
             // data為空值
-            System.out.println("無效token");
-            throw new RuntimeException("無效token");
+            System.out.println("Token 資料為空");
+            throw new InvalidTokenException("Token 資料為空");
         }
         // 5.data解析
         try {
            return userPayload.toString();
         } catch (RuntimeException e) {
             // data格式有誤
-            System.out.println("無效token");
-            throw new RuntimeException("無效token");
+            System.out.println("Token 解析失敗");
+            throw new InvalidTokenException("Token 解析失敗");
         }
     }
 }
