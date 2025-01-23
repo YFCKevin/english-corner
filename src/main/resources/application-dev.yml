@@ -11,7 +11,7 @@ spring:
     static-locations: file:/Users/chenyifan/Documents/workspace-fan/talkyo/src/main/resources/static/
   data:
     mongodb:
-      uri: mongodb://${db-username}:${db-password}@localhost:27017
+      uri: mongodb://localhost:27017
   security:
     oauth2:
       client:
