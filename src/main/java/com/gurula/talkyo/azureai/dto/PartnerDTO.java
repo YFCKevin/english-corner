@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.gurula.talkyo.azureai.Partner;
 import com.gurula.talkyo.azureai.VoiceTag;
+import com.gurula.talkyo.azureai.enums.Locale;
 
 import java.util.List;
 
@@ -85,8 +86,12 @@ public class PartnerDTO {
         this.gender = gender;
     }
 
-    public String getLocale() {
-        return locale;
+    public Locale getLocale() {
+        try {
+            return Locale.valueOf(locale);
+        } catch (IllegalArgumentException e) {
+            return Locale.OTHER;
+        }
     }
 
     public void setLocale(String locale) {

@@ -1,5 +1,6 @@
 package com.gurula.talkyo.azureai;
 
+import com.gurula.talkyo.azureai.enums.Locale;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -14,7 +15,7 @@ public class Partner {
     private String localName;
     private String shortName;
     private String gender;
-    private String locale;
+    private Locale locale;
     private String localeName;
     private List<String> secondaryLocaleList;
     private String sampleRateHertz;
@@ -73,11 +74,11 @@ public class Partner {
         this.gender = gender;
     }
 
-    public String getLocale() {
+    public Locale getLocale() {
         return locale;
     }
 
-    public void setLocale(String locale) {
+    public void setLocale(Locale locale) {
         this.locale = locale;
     }
 
