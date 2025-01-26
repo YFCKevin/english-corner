@@ -60,8 +60,8 @@ azure:
 
 config:
   globalDomain: https://gurula.cc/talkyo/
-  audioSavePath: /opt/talkyo/talkyo_files/audio/
-  picSavePath: /opt/talkyo/talkyo_images/
+  audioSavePath: /opt/talkyo/audio/
+  picSavePath: /opt/talkyo/image/
   picShowPath: https://gurula.cc/talkyo/image/
   audioShowPath: https://gurula.cc/talkyo/audio/
   jsonPath: /opt/talkyo/static/js/

@@ -59,8 +59,8 @@ azure:
 
 config:
   globalDomain: http://localhost:8086/talkyo/
-  audioSavePath: /Users/chenyifan/Documents/workspace-fan/talkyo/talkyo_files/audio/
-  picSavePath: /Users/chenyifan/Documents/workspace-fan/talkyo/talkyo_images/
+  audioSavePath: /Users/chenyifan/Documents/workspace-fan/talkyo/audio/
+  picSavePath: /Users/chenyifan/Documents/workspace-fan/talkyo/image/
   picShowPath: http://localhost:8086/talkyo/image/
   audioShowPath: http://localhost:8086/talkyo/audio/
   jsonPath: /Users/chenyifan/Documents/workspace-fan/talkyo/src/main/resources/static/js/
