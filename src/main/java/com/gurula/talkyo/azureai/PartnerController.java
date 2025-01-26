@@ -2,6 +2,7 @@ package com.gurula.talkyo.azureai;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gurula.talkyo.azureai.dto.PartnerDTO;
 import com.gurula.talkyo.exception.ResultStatus;
@@ -63,13 +64,15 @@ public class PartnerController {
         ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
 
         if (response.getStatusCodeValue() == 200) {
-            List<PartnerDTO> partnerDTOS = objectMapper.readValue(response.getBody(), new TypeReference<>() {});
+            List<PartnerDTO> partnerDTOS = objectMapper
+                    .configure(DeserializationFeature.READ_ENUMS_USING_TO_STRING, true)
+                    .readValue(response.getBody(), new TypeReference<>() {});
 
             final Set<String> existingShortNames = partnerService.findAll().stream()
                     .map(Partner::getShortName).collect(Collectors.toSet());
 
             List<Partner> newPartners = partnerDTOS.stream()
-                    .filter(partnerDTO -> existingShortNames.contains(partnerDTO.getShortName()))
+                    .filter(partnerDTO -> !existingShortNames.contains(partnerDTO.getShortName()))
                     .map(partnerDTO -> convertToPartner(partnerDTO, sdf.format(new Date())))
                     .toList();
 

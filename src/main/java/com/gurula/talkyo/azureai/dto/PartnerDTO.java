@@ -26,7 +26,7 @@ public class PartnerDTO {
     private String gender;
 
     @JsonProperty("Locale")
-    private String locale;
+    private Locale locale;
 
     @JsonProperty("LocaleName")
     private String localeName;
@@ -87,14 +87,10 @@ public class PartnerDTO {
     }
 
     public Locale getLocale() {
-        try {
-            return Locale.valueOf(locale);
-        } catch (IllegalArgumentException e) {
-            return Locale.OTHER;
-        }
+        return locale;
     }
 
-    public void setLocale(String locale) {
+    public void setLocale(Locale locale) {
         this.locale = locale;
     }
 

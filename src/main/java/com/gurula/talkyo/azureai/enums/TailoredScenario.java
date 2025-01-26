@@ -1,5 +1,8 @@
 package com.gurula.talkyo.azureai.enums;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
+
 public enum TailoredScenario {
     E_LEARNING(1, "電子學習"),
     MEDITATION(2, "冥想"),
@@ -10,10 +13,11 @@ public enum TailoredScenario {
     AUDIOBOOK(7, "有聲書"),
     DOCUMENTARY(8, "紀錄片"),
     ASSISTANT(9, "助手"),
-    NEWS(10, "新聞"),
-    CHAT(11, "聊天"),
-    ADVERTISEMENT(12, "廣告"),
-    GAMING(13, "遊戲");
+    MEDITATION_LOWERCASE(10, "冥想"),
+    NEWS(11, "新聞"),
+    CHAT(12, "聊天"),
+    ADVERTISEMENT(13, "廣告"),
+    GAMING(14, "遊戲");
 
     private int value;
     private String label;
@@ -32,5 +36,20 @@ public enum TailoredScenario {
     }
     private void setLabel(String label) {
         this.label = label;
+    }
+    @JsonCreator
+    public static TailoredScenario fromString(String value) {
+        for (TailoredScenario scenario : TailoredScenario.values()) {
+            if (scenario.name().replace("_", "-").equalsIgnoreCase(value) ||
+                    scenario.name().replace("_", " ").equalsIgnoreCase(value)) {
+                return scenario;
+            }
+        }
+        throw new IllegalArgumentException("Unknown enum value: " + value);
+    }
+
+    @JsonValue
+    public String toJson() {
+        return this.name();
     }
 }

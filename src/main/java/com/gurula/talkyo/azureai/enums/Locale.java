@@ -1,5 +1,8 @@
 package com.gurula.talkyo.azureai.enums;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
+
 public enum Locale {
     EN_IE("en-IE", "愛爾蘭英語"),
     IU_CANS_CA("iu-Cans-CA", "加拿大庫克語（原始）"),
@@ -171,6 +174,21 @@ public enum Locale {
 
     public String getLabel() {
         return label;
+    }
+
+    @JsonCreator
+    public static Locale fromString(String value) {
+        for (Locale locale : Locale.values()) {
+            if (locale.getOrigin().equalsIgnoreCase(value)) {
+                return locale;
+            }
+        }
+        throw new IllegalArgumentException("Unknown enum value: " + value);
+    }
+
+    @JsonValue
+    public String toJson() {
+        return this.name();
     }
 }
 
