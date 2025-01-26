@@ -1,31 +1,25 @@
 package com.gurula.talkyo.chatroom;
 
 public class ContentAssessment {
-    private String vocabularyScore; // 詞彙分數
-    private String grammarScore;    // 文法分數
-    private String topicScore;  // 主題分數
+    private double vocabularyScore; // 詞彙分數
+    private double grammarScore;    // 文法分數
+    private double topicScore;  // 主題分數
 
-    public String getVocabularyScore() {
+    public ContentAssessment(double vocabularyScore, double grammarScore, double topicScore) {
+        this.vocabularyScore = vocabularyScore;
+        this.grammarScore = grammarScore;
+        this.topicScore = topicScore;
+    }
+
+    public double getVocabularyScore() {
         return vocabularyScore;
     }
 
-    public void setVocabularyScore(String vocabularyScore) {
-        this.vocabularyScore = vocabularyScore;
-    }
-
-    public String getGrammarScore() {
+    public double getGrammarScore() {
         return grammarScore;
     }
 
-    public void setGrammarScore(String grammarScore) {
-        this.grammarScore = grammarScore;
-    }
-
-    public String getTopicScore() {
+    public double getTopicScore() {
         return topicScore;
-    }
-
-    public void setTopicScore(String topicScore) {
-        this.topicScore = topicScore;
     }
 }

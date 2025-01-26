@@ -1,7 +1,10 @@
 package com.gurula.talkyo.chatroom.feature;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.gurula.talkyo.azureai.AudioService;
 import com.gurula.talkyo.azureai.dto.ChatAudioDTO;
+import com.gurula.talkyo.chatroom.AISender;
+import com.gurula.talkyo.chatroom.AudioContent;
 import com.gurula.talkyo.chatroom.Message;
 import com.gurula.talkyo.chatroom.MessageRepository;
 import com.gurula.talkyo.chatroom.dto.ChatRequestDTO;
@@ -18,8 +21,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
@@ -41,7 +48,7 @@ public class SendWelcomeMessage implements ConversationFeature{
     }
 
     @Override
-    public ConversationChainDTO execute(AbstractConversation conversation, ChatRequestDTO chatRequestDTO) throws ExecutionException, InterruptedException {
+    public <T extends AbstractConversation> ConversationChainDTO execute(T conversation, ChatRequestDTO chatRequestDTO) throws ExecutionException, InterruptedException, IOException {
         System.out.println("SendWelcomeMessage");
 
         LLMChatResponseDTO llmChatResponseDTO = new LLMChatResponseDTO();
@@ -62,12 +69,11 @@ public class SendWelcomeMessage implements ConversationFeature{
         ConversationChainDTO dto = new ConversationChainDTO();
         final Message message = new Message();
         message.setConversationId(chatRequestDTO.getConversationId());
-        message.setSenderRole(SenderRole.AI);
+        message.setSenderContent(new AISender(llmChatResponseDTO.getTranslation()));
         message.setCreatedDateTime(sdf.format(new Date()));
         message.setSender(chatRequestDTO.getPartnerId());
-        message.setTranslation(llmChatResponseDTO.getTranslation());
-        message.setContent(llmChatResponseDTO.getContent());
-        message.setAudioPath(audioService.genChattingAudioFile(new ChatAudioDTO(llmChatResponseDTO.getContent(), chatRequestDTO.getMemberId(), chatRequestDTO.getPartnerId(), chatRequestDTO.getConversationId())));
+        final String fileName = audioService.textToSpeechInChatting (List.of(new ChatAudioDTO(llmChatResponseDTO.getContent(), chatRequestDTO.getMemberId(), chatRequestDTO.getPartnerId(), chatRequestDTO.getConversationId()))).get(0).getFileName().toString();
+        message.setMessageContents(List.of(new AudioContent(fileName, Files.size(Paths.get(fileName)), llmChatResponseDTO.getContent())));
         messageRepository.save(message);
         dto.setMessage(message);
         return dto;

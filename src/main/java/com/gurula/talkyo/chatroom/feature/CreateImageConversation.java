@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class CreateImageConversation implements ConversationFeature {
     @Override
-    public ConversationChainDTO execute(AbstractConversation conversation, ChatRequestDTO chatRequestDTO) {
+    public <T extends AbstractConversation> ConversationChainDTO execute(T conversation, ChatRequestDTO chatRequestDTO) {
         return null;
     }
 }

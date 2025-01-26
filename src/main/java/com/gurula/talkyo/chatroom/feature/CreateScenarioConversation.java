@@ -5,6 +5,7 @@ import com.gurula.talkyo.chatroom.ConversationRepository;
 import com.gurula.talkyo.chatroom.dto.ChatRequestDTO;
 import com.gurula.talkyo.chatroom.dto.ConversationChainDTO;
 import com.gurula.talkyo.chatroom.factory.AbstractConversation;
+import com.gurula.talkyo.chatroom.factory.LearningPlanConversation;
 import org.springframework.stereotype.Component;
 
 import java.text.SimpleDateFormat;
@@ -22,7 +23,7 @@ public class CreateScenarioConversation implements ConversationFeature {
 
 
     @Override
-    public ConversationChainDTO execute(AbstractConversation conversation, ChatRequestDTO chatRequestDTO) {
+    public <T extends AbstractConversation> ConversationChainDTO execute(T conversation, ChatRequestDTO chatRequestDTO) {
         System.out.println("CreateScenarioConversation");
         Conversation c = new Conversation();
         c.setChatroomId(chatRequestDTO.getChatroomId());

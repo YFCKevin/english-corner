@@ -13,6 +13,7 @@ public class Conversation {
     private ConversationType conversationType;
     private String startedDateTime;
     private String finishedDateTime;
+    private LearningReport report;
 
     public String getId() {
         return id;
@@ -60,5 +61,13 @@ public class Conversation {
 
     public void setConversationType(ConversationType conversationType) {
         this.conversationType = conversationType;
+    }
+
+    public LearningReport getReport() {
+        return report;
+    }
+
+    public void setReport(LearningReport report) {
+        this.report = report;
     }
 }

@@ -18,9 +18,9 @@ public class SituationConversation extends AbstractConversation{
         ));
 
         setChattingChain(Arrays.asList(
+                applicationContext.getBean(SpeechToText.class),
                 applicationContext.getBean(GrammarCheck.class),
                 applicationContext.getBean(GenAdvanceSentences.class),
-                applicationContext.getBean(SaveAudioFile.class),
                 applicationContext.getBean(AIReplyMessage.class)
         ));
 

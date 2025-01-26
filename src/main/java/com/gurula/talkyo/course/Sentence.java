@@ -2,16 +2,23 @@ package com.gurula.talkyo.course;
 
 import com.gurula.talkyo.course.enums.SentenceLevel;
 import com.gurula.talkyo.course.utils.CourseUtil;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.List;
 
+@Document("sentence")
 public class Sentence {
+    @Id
+    private String id;
     private String unitNumber;
     private String content;
     private String translation;
-    private List<String> audioPath;
+    private List<String> audioName;
     private SentenceLevel complexity;
     private String lessonNumber;
+    private String explanation;
+    private boolean formal;
 
     public String getUnitNumber() {
         return unitNumber;
@@ -37,12 +44,12 @@ public class Sentence {
         this.translation = translation;
     }
 
-    public List<String> getAudioPath() {
-        return audioPath;
+    public List<String> getAudioName() {
+        return audioName;
     }
 
-    public void setAudioPath(List<String> audioPath) {
-        this.audioPath = audioPath;
+    public void setAudioName(List<String> audioName) {
+        this.audioName = audioName;
     }
 
     public SentenceLevel getComplexity() {
@@ -59,5 +66,29 @@ public class Sentence {
 
     public void setLessonNumber(String lessonNumber) {
         this.lessonNumber = lessonNumber;
+    }
+
+    public String getExplanation() {
+        return explanation;
+    }
+
+    public void setExplanation(String explanation) {
+        this.explanation = explanation;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public boolean isFormal() {
+        return formal;
+    }
+
+    public void setFormal(boolean formal) {
+        this.formal = formal;
     }
 }

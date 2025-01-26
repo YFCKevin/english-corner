@@ -2,24 +2,12 @@ package com.gurula.talkyo.chatroom;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
-
-@Document(collection = "grammar_result")
 public class GrammarResult {
-    @Id
-    private String id;
     private String errorSentence;
     private String correctSentence;
     private String translation;     // 正確語句的翻譯
     private String errorReason;
     private String creationDate;
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
 
     public String getErrorSentence() {
         return errorSentence;

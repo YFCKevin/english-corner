@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
@@ -87,8 +88,9 @@ public class CourseServiceImpl implements CourseService{
 
             sentences = sentences.stream().map(sentence -> {
                 try {
-                    final List<String> audioPaths = audioService.speechSynthesis(sentence.getContent(), sentence.getUnitNumber());
-                    sentence.setAudioPath(audioPaths);
+                    final List<Path> audioPaths = audioService.speechSynthesis(sentence.getContent(), sentence.getUnitNumber());
+                    final List<String> audioFileNames = audioPaths.stream().map(path -> path.getFileName().toString()).toList();
+                    sentence.setAudioName(audioFileNames);
                     return sentence;
                 } catch (ExecutionException | InterruptedException e) {
                     throw new RuntimeException(e);

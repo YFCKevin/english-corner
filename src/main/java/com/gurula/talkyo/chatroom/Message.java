@@ -1,28 +1,24 @@
 package com.gurula.talkyo.chatroom;
 
+import com.gurula.talkyo.chatroom.enums.MessageType;
 import com.gurula.talkyo.chatroom.enums.SenderRole;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Document(collection = "message")
 public class Message {
     @Id
     private String id;
-    private String content;
-    private String audioPath;
+    private List<MessageContent> messageContents = new ArrayList<>();
     private String conversationId;
     private String sender;  // memberId or partnerId
-    private SenderRole senderRole;
+    private MessageSender senderContent;
     private String createdDateTime;
     private String updatedDateTime;
-
-    // for AI
-    private String translation;
-
-    // for Human
     private boolean accuracy;
-    private GrammarResult grammarResult;
-    private ConversationScore conversationScore;
 
     public String getId() {
         return id;
@@ -30,22 +26,6 @@ public class Message {
 
     public void setId(String id) {
         this.id = id;
-    }
-
-    public String getContent() {
-        return content;
-    }
-
-    public void setContent(String content) {
-        this.content = content;
-    }
-
-    public String getAudioPath() {
-        return audioPath;
-    }
-
-    public void setAudioPath(String audioPath) {
-        this.audioPath = audioPath;
     }
 
     public String getConversationId() {
@@ -64,14 +44,6 @@ public class Message {
         this.sender = sender;
     }
 
-    public SenderRole getSenderRole() {
-        return senderRole;
-    }
-
-    public void setSenderRole(SenderRole senderRole) {
-        this.senderRole = senderRole;
-    }
-
     public String getCreatedDateTime() {
         return createdDateTime;
     }
@@ -88,12 +60,20 @@ public class Message {
         this.updatedDateTime = updatedDateTime;
     }
 
-    public String getTranslation() {
-        return translation;
+    public List<MessageContent> getMessageContents() {
+        return messageContents;
     }
 
-    public void setTranslation(String translation) {
-        this.translation = translation;
+    public void setMessageContents(List<MessageContent> messageContents) {
+        this.messageContents = messageContents;
+    }
+
+    public MessageSender getSenderContent() {
+        return senderContent;
+    }
+
+    public void setSenderContent(MessageSender senderContent) {
+        this.senderContent = senderContent;
     }
 
     public boolean isAccuracy() {
@@ -102,21 +82,5 @@ public class Message {
 
     public void setAccuracy(boolean accuracy) {
         this.accuracy = accuracy;
-    }
-
-    public GrammarResult getGrammarResult() {
-        return grammarResult;
-    }
-
-    public void setGrammarResult(GrammarResult grammarResult) {
-        this.grammarResult = grammarResult;
-    }
-
-    public ConversationScore getConversationScore() {
-        return conversationScore;
-    }
-
-    public void setConversationScore(ConversationScore conversationScore) {
-        this.conversationScore = conversationScore;
     }
 }

@@ -17,8 +17,8 @@ public class OneOnOneConversation extends AbstractConversation{
         ));
 
         setChattingChain(Arrays.asList(
+                applicationContext.getBean(SpeechToText.class),
                 applicationContext.getBean(GrammarCheck.class),
-                applicationContext.getBean(SaveAudioFile.class),
                 applicationContext.getBean(AIReplyMessage.class)
         ));
     }

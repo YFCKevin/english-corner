@@ -1,12 +1,15 @@
 package com.gurula.talkyo.chatroom.factory;
 
+import com.gurula.talkyo.chatroom.AudioContent;
 import com.gurula.talkyo.chatroom.dto.ChatRequestDTO;
 import com.gurula.talkyo.chatroom.dto.ConversationChainDTO;
 import com.gurula.talkyo.chatroom.enums.ConversationType;
 import com.gurula.talkyo.chatroom.feature.ConversationFeature;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 public abstract class AbstractConversation {
     private ConversationType conversationType;
@@ -17,6 +20,14 @@ public abstract class AbstractConversation {
 
     public AbstractConversation (ConversationType conversationType, ChatRequestDTO chatRequestDTO){
         this.conversationType = conversationType;
+        this.chatRequestDTO = chatRequestDTO;
+    }
+
+    public ChatRequestDTO getChatRequestDTO() {
+        return chatRequestDTO;
+    }
+
+    public void setChatRequestDTO(ChatRequestDTO chatRequestDTO) {
         this.chatRequestDTO = chatRequestDTO;
     }
 
@@ -48,7 +59,7 @@ public abstract class AbstractConversation {
         this.chattingChain = chattingChain;
     }
 
-    public ConversationChainDTO startConversation() throws ExecutionException, InterruptedException {
+    public ConversationChainDTO startConversation() throws ExecutionException, InterruptedException, IOException {
 
         ConversationChainDTO finalResult = new ConversationChainDTO();
 
@@ -60,7 +71,11 @@ public abstract class AbstractConversation {
                 finalResult.setConversationId(result.getConversationId());
             }
             if (result.getMessage() != null) {
-                System.out.println("Sent message: " + result.getMessage().getContent());
+                System.out.println("Sent message: " +
+                        result.getMessage().getMessageContents().stream()
+                                .filter(content -> content instanceof AudioContent)
+                                .map(content -> ((AudioContent) content).getParsedText())
+                                .collect(Collectors.joining(", ")));
                 finalResult.setMessage(result.getMessage());
             }
         }
@@ -68,17 +83,25 @@ public abstract class AbstractConversation {
         return finalResult;
     }
 
-    public void finish() throws ExecutionException, InterruptedException {
-        for (ConversationFeature feature : endChain) {
-            final ConversationChainDTO result = feature.execute(this, chatRequestDTO);
+    public ConversationChainDTO chatting() throws ExecutionException, InterruptedException, IOException {
 
+        ConversationChainDTO finalResult = null;
+
+        for (ConversationFeature feature : endChain) {
+            finalResult = feature.execute(this, chatRequestDTO);
         }
+
+        return finalResult;
     }
 
-    public void chatting() throws ExecutionException, InterruptedException {
-        for (ConversationFeature feature : chattingChain) {
-            final ConversationChainDTO result = feature.execute(this, chatRequestDTO);
+    public ConversationChainDTO finish() throws ExecutionException, InterruptedException, IOException {
 
+        ConversationChainDTO finalResult = null;
+
+        for (ConversationFeature feature : endChain) {
+            finalResult = feature.execute(this, chatRequestDTO);
         }
+
+        return finalResult;
     }
 }

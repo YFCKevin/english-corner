@@ -1,14 +1,20 @@
 package com.gurula.talkyo.azureai.dto;
 
 public class ChatAudioDTO {
-    private final String content;
-    private final String memberId;
-    private final String partnerId;
-    private final String conversationId;
+    private String content;
+    private String memberId;
+    private String partnerId;
+    private String conversationId;
 
     public ChatAudioDTO(String content, String memberId, String partnerId, String conversationId) {
         this.content = content;
         this.memberId = memberId;
+        this.partnerId = partnerId;
+        this.conversationId = conversationId;
+    }
+
+    public ChatAudioDTO(String content, String partnerId, String conversationId) {
+        this.content = content;
         this.partnerId = partnerId;
         this.conversationId = conversationId;
     }

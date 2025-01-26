@@ -1,24 +1,18 @@
 package com.gurula.talkyo.chatroom;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
-
-@Document(collection = "conversation_score")
 public class ConversationScore {
-    @Id
-    private String id;
     private double fluency; // 流暢度
     private double accuracy;    // 精准度
     private double completeness;    // 完整性
     private double prosody; // 韻律
     private ContentAssessment contentAssessment;    // 內容分析
 
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
+    public ConversationScore(double fluency, double accuracy, double completeness, double prosody, ContentAssessment contentAssessment) {
+        this.fluency = fluency;
+        this.accuracy = accuracy;
+        this.completeness = completeness;
+        this.prosody = prosody;
+        this.contentAssessment = contentAssessment;
     }
 
     public double getFluency() {

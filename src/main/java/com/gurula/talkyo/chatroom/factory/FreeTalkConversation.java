@@ -18,7 +18,7 @@ public class FreeTalkConversation extends AbstractConversation{
         ));
 
         setChattingChain(List.of(
-                applicationContext.getBean(SaveAudioFile.class)
+                applicationContext.getBean(SpeechToText.class)
         ));
     }
 }
