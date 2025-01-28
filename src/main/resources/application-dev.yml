@@ -12,6 +12,29 @@ spring:
   data:
     mongodb:
       uri: mongodb://localhost:27017
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: ${db-username}
+    password: ${db-password}
+    virtualHost: /talkyo
+    listener:
+      simple:
+        prefetch: 1 #當多個消費者訂閱同一個Queue時，確保每個消費者最多處理一條Msg，而不是某些消費者堆積大量消息。
+        acknowledge-mode: auto
+        retry:
+          enabled: true
+          initial-interval: 1000ms
+          multiplier: 1
+          max-attempts: 1
+          stateless: true
+    connection-timeout: 1s
+    template:
+      retry:
+        enabled: true
+        initial-interval: 1000ms
+        multiplier: 1
+        max-attempts: 3
   security:
     oauth2:
       client:
