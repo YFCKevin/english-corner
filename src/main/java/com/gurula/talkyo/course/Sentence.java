@@ -91,4 +91,19 @@ public class Sentence {
     public void setFormal(boolean formal) {
         this.formal = formal;
     }
+
+    @Override
+    public String toString() {
+        return "Sentence{" +
+                "id='" + id + '\'' +
+                ", unitNumber='" + unitNumber + '\'' +
+                ", content='" + content + '\'' +
+                ", translation='" + translation + '\'' +
+                ", audioName=" + audioName +
+                ", complexity=" + complexity +
+                ", lessonNumber='" + lessonNumber + '\'' +
+                ", explanation='" + explanation + '\'' +
+                ", formal=" + formal +
+                '}';
+    }
 }
