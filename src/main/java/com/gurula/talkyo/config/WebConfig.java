@@ -20,8 +20,8 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        registry.addResourceHandler("/talkyo/image/**").addResourceLocations("file:"+ configProperties.getPicSavePath());
-        registry.addResourceHandler("/talkyo/audio/**").addResourceLocations("file:"+ configProperties.getAudioSavePath());
+        registry.addResourceHandler("/image/**").addResourceLocations("file:"+ configProperties.getPicSavePath());
+        registry.addResourceHandler("/audio/**").addResourceLocations("file:"+ configProperties.getAudioSavePath());
         registry.addResourceHandler("/talkyo/**").addResourceLocations("classpath:/static/");
 //        super.addResourceHandlers(registry);
     }
