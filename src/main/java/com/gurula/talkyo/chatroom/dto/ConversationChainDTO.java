@@ -3,13 +3,16 @@ package com.gurula.talkyo.chatroom.dto;
 import com.gurula.talkyo.chatroom.ConversationScore;
 import com.gurula.talkyo.chatroom.Message;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class ConversationChainDTO {
 
     // start chain
     private String conversationId;
 
     // chatting chain
-    private Message message;
+    private List<Message> messages = new ArrayList<>();
 
     // end chain
     private ConversationScore conversationScore;
@@ -21,9 +24,13 @@ public class ConversationChainDTO {
         this.conversationId = conversationId;
     }
 
-    public ConversationChainDTO(String conversationId, Message message, ConversationScore conversationScore) {
+    public ConversationChainDTO(List<Message> messages) {
+        this.messages = messages;
+    }
+
+    public ConversationChainDTO(String conversationId, List<Message> messages, ConversationScore conversationScore) {
         this.conversationId = conversationId;
-        this.message = message;
+        this.messages = messages;
         this.conversationScore = conversationScore;
     }
 
@@ -35,12 +42,8 @@ public class ConversationChainDTO {
         this.conversationId = conversationId;
     }
 
-    public Message getMessage() {
-        return message;
-    }
-
-    public void setMessage(Message message) {
-        this.message = message;
+    public List<Message> getMessages() {
+        return messages;
     }
 
     public ConversationScore getConversationScore() {

@@ -37,4 +37,13 @@ public class Scenario {
     public void setSubject(String subject) {
         this.subject = subject;
     }
+
+    @Override
+    public String toString() {
+        return "Scenario{" +
+                "partnerRole='" + partnerRole + '\'' +
+                ", humanRole='" + humanRole + '\'' +
+                ", subject='" + subject + '\'' +
+                '}';
+    }
 }

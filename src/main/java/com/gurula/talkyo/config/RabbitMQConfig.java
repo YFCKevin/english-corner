@@ -17,12 +17,12 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RabbitMQConfig {
     private final RabbitMQProperties rabbitMQProperties;
-    public static final String SPEECH_TO_TEXT_QUEUE = "speechToText.queue";
+    public static final String PRONUNCIATION_QUEUE = "pronunciation.queue";
     public static final String GRAMMAR_QUEUE = "grammar.queue";
     public static final String ADVANCED_SENTENCE_QUEUE = "advancedSentence.queue";
     public static final String PARTNER_REPLY_QUEUE = "partnerReply.queue";
     public static final String ERROR_QUEUE = "error.queue";
-    public static final String WORKFLOW_EXCHANGE = "workflow-exchange";
+    public static final String TALKYO_CHAT_FANOUT_EXCHANGE = "talkyo-chat-fanout-exchange";
     public static final String ERROR_EXCHANGE = "error-exchange";
 
 
@@ -37,7 +37,6 @@ public class RabbitMQConfig {
         connectionFactory.setPort(rabbitMQProperties.getPort());
         connectionFactory.setUsername(rabbitMQProperties.getUsername());
         connectionFactory.setPassword(rabbitMQProperties.getPassword());
-        connectionFactory.setVirtualHost(rabbitMQProperties.getVirtualHost());
         return connectionFactory;
     }
 
@@ -57,32 +56,26 @@ public class RabbitMQConfig {
     public Queue errorQueue() {
         return new Queue(ERROR_QUEUE, true);
     }
-
-    @Bean
-    public Queue speechToTextQueue() {
-        return new Queue(SPEECH_TO_TEXT_QUEUE, true);
-    }
-
     @Bean
     public Queue grammarQueue() {
         return new Queue(GRAMMAR_QUEUE, true);
     }
-
     @Bean
     public Queue advancedSentenceQueue() {
         return new Queue(ADVANCED_SENTENCE_QUEUE, true);
     }
     @Bean
-
     public Queue partnerReplyQueue() {
         return new Queue(PARTNER_REPLY_QUEUE, true);
     }
-
     @Bean
-    public TopicExchange exchange() {
-        return new TopicExchange(WORKFLOW_EXCHANGE);
+    public Queue pronunciationQueue() {
+        return new Queue(PRONUNCIATION_QUEUE, true);
     }
-
+    @Bean
+    public FanoutExchange chatFanoutExchange() {
+        return new FanoutExchange(TALKYO_CHAT_FANOUT_EXCHANGE);
+    }
     @Bean
     public TopicExchange errorExchange() {
         return new TopicExchange(ERROR_EXCHANGE);
@@ -92,5 +85,25 @@ public class RabbitMQConfig {
     @Bean
     public MessageRecoverer messageRecoverer(RabbitTemplate rabbitTemplate) {
         return new RepublishMessageRecoverer(rabbitTemplate, ERROR_EXCHANGE, "error.#");
+    }
+
+    @Bean
+    public Binding bindGrammar() {
+        return BindingBuilder.bind(grammarQueue()).to(chatFanoutExchange());
+    }
+
+    @Bean
+    public Binding bindAdvancedSentence() {
+        return BindingBuilder.bind(advancedSentenceQueue()).to(chatFanoutExchange());
+    }
+
+    @Bean
+    public Binding bindPronunciation() {
+        return BindingBuilder.bind(pronunciationQueue()).to(chatFanoutExchange());
+    }
+
+    @Bean
+    public Binding bindPartnerReply() {
+        return BindingBuilder.bind(partnerReplyQueue()).to(chatFanoutExchange());
     }
 }

@@ -21,8 +21,8 @@ public class LearningRecordServiceImpl implements LearningRecordService{
     }
 
     @Override
-    public int finish(String lessonId) {
-        Optional<LearningRecord> opt = learningRecordRepository.findByLessonId(lessonId);
+    public int finish(String chatroomId) {
+        Optional<LearningRecord> opt = learningRecordRepository.findByChatroomId(chatroomId);
         if (opt.isEmpty()) {
             // 開始課程紀錄不存在
             return 0;

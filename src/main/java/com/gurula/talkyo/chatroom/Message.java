@@ -12,13 +12,31 @@ import java.util.List;
 public class Message {
     @Id
     private String id;
-    private List<MessageContent> messageContents = new ArrayList<>();
-    private String conversationId;
+    private String chatroomId;
     private String sender;  // memberId or partnerId
-    private MessageSender senderContent;
     private String createdDateTime;
     private String updatedDateTime;
     private boolean accuracy;
+    private SenderRole senderRole;
+
+    // human
+    private GrammarResult grammarResult;
+    private List<AdvancedSentence> advancedSentences;
+    private ConversationScore conversationScore;
+
+    // partner
+    private String translation;
+
+    // text
+    private String text;
+
+    // image
+    private String imageName;
+
+    // audio
+    private String audioName;
+    private String parsedText;
+    private long size;
 
     public String getId() {
         return id;
@@ -28,12 +46,12 @@ public class Message {
         this.id = id;
     }
 
-    public String getConversationId() {
-        return conversationId;
+    public String getChatroomId() {
+        return chatroomId;
     }
 
-    public void setConversationId(String conversationId) {
-        this.conversationId = conversationId;
+    public void setChatroomId(String chatroomId) {
+        this.chatroomId = chatroomId;
     }
 
     public String getSender() {
@@ -60,27 +78,91 @@ public class Message {
         this.updatedDateTime = updatedDateTime;
     }
 
-    public List<MessageContent> getMessageContents() {
-        return messageContents;
-    }
-
-    public void setMessageContents(List<MessageContent> messageContents) {
-        this.messageContents = messageContents;
-    }
-
-    public MessageSender getSenderContent() {
-        return senderContent;
-    }
-
-    public void setSenderContent(MessageSender senderContent) {
-        this.senderContent = senderContent;
-    }
-
     public boolean isAccuracy() {
         return accuracy;
     }
 
     public void setAccuracy(boolean accuracy) {
         this.accuracy = accuracy;
+    }
+
+    public SenderRole getSenderRole() {
+        return senderRole;
+    }
+
+    public void setSenderRole(SenderRole senderRole) {
+        this.senderRole = senderRole;
+    }
+
+    public GrammarResult getGrammarResult() {
+        return grammarResult;
+    }
+
+    public void setGrammarResult(GrammarResult grammarResult) {
+        this.grammarResult = grammarResult;
+    }
+
+    public List<AdvancedSentence> getAdvancedSentences() {
+        return advancedSentences;
+    }
+
+    public void setAdvancedSentences(List<AdvancedSentence> advancedSentences) {
+        this.advancedSentences = advancedSentences;
+    }
+
+    public ConversationScore getConversationScore() {
+        return conversationScore;
+    }
+
+    public void setConversationScore(ConversationScore conversationScore) {
+        this.conversationScore = conversationScore;
+    }
+
+    public String getTranslation() {
+        return translation;
+    }
+
+    public void setTranslation(String translation) {
+        this.translation = translation;
+    }
+
+    public String getText() {
+        return text;
+    }
+
+    public void setText(String text) {
+        this.text = text;
+    }
+
+    public String getImageName() {
+        return imageName;
+    }
+
+    public void setImageName(String imageName) {
+        this.imageName = imageName;
+    }
+
+    public String getAudioName() {
+        return audioName;
+    }
+
+    public void setAudioName(String audioName) {
+        this.audioName = audioName;
+    }
+
+    public String getParsedText() {
+        return parsedText;
+    }
+
+    public void setParsedText(String parsedText) {
+        this.parsedText = parsedText;
+    }
+
+    public long getSize() {
+        return size;
+    }
+
+    public void setSize(long size) {
+        this.size = size;
     }
 }

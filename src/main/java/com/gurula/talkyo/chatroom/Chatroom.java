@@ -1,18 +1,21 @@
 package com.gurula.talkyo.chatroom;
 
+import com.gurula.talkyo.chatroom.enums.ChatroomType;
+import com.gurula.talkyo.chatroom.enums.RoomStatus;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Document(collection = "chatroom")
 public class Chatroom {
     @Id
     private String id;
-    private List<String> participants = new ArrayList<>();
+    private RoomStatus roomStatus;  // active, close
+    private ChatroomType chatroomType;
     private String creationDate;
+    private String closeDate;
     private String ownerId; // memberId
+    private Scenario scenario;
+    private LearningReport report;
 
     public String getId() {
         return id;
@@ -22,12 +25,44 @@ public class Chatroom {
         this.id = id;
     }
 
-    public List<String> getParticipants() {
-        return participants;
+    public RoomStatus getRoomStatus() {
+        return roomStatus;
     }
 
-    public void setParticipants(List<String> participants) {
-        this.participants = participants;
+    public void setRoomStatus(RoomStatus roomStatus) {
+        this.roomStatus = roomStatus;
+    }
+
+    public ChatroomType getChatroomType() {
+        return chatroomType;
+    }
+
+    public void setChatroomType(ChatroomType chatroomType) {
+        this.chatroomType = chatroomType;
+    }
+
+    public String getCloseDate() {
+        return closeDate;
+    }
+
+    public void setCloseDate(String closeDate) {
+        this.closeDate = closeDate;
+    }
+
+    public Scenario getScenario() {
+        return scenario;
+    }
+
+    public void setScenario(Scenario scenario) {
+        this.scenario = scenario;
+    }
+
+    public LearningReport getReport() {
+        return report;
+    }
+
+    public void setReport(LearningReport report) {
+        this.report = report;
     }
 
     public String getCreationDate() {

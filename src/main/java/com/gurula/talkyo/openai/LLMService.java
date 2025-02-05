@@ -12,13 +12,13 @@ import java.util.List;
 public interface LLMService {
     String translate(String text);
 
-    String translateSentence(String sentencesJson);
+    String translateSentence(String sentencesJson) throws JsonProcessingException;
 
     LLMChatResponseDTO genWelcomeMessage(LLMChatRequestDTO llmChatRequestDTO) throws JsonProcessingException;
 
     GrammarResponseDTO grammarCheck(String content) throws JsonProcessingException;
 
-    List<AdvanceSentencesResponseDTO> advanceSentences(String correctSentence) throws JsonProcessingException;
+    List<AdvanceSentencesResponseDTO> advanceSentences(String content) throws JsonProcessingException;
 
     LLMChatResponseDTO replyMsg(LLMChatRequestDTO llmChatRequestDTO) throws JsonProcessingException;
 

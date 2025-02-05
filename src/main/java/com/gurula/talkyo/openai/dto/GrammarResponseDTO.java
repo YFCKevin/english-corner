@@ -5,6 +5,9 @@ public class GrammarResponseDTO {
     private String translation;
     private String errorReason;
 
+    public GrammarResponseDTO() {
+    }
+
     public GrammarResponseDTO(String correctSentence, String translation, String errorReason) {
         this.correctSentence = correctSentence;
         this.translation = translation;
@@ -21,5 +24,14 @@ public class GrammarResponseDTO {
 
     public String getErrorReason() {
         return errorReason;
+    }
+
+    @Override
+    public String toString() {
+        return "GrammarResponseDTO{" +
+                "correctSentence='" + correctSentence + '\'' +
+                ", translation='" + translation + '\'' +
+                ", errorReason='" + errorReason + '\'' +
+                '}';
     }
 }

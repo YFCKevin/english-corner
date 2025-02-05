@@ -1,15 +1,12 @@
 package com.gurula.talkyo.openai.dto;
 
-public class LLMChatResponseDTO {
+public class SentenceResponseDTO {
+    private String unitNumber;
     private String content;
     private String translation;
 
-    public LLMChatResponseDTO() {
-    }
-
-    public LLMChatResponseDTO(String content, String translation) {
-        this.content = content;
-        this.translation = translation;
+    public String getUnitNumber() {
+        return unitNumber;
     }
 
     public String getContent() {
@@ -22,8 +19,9 @@ public class LLMChatResponseDTO {
 
     @Override
     public String toString() {
-        return "LLMChatResponseDTO{" +
-                "content='" + content + '\'' +
+        return "SentenceResponseDTO{" +
+                "unitNumber='" + unitNumber + '\'' +
+                ", content='" + content + '\'' +
                 ", translation='" + translation + '\'' +
                 '}';
     }

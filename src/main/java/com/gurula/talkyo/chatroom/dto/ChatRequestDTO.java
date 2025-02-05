@@ -1,22 +1,43 @@
 package com.gurula.talkyo.chatroom.dto;
 
 import com.gurula.talkyo.chatroom.Scenario;
+import com.gurula.talkyo.chatroom.enums.ChatroomType;
 
 public class ChatRequestDTO {
     private String chatroomId;
     private Scenario scenario;
-    private String conversationId;
     private String memberId;
     private String partnerId;
     private String lessonId;
     private String messageId;
+    private ChatroomType chatroomType;
 
-    public ChatRequestDTO(String conversationId, String lessonId) {
-        this.conversationId = conversationId;
+    // for pronunciation
+    private String referenceText;
+    private String audioFilePath;
+
+    public ChatRequestDTO() {
+    }
+
+    public ChatRequestDTO(String chatroomId, ChatroomType chatroomType, Scenario scenario) {
+        this.chatroomId = chatroomId;
+        this.chatroomType = chatroomType;
+        this.scenario = scenario;
+    }
+
+    public ChatRequestDTO(String lessonId) {
         this.lessonId = lessonId;
     }
 
-    public ChatRequestDTO(String memberId, String partnerId, String messageId, String lessonId) {
+    public ChatRequestDTO(String messageId, String referenceText, String audioFilePath, String partnerId) {
+        this.messageId = messageId;
+        this.referenceText = referenceText;
+        this.audioFilePath = audioFilePath;
+        this.partnerId = partnerId;
+    }
+
+    public ChatRequestDTO(String chatroomId, String memberId, String partnerId, String messageId, String lessonId) {
+        this.chatroomId = chatroomId;
         this.memberId = memberId;
         this.partnerId = partnerId;
         this.messageId = messageId;
@@ -52,14 +73,6 @@ public class ChatRequestDTO {
         this.scenario = scenario;
     }
 
-    public String getConversationId() {
-        return conversationId;
-    }
-
-    public void setConversationId(String conversationId) {
-        this.conversationId = conversationId;
-    }
-
     public String getMemberId() {
         return memberId;
     }
@@ -82,5 +95,48 @@ public class ChatRequestDTO {
 
     public void setLessonId(String lessonId) {
         this.lessonId = lessonId;
+    }
+
+    public ChatroomType getChatroomType() {
+        return chatroomType;
+    }
+
+    public void setMessageId(String messageId) {
+        this.messageId = messageId;
+    }
+
+    public void setChatroomType(ChatroomType chatroomType) {
+        this.chatroomType = chatroomType;
+    }
+
+    public String getReferenceText() {
+        return referenceText;
+    }
+
+    public String getAudioFilePath() {
+        return audioFilePath;
+    }
+
+    public void setReferenceText(String referenceText) {
+        this.referenceText = referenceText;
+    }
+
+    public void setAudioFilePath(String audioFilePath) {
+        this.audioFilePath = audioFilePath;
+    }
+
+    @Override
+    public String toString() {
+        return "ChatRequestDTO{" +
+                "chatroomId='" + chatroomId + '\'' +
+                ", scenario=" + scenario +
+                ", memberId='" + memberId + '\'' +
+                ", partnerId='" + partnerId + '\'' +
+                ", lessonId='" + lessonId + '\'' +
+                ", messageId='" + messageId + '\'' +
+                ", chatroomType=" + chatroomType +
+                ", referenceText='" + referenceText + '\'' +
+                ", audioFilePath='" + audioFilePath + '\'' +
+                '}';
     }
 }

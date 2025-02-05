@@ -6,4 +6,6 @@ import java.util.Optional;
 
 public interface LearningRecordRepository extends MongoRepository<LearningRecord, String> {
     Optional<LearningRecord> findByLessonId(String lessonId);
+    Optional<LearningRecord> findByChatroomId(String chatroomId);
+
 }

@@ -1,34 +1,25 @@
 package com.gurula.talkyo.chatroom.dto;
 
-import com.gurula.talkyo.chatroom.enums.ConversationType;
+import com.gurula.talkyo.chatroom.enums.ChatroomType;
 import com.gurula.talkyo.chatroom.enums.MessageType;
 import org.springframework.web.multipart.MultipartFile;
 
 public class ChatDTO {
-    private ConversationType conversationType;
+    private ChatroomType chatroomType;
     private String chatroomId;
-    private String conversationId;
-    private String content;
     private MultipartFile multipartFile;
+    private String content;
     private String audioFileName;
     private String imageFileName;
     private String lessonId;
     private MessageType messageType;
 
-    public String getConversationId() {
-        return conversationId;
-    }
-
     public String getContent() {
         return content;
     }
 
-    public MultipartFile getMultipartFile() {
-        return multipartFile;
-    }
-
-    public ConversationType getConversationType() {
-        return conversationType;
+    public ChatroomType getChatroomType() {
+        return chatroomType;
     }
 
     public String getChatroomId() {
@@ -49,5 +40,55 @@ public class ChatDTO {
 
     public String getImageFileName() {
         return imageFileName;
+    }
+
+    public MultipartFile getMultipartFile() {
+        return multipartFile;
+    }
+
+    public void setChatroomType(ChatroomType chatroomType) {
+        this.chatroomType = chatroomType;
+    }
+
+    public void setChatroomId(String chatroomId) {
+        this.chatroomId = chatroomId;
+    }
+
+    public void setMultipartFile(MultipartFile multipartFile) {
+        this.multipartFile = multipartFile;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
+    }
+
+    public void setAudioFileName(String audioFileName) {
+        this.audioFileName = audioFileName;
+    }
+
+    public void setImageFileName(String imageFileName) {
+        this.imageFileName = imageFileName;
+    }
+
+    public void setLessonId(String lessonId) {
+        this.lessonId = lessonId;
+    }
+
+    public void setMessageType(MessageType messageType) {
+        this.messageType = messageType;
+    }
+
+    @Override
+    public String toString() {
+        return "ChatDTO{" +
+                "chatroomType=" + chatroomType +
+                ", chatroomId='" + chatroomId + '\'' +
+                ", multipartFile=" + multipartFile +
+                ", content='" + content + '\'' +
+                ", audioFileName='" + audioFileName + '\'' +
+                ", imageFileName='" + imageFileName + '\'' +
+                ", lessonId='" + lessonId + '\'' +
+                ", messageType=" + messageType +
+                '}';
     }
 }

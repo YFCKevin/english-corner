@@ -6,13 +6,13 @@ public class PayloadDTO {
     private String model;
     private List<MsgDTO> messages;
     private float temperature;
-    private int token;
+    private int max_tokens;
 
-    public PayloadDTO(String model, List<MsgDTO> messages, float temperature, int token) {
+    public PayloadDTO(String model, List<MsgDTO> messages, float temperature, int max_tokens) {
         this.model = model;
         this.messages = messages;
         this.temperature = temperature;
-        this.token = token;
+        this.max_tokens = max_tokens;
     }
 
     public PayloadDTO(String model, List<MsgDTO> messages, float temperature) {
@@ -33,7 +33,7 @@ public class PayloadDTO {
         return temperature;
     }
 
-    public int getToken() {
-        return token;
+    public int getMax_tokens() {
+        return max_tokens;
     }
 }

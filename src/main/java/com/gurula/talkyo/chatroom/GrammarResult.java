@@ -7,7 +7,6 @@ public class GrammarResult {
     private String correctSentence;
     private String translation;     // 正確語句的翻譯
     private String errorReason;
-    private String creationDate;
 
     public String getErrorSentence() {
         return errorSentence;
@@ -39,13 +38,5 @@ public class GrammarResult {
 
     public void setErrorReason(String errorReason) {
         this.errorReason = errorReason;
-    }
-
-    public String getCreationDate() {
-        return creationDate;
-    }
-
-    public void setCreationDate(String creationDate) {
-        this.creationDate = creationDate;
     }
 }

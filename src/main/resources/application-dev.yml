@@ -17,7 +17,6 @@ spring:
     port: 5672
     username: ${db-username}
     password: ${db-password}
-    virtualHost: /talkyo
     listener:
       simple:
         prefetch: 1 #當多個消費者訂閱同一個Queue時，確保每個消費者最多處理一條Msg，而不是某些消費者堆積大量消息。

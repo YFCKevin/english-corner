@@ -13,8 +13,6 @@ public class RabbitMQProperties {
     private String username;
     @Value("${spring.rabbitmq.password}")
     private String password;
-    @Value("${spring.rabbitmq.virtual-host}")
-    private String virtualHost;
 
     public String getHost() {
         return host;
@@ -38,14 +36,6 @@ public class RabbitMQProperties {
 
     public void setPassword(String password) {
         this.password = password;
-    }
-
-    public String getVirtualHost() {
-        return virtualHost;
-    }
-
-    public void setVirtualHost(String virtualHost) {
-        this.virtualHost = virtualHost;
     }
 
     public int getPort() {

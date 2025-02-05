@@ -4,6 +4,9 @@ public class LearningReport {
     private ConversationScore conversationScore;
     private Feedback feedback;
 
+    public LearningReport() {
+    }
+
     public LearningReport(ConversationScore conversationScore) {
         this.conversationScore = conversationScore;
     }

@@ -3,14 +3,19 @@ package com.gurula.talkyo.azureai;
 import com.gurula.talkyo.azureai.dto.ChatAudioDTO;
 import com.gurula.talkyo.chatroom.ContentAssessment;
 import com.gurula.talkyo.chatroom.ConversationScore;
+import com.gurula.talkyo.chatroom.DisplayWord;
 import com.gurula.talkyo.properties.AzureProperties;
 import com.gurula.talkyo.properties.ConfigProperties;
 import com.microsoft.cognitiveservices.speech.*;
 import com.microsoft.cognitiveservices.speech.audio.AudioConfig;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -30,27 +35,38 @@ public class AudioService {
         this.partnerRepository = partnerRepository;
     }
 
-    public List<Path> speechSynthesis(String content, String unitNumber) throws ExecutionException, InterruptedException {
+    public Path speechSynthesis(String courseTopic, String lessonNumber, String content, String sentenceUnitNumber, String shortName) throws ExecutionException, InterruptedException, IOException {
         SpeechConfig speechConfig = SpeechConfig.fromSubscription(
                 azureProperties.getAudio().getKey(),
                 azureProperties.getAudio().getRegion()
         );
 
-        final Path maleAudioPath = generateSpeechFile(speechConfig, content, unitNumber, "en-US-BrianMultilingualNeural", "_en-US-BrianMultilingualNeural.wav");
-
-        final Path femaleAudioPath = generateSpeechFile(speechConfig, content, unitNumber, "en-US-PhoebeMultilingualNeural", "_en-US-PhoebeMultilingualNeural.wav");
+        final Path audioPath = generateSpeechFile(
+                speechConfig,
+                content,
+                sentenceUnitNumber,
+                courseTopic,
+                lessonNumber,
+                shortName,
+                "_" + shortName + ".wav"
+        );
+        Thread.sleep(3000);
 
         speechConfig.close();
 
-        return Arrays.asList(maleAudioPath, femaleAudioPath);
+        return audioPath;
     }
 
-    public Path generateSpeechFile(SpeechConfig speechConfig, String content, String unitNumber, String voiceName, String suffix)
-            throws ExecutionException, InterruptedException {
+    public Path generateSpeechFile(SpeechConfig speechConfig, String content, String sentenceUnitNumber, String courseTopic, String lessonNumber, String voiceName, String suffix)
+            throws ExecutionException, InterruptedException, IOException {
         speechConfig.setSpeechSynthesisVoiceName(voiceName);
         speechConfig.setSpeechSynthesisOutputFormat(SpeechSynthesisOutputFormat.Riff16Khz16BitMonoPcm);
 
-        Path filePath = Paths.get(configProperties.getAudioSavePath(), unitNumber + suffix);
+        // 存放位置：/audio/{course topic}/{lesson unitNumber}/{sentence unitNumber_partner voice.wav}
+        Path filePath = Paths.get(configProperties.getAudioSavePath(), courseTopic, lessonNumber, sentenceUnitNumber + suffix);
+        // 檢查並創建資料夾
+        Files.createDirectories(filePath.getParent());
+
         AudioConfig audioConfig = AudioConfig.fromWavFileOutput(filePath.toString());
         SpeechSynthesizer speechSynthesizer = new SpeechSynthesizer(speechConfig, audioConfig);
 
@@ -76,7 +92,6 @@ public class AudioService {
     }
 
     public List<Path> textToSpeechInChatting(List<ChatAudioDTO> chatAudioDTOList) throws ExecutionException, InterruptedException {
-
         if (chatAudioDTOList == null || chatAudioDTOList.isEmpty()) {
             return Collections.emptyList();
         }
@@ -99,8 +114,11 @@ public class AudioService {
 
             try {
                 for (ChatAudioDTO chatAudioDTO : chatAudioDTOList) {
-                    String suffix = "_" + partner.getShortName() + "_" + System.currentTimeMillis() + ".wav";
-                    Path filePath = Paths.get(configProperties.getAudioSavePath(), chatAudioDTO.getConversationId() + suffix);
+                    String suffix = partner.getShortName() + "_" + System.currentTimeMillis() + ".wav";
+                    // 存放位置：/audio/{chatroomId}/{partner shortName_timestamp.wav}
+                    Path filePath = Paths.get(configProperties.getAudioSavePath(), chatAudioDTO.getChatroomId(), suffix);
+                    // 檢查並創建資料夾
+                    Files.createDirectories(filePath.getParent());
 
                     AudioConfig audioConfig = AudioConfig.fromWavFileOutput(filePath.toString());
 
@@ -121,10 +139,11 @@ public class AudioService {
                         }
                     }
                 }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             } finally {
                 speechConfig.close();
             }
-
             return audioPaths;
         } else {
             logger.warn("Partner not found for ID: " + sampleDTO.getPartnerId());
@@ -134,7 +153,7 @@ public class AudioService {
 
 
 
-    public ConversationScore analyzeMultipleAudioFiles(String referenceText, String audioFilePath) {
+    public ConversationScore pronunciation(String referenceText, String audioFilePath) {
         try {
             // 創建 SpeechConfig
             SpeechConfig speechConfig = SpeechConfig.fromSubscription(azureProperties.getAudio().getKey(), azureProperties.getAudio().getRegion());
@@ -146,8 +165,7 @@ public class AudioService {
                     PronunciationAssessmentGranularity.Word           // 以"單字"為單位
             );
 
-            // 開啟內容分析 (與主題相關) 和 韻律分析 (Prosody)
-            pronunciationConfig.enableContentAssessmentWithTopic("general");
+            // 開啟韻律分析 (Prosody)
             pronunciationConfig.enableProsodyAssessment();          // 韻律分析
 
             // 創建 AudioConfig
@@ -172,31 +190,23 @@ public class AudioService {
                 System.out.println("流利度 (Fluency): " + assessmentResult.getFluencyScore());
                 System.out.println("完整性 (Completeness): " + assessmentResult.getCompletenessScore());
                 System.out.println("韻律 (Prosody): " + assessmentResult.getProsodyScore());
-                System.out.println("文法評分: " + assessmentResult.getContentAssessmentResult().getGrammarScore());
-                System.out.println("主題評分: " + assessmentResult.getContentAssessmentResult().getTopicScore());
-                System.out.println("單字評分: " + assessmentResult.getContentAssessmentResult().getVocabularyScore());
+
+                // 顯示錯誤分析結果（如果有錯誤）
+                String jsonResult = result.getProperties().getProperty(PropertyId.SpeechServiceResponse_JsonResult);
+                final List<DisplayWord> displayWords = constructWords(jsonResult);
+
+                // 完整 JSON 結果
+                System.out.println("pronunciation: "+jsonResult);
 
                 // 結果放入 DTO
-                ContentAssessment contentAssessment = new ContentAssessment(
-                        assessmentResult.getContentAssessmentResult().getVocabularyScore(),
-                        assessmentResult.getContentAssessmentResult().getGrammarScore(),
-                        assessmentResult.getContentAssessmentResult().getTopicScore()
-                );
-                ConversationScore conversationScore = new ConversationScore(
+                return new ConversationScore(
                         assessmentResult.getFluencyScore(),
                         assessmentResult.getAccuracyScore(),
                         assessmentResult.getCompletenessScore(),
                         assessmentResult.getProsodyScore(),
-                        contentAssessment
+                        result.getText(),
+                        displayWords
                 );
-
-                // 顯示錯誤分析結果（如果有錯誤）
-                String jsonResult = result.getProperties().getProperty(PropertyId.SpeechServiceResponse_JsonResult);
-
-                // 完整 JSON 結果
-                System.out.println(jsonResult);
-
-                return conversationScore;
 
             } else {
                 System.out.println("語音識別失敗: " + result.getReason());
@@ -206,6 +216,86 @@ public class AudioService {
             recognizer.close();
             speechConfig.close();
 
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return null;
+    }
+
+    private static List<DisplayWord> constructWords(String jsonResult) {
+        List<DisplayWord> displayWords = new ArrayList<>();
+        JSONObject root = new JSONObject(jsonResult);
+        JSONArray nBestArray = root.getJSONArray("NBest");
+        if (nBestArray.length() > 0) {
+            JSONObject firstResult = nBestArray.getJSONObject(0);
+            JSONArray wordsArray = firstResult.getJSONArray("Words");
+            for (int i = 0; i < wordsArray.length(); i++) {
+                JSONObject wordObj = wordsArray.getJSONObject(i);
+                String word = wordObj.getString("Word");
+                JSONObject paObj = wordObj.getJSONObject("PronunciationAssessment");
+                double accuracyScore = paObj.getDouble("AccuracyScore");
+                String errorType = paObj.getString("ErrorType");
+                DisplayWord displayWord = new DisplayWord(word, accuracyScore, errorType);
+                displayWords.add(displayWord);
+            }
+        }
+        return displayWords;
+    }
+
+
+    public ContentAssessment analyzeTopic(String referenceText, String audioFilePath) {
+        try {
+            // 創建 SpeechConfig
+            SpeechConfig speechConfig = SpeechConfig.fromSubscription(
+                    azureProperties.getAudio().getKey(),
+                    azureProperties.getAudio().getRegion()
+            );
+
+            // 設置內容分析參數
+            PronunciationAssessmentConfig contentConfig = new PronunciationAssessmentConfig(
+                    referenceText,
+                    PronunciationAssessmentGradingSystem.HundredMark,  // 100分制
+                    PronunciationAssessmentGranularity.FullText        // 分析整段文本
+            );
+            contentConfig.enableContentAssessmentWithTopic("general");  // 啟用主題相關性分析
+
+            // 創建 AudioConfig
+            AudioConfig audioConfig = AudioConfig.fromWavFileInput(audioFilePath);
+
+            // 創建 SpeechRecognizer
+            SpeechRecognizer recognizer = new SpeechRecognizer(speechConfig, audioConfig);
+
+            // 應用內容評估設置
+            contentConfig.applyTo(recognizer);
+
+            // 使用 recognizeOnceAsync 進行語音識別及評估
+            final com.microsoft.cognitiveservices.speech.SpeechRecognitionResult result = recognizer.recognizeOnceAsync().get();
+
+            // 完整 JSON 結果
+            String jsonResult = result.getProperties().getProperty(PropertyId.SpeechServiceResponse_JsonResult);
+            System.out.println("topic: " + jsonResult);
+
+            if (result.getReason() == ResultReason.RecognizedSpeech) {
+                PronunciationAssessmentResult assessmentResult = PronunciationAssessmentResult.fromResult(result);
+
+                System.out.println("文法評分: " + assessmentResult.getContentAssessmentResult().getGrammarScore());
+                System.out.println("主題評分: " + assessmentResult.getContentAssessmentResult().getTopicScore());
+                System.out.println("單字評分: " + assessmentResult.getContentAssessmentResult().getVocabularyScore());
+
+                // 內容評估結果
+                ContentAssessmentResult contentResult = assessmentResult.getContentAssessmentResult();
+
+                return new ContentAssessment(
+                        contentResult.getVocabularyScore(),
+                        contentResult.getGrammarScore(),
+                        contentResult.getTopicScore()
+                );
+            } else {
+                System.out.println("語音識別失敗: " + result.getReason());
+            }
+
+            recognizer.close();
+            speechConfig.close();
         } catch (Exception ex) {
             ex.printStackTrace();
         }

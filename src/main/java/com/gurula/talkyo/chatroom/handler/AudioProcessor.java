@@ -7,6 +7,7 @@ import com.gurula.talkyo.properties.ConfigProperties;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class AudioProcessor extends MessageTypeHandler{
 
@@ -21,7 +22,8 @@ public class AudioProcessor extends MessageTypeHandler{
 
     @Override
     protected String doHandler(ChatDTO chatDTO, ConfigProperties configProperties) throws IOException {
-        Path path = FileUtils.saveUploadedFile(chatDTO.getMultipartFile(), configProperties.getAudioSavePath());
+        Path uploadPath = Paths.get(configProperties.getAudioSavePath(), chatDTO.getChatroomId());
+        Path path = FileUtils.saveUploadedFile(chatDTO.getMultipartFile(), MessageType.AUDIO, uploadPath);
         return path.getFileName().toString();
     }
 }

@@ -37,7 +37,65 @@ public class LLMServiceImpl implements LLMService{
 
     @Override
     public String translateSentence(String sentence) {
+
+        String url = "https://api.openai.com/v1/chat/completions";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(configProperties.getOpenaiApiKey());
+
+        String payload = translateSentencePayload(sentence);
+
+        System.out.println("payload = " + payload);
+
+        HttpEntity<String> entity = new HttpEntity<>(payload, headers);
+
+        ResponseEntity<ChatCompletionResponse> response = restTemplate.exchange(url, HttpMethod.POST, entity, ChatCompletionResponse.class);
+
+        if (response.getStatusCode().is2xxSuccessful()) {
+            logger.info("OpenAI回傳的status code: {}", response);
+            ChatCompletionResponse responseBody = response.getBody();
+            final String jsonContent = extractJsonContent(responseBody);
+            System.out.println("GPT回傳資料 ======> " + jsonContent);
+            return jsonContent;
+        }
+
         return null;
+    }
+
+    private String translateSentencePayload(String sentence) {
+
+        String systemMessageContent = "You are a skilled assistant that translates sentences from English to Traditional Chinese. Please ensure that the translation is clear, accurate, and culturally appropriate for native speakers. Maintain the tone and context of the original sentence as much as possible.";
+
+        String userMessageContent = String.format(
+                "Please translate the following English sentences into Traditional Chinese. Return the result as a JSON array of objects, where each object contains the following properties:\n" +
+                        "[\n" +
+                        "  {\n" +
+                        "    \"unitNumber\": \"<unitNumber>\",\n" +
+                        "    \"content\": \"<original sentence>\",\n" +
+                        "    \"translation\": \"<translated sentence>\"\n" +
+                        "  },\n" +
+                        "]\n" +
+                        "For each sentence, return the translation along with the original sentence.\n" +
+                        "Here are the sentences to be translated:\n" +
+                        "%s", sentence
+        );
+
+        MsgDTO systemMessage = new MsgDTO(Role.system, systemMessageContent);
+        MsgDTO userMessage = new MsgDTO(Role.user, userMessageContent);
+
+        List<MsgDTO> messages = new ArrayList<>();
+        messages.add(systemMessage);
+        messages.add(userMessage);
+
+        PayloadDTO payload = new PayloadDTO("gpt-4o-mini", messages, 0.7F, 5000);
+
+        try {
+            return objectMapper.writeValueAsString(payload);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     @Override
@@ -155,6 +213,7 @@ public class LLMServiceImpl implements LLMService{
             logger.info("OpenAI回傳的status code: {}", response);
             ChatCompletionResponse responseBody = response.getBody();
             final String jsonContent = extractJsonContent(responseBody);
+            System.out.println("jsonContent = " + jsonContent);
             final LLMChatResponseDTO responseDTO = objectMapper.readValue(jsonContent, LLMChatResponseDTO.class);
             System.out.println("GPT回傳資料 ======> " + responseDTO.getContent() + "\n" + responseDTO.getTranslation());
             return responseDTO;
@@ -193,14 +252,16 @@ public class LLMServiceImpl implements LLMService{
     }
 
     private String feedbackPayload(String dialogueText) {
-        // System message content
+
         String systemMessageContent = "You are a language learning assistant. Your task is to evaluate only the user's sentences from the provided dialogue. " +
                 "Focus on identifying both errors and correct usage in the user's sentences. Provide feedback in a concise, bullet-point format with approximately 300 words. " +
-                "Translate the feedback into Traditional Chinese. Do not evaluate or reference the partner's sentences. " +
+                "Translate only the feedback into Traditional Chinese. Do not evaluate or reference the partner's sentences. " +
+                "Do not translate the user's original sentences. Exclude any phrases of appreciation or gratitude, such as 'Thank you' or 'Great job'. " +
+                "Ensure that both 'comment' and 'translation' are single strings, not arrays or lists. Join multiple feedback points into a single string, separating them with newline characters ('\\n'). " +
                 "Return the feedback in the following JSON format:\n" +
                 "{\n" +
-                "  \"comment\": \"[300-word English feedback in bullet-point format]\",\n" +
-                "  \"translation\": \"[Traditional Chinese translation of the feedback]\"\n" +
+                "  \"comment\": \"[300-word English feedback in bullet-point format without gratitude or appreciation statements]\",\n" +
+                "  \"translation\": \"[Traditional Chinese translation of the feedback only, do not translate the user's sentences]\"\n" +
                 "}";
 
         String userMessageContent = String.format(
@@ -216,7 +277,7 @@ public class LLMServiceImpl implements LLMService{
         messages.add(systemMessage);
         messages.add(userMessage);
 
-        PayloadDTO payload = new PayloadDTO("gpt-4o-mini", messages, 1);
+        PayloadDTO payload = new PayloadDTO("gpt-4o-mini", messages, 1, 5000);
 
         try {
             return objectMapper.writeValueAsString(payload);
@@ -230,29 +291,44 @@ public class LLMServiceImpl implements LLMService{
     private String replyPayload(String historyMsgs, Scenario scenario) {
 
         String systemMessageContent = String.format(
-                "You are a %s assisting a %s who is %s. " +
-                        "You will help the %s learn English phrases related to %s by providing both the sentence in English and its Traditional Chinese translation. " +
-                        "For each sentence, generate a question related to the sentence and ask the user to respond in English. " +
-                        "After each question, provide the sentence in English and its Traditional Chinese translation. " +
-                        "Your task is to guide the %s through typical scenarios, using sentences from the following list. " +
-                        "Make sure to refer to the previous conversation history provided below in order to generate a relevant response, " +
-                        "and adjust your responses based on that context. " +
+                "You are an AI assistant, responsible for simulating role-playing conversations to help the user practice conversation skills in a specific scenario.\n\n" +
+                        "Role Setting\n" +
+                        "- Your role is: \"%s\".\n" +
+                        "- The user's role is: \"%s\".\n" +
+                        "- The conversation scenario is: \"%s\".\n\n" +
+                        "Conversation Rules\n" +
+                        "1.You can only play your role, and please stick to the script.\n" +
+                        "2.Please automatically generate a suitable \"opening statement\" and start the conversation with it.\n" +
+                        "3.After each response, wait for the user to reply before proceeding; do not provide sample answers right away.\n" +
+                        "4.If the user’s response is incomplete, prompt them to provide more information.\n" +
+                        "5.If the user doesn’t know how to respond, provide part of a sample response but leave room for them to fill in.\n" +
+                        "6.If the user’s answer is too simple, add an extra challenge by asking for details or recommending other options to make the conversation more natural.\n" +
+                        "7.You should naturally end the conversation at the appropriate time, but do not terminate the conversation too early.\n" +
+                        "8. Ask one question at a time and wait for the user's response before proceeding to the next question.\n" +
+                        "9. Use a natural and smooth flow to guide the user instead of asking too many questions at once.\n" +
+                        "Response Format\n" +
                         "Please respond in the following format:\n" +
                         "{\n" +
-                        "    \"content\": \"[Question in English]\",\n" +
-                        "    \"translation\": \"[Traditional Chinese translation of the question]\"\n" +
+                        "    \"content\": \"[AI role's response in English]\",\n" +
+                        "    \"translation\": \"[AI role's response translated into Traditional Chinese]\"\n" +
                         "}",
-                scenario.getPartnerRole(),
-                scenario.getHumanRole(),
-                scenario.getSubject(),
-                scenario.getHumanRole(),
-                scenario.getSubject(),
-                scenario.getHumanRole()
+                scenario.getPartnerRole(),  // AI role
+                scenario.getHumanRole(),    // User role
+                scenario.getSubject()       // Scenario subject
         );
+
 
         // 將歷史訊息納入，用於 AI 的參考
         String userMessageContent = String.format(
-                "Here is the history of our conversation:\n%s",
+                "Conversation Scenario: \"%s\"\n" +
+                        "Your Role: \"%s\"\n" +
+                        "User's Role: \"%s\"\n\n" +
+                        "History of the conversation:\n" +
+                        "%s\n\n" +
+                        "Please continue the conversation based on the previous messages.",
+                scenario.getSubject(),
+                scenario.getPartnerRole(),
+                scenario.getHumanRole(),
                 historyMsgs
         );
 
@@ -263,7 +339,7 @@ public class LLMServiceImpl implements LLMService{
         messages.add(systemMessage);
         messages.add(userMessage);
 
-        PayloadDTO payload = new PayloadDTO("gpt-4o-mini", messages, 1);
+        PayloadDTO payload = new PayloadDTO("gpt-4o-mini", messages, 1, 5000);
 
         try {
             return objectMapper.writeValueAsString(payload);
@@ -327,7 +403,7 @@ public class LLMServiceImpl implements LLMService{
         messages.add(systemMessage);
         messages.add(userMessage);
 
-        PayloadDTO payload = new PayloadDTO("gpt-4o-mini", messages, 0.3F, 500);
+        PayloadDTO payload = new PayloadDTO("gpt-4o-mini", messages, 0.3F, 5000);
 
         try {
             return objectMapper.writeValueAsString(payload);
@@ -341,33 +417,53 @@ public class LLMServiceImpl implements LLMService{
     private String firstMsgPayload(Scenario scenario, String sentences) {
 
         String systemMessageContent = String.format(
-                "You are a %s assisting a %s who is %s. " +
-                        "You will help the %s learn English phrases related to %s by providing both the sentence in English and its Traditional Chinese translation. " +
-                        "For each sentence, generate a question related to the sentence and ask the user to respond in English. " +
-                        "After each question, provide the sentence in English and its Traditional Chinese translation. " +
-                        "Your task is to guide the %s through typical scenarios, using sentences from the following list. " +
+                "You are an AI assistant, responsible for simulating role-playing conversations to help the user practice conversation skills in a specific scenario.\n\n" +
+                        "Role Setting\n" +
+                        "- Your role is: \"%s\" (e.g., a coffee shop employee, hotel front desk, interviewer).\n" +
+                        "- The user's role is: \"%s\" (e.g., customer, traveler, job applicant).\n" +
+                        "- The conversation scenario is: \"%s\" (e.g., ordering food, checking in, job interview).\n\n" +
+                        "Conversation Rules\n" +
+                        "1.You can only play your role, and please stick to the script.\n" +
+                        "2.Please **only generate the opening statement for the first round of conversation**, and start the conversation with it.\n" +
+                        "3.After each response, wait for the user to reply before proceeding; do not provide sample answers right away.\n" +
+                        "4.If the user’s response is incomplete, prompt them to provide more information.\n" +
+                        "5.If the user doesn’t know how to respond, provide part of a sample response but leave room for them to fill in.\n" +
+                        "6.If the user’s answer is too simple, add an extra challenge by asking for details or recommending other options to make the conversation more natural.\n" +
+                        "7.You should naturally end the conversation at the appropriate time, but do not terminate the conversation too early.\n\n" +
+                        "Response Format\n" +
                         "Please respond in the following format:\n" +
                         "{\n" +
-                        "    \"content\": \"[Question in English]\",\n" +
-                        "    \"translation\": \"[Traditional Chinese translation of the question]\"\n" +
+                        "    \"content\": \"[AI role's response in English]\",\n" +
+                        "    \"translation\": \"[AI role's response translated into Traditional Chinese]\"\n" +
                         "}",
+                scenario.getPartnerRole(),  // AI role
+                scenario.getHumanRole(),    // User role
+                scenario.getSubject()       // Scenario subject
+        );
+
+        String userMessageContent = String.format(
+                "Conversation Scenario: \"%s\"\n" +
+                        "Your Role: \"%s\"\n" +
+                        "User's Role: \"%s\"\n\n" +
+                        "Here are some example sentences for you to use as the \"%s\" role:\n" +
+                        "%s\n\n" +
+                        "Please start the conversation based on the scenario. Use one of the example sentences or create your own response to initiate the conversation.",
+                scenario.getSubject(),
                 scenario.getPartnerRole(),
                 scenario.getHumanRole(),
-                scenario.getSubject(),
                 scenario.getHumanRole(),
-                scenario.getSubject(),
-                scenario.getHumanRole()
+                sentences
         );
 
 
         MsgDTO systemMessage = new MsgDTO(Role.system, systemMessageContent);
-        MsgDTO userMessage = new MsgDTO(Role.user, sentences);
+        MsgDTO userMessage = new MsgDTO(Role.user, userMessageContent);
 
         List<MsgDTO> messages = new ArrayList<>();
         messages.add(systemMessage);
         messages.add(userMessage);
 
-        PayloadDTO payload = new PayloadDTO("gpt-4o-mini", messages, 1);
+        PayloadDTO payload = new PayloadDTO("gpt-4o-mini", messages, 1, 2000);
 
         try {
             return objectMapper.writeValueAsString(payload);

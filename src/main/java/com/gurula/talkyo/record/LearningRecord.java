@@ -11,12 +11,15 @@ public class LearningRecord {
     private String memberId;
     private String courseId;
     private String lessonId;
-    private String conversationId;
+    private String chatroomId;
     private boolean finish;
+
+    public LearningRecord() {
+    }
 
     public LearningRecord(RecordDTO recordDTO, boolean finish, String memberId) {
         this.courseId = recordDTO.getCourseId();
-        this.conversationId = recordDTO.getConversationId();
+        this.chatroomId = recordDTO.getChatroomId();
         this.lessonId = recordDTO.getLessonId();
         this.finish = finish;
         this.memberId = memberId;
@@ -26,7 +29,7 @@ public class LearningRecord {
         this.id = record.getId();
         this.memberId = record.getMemberId();
         this.lessonId = record.getLessonId();
-        this.conversationId = record.getConversationId();
+        this.chatroomId = record.getChatroomId();
         this.courseId = record.getCourseId();
         this.finish = finish;
     }
@@ -47,8 +50,8 @@ public class LearningRecord {
         return lessonId;
     }
 
-    public String getConversationId() {
-        return conversationId;
+    public String getChatroomId() {
+        return chatroomId;
     }
 
     public boolean isFinish() {

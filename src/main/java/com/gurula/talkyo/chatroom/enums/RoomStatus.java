@@ -1,15 +1,11 @@
 package com.gurula.talkyo.chatroom.enums;
 
-public enum ConversationType {
-    PROJECT(1,"學習計畫"),
-    SITUATION(2,"情境"),
-    FREE_TALK(3,"自由對話"),
-    IMAGE(4,"圖片描述"),
-    ONE_ON_ONE(5,"一對一");
+public enum RoomStatus {
+    ACTIVE(1,"進行中"), CLOSED(2,"已關閉");
 
     private int value;
     private String label;
-    private ConversationType(int value,String label){
+    private RoomStatus(int value,String label){
         this.value = value;
         this.label = label;
     }

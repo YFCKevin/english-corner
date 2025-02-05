@@ -4,19 +4,19 @@ public class ChatAudioDTO {
     private String content;
     private String memberId;
     private String partnerId;
-    private String conversationId;
+    private String chatroomId;
 
-    public ChatAudioDTO(String content, String memberId, String partnerId, String conversationId) {
+    public ChatAudioDTO(String content, String memberId, String partnerId, String chatroomId) {
         this.content = content;
         this.memberId = memberId;
         this.partnerId = partnerId;
-        this.conversationId = conversationId;
+        this.chatroomId = chatroomId;
     }
 
-    public ChatAudioDTO(String content, String partnerId, String conversationId) {
+    public ChatAudioDTO(String content, String partnerId, String chatroomId) {
         this.content = content;
         this.partnerId = partnerId;
-        this.conversationId = conversationId;
+        this.chatroomId = chatroomId;
     }
 
     public String getContent() {
@@ -31,7 +31,17 @@ public class ChatAudioDTO {
         return partnerId;
     }
 
-    public String getConversationId() {
-        return conversationId;
+    public String getChatroomId() {
+        return chatroomId;
+    }
+
+    @Override
+    public String toString() {
+        return "ChatAudioDTO{" +
+                "content='" + content + '\'' +
+                ", memberId='" + memberId + '\'' +
+                ", partnerId='" + partnerId + '\'' +
+                ", chatroomId='" + chatroomId + '\'' +
+                '}';
     }
 }

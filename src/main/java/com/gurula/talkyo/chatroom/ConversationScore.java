@@ -1,11 +1,27 @@
 package com.gurula.talkyo.chatroom;
 
+import java.util.List;
+
 public class ConversationScore {
     private double fluency; // 流暢度
     private double accuracy;    // 精准度
     private double completeness;    // 完整性
     private double prosody; // 韻律
+    private String displayText;     // 識別文字
+    private List<DisplayWord> displayWords;
     private ContentAssessment contentAssessment;    // 內容分析
+
+    public ConversationScore() {
+    }
+
+    public ConversationScore(double fluency, double accuracy, double completeness, double prosody, String displayText, List<DisplayWord> displayWords) {
+        this.fluency = fluency;
+        this.accuracy = accuracy;
+        this.completeness = completeness;
+        this.prosody = prosody;
+        this.displayText = displayText;
+        this.displayWords = displayWords;
+    }
 
     public ConversationScore(double fluency, double accuracy, double completeness, double prosody, ContentAssessment contentAssessment) {
         this.fluency = fluency;
@@ -19,32 +35,24 @@ public class ConversationScore {
         return fluency;
     }
 
-    public void setFluency(double fluency) {
-        this.fluency = fluency;
-    }
-
     public double getAccuracy() {
         return accuracy;
-    }
-
-    public void setAccuracy(double accuracy) {
-        this.accuracy = accuracy;
     }
 
     public double getCompleteness() {
         return completeness;
     }
 
-    public void setCompleteness(double completeness) {
-        this.completeness = completeness;
-    }
-
     public double getProsody() {
         return prosody;
     }
 
-    public void setProsody(double prosody) {
-        this.prosody = prosody;
+    public String getDisplayText() {
+        return displayText;
+    }
+
+    public List<DisplayWord> getDisplayWords() {
+        return displayWords;
     }
 
     public ContentAssessment getContentAssessment() {

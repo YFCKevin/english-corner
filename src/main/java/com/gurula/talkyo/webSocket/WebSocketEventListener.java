@@ -1,31 +1,22 @@
 package com.gurula.talkyo.webSocket;
 
-import com.gurula.talkyo.chatroom.Chatroom;
-import com.gurula.talkyo.chatroom.ChatroomRepository;
-import com.gurula.talkyo.chatroom.ChatroomService;
-import com.gurula.talkyo.chatroom.Scenario;
-import com.gurula.talkyo.chatroom.dto.ChatRequestDTO;
-import com.gurula.talkyo.chatroom.dto.ConversationChainDTO;
-import com.gurula.talkyo.chatroom.enums.ConversationType;
-import com.gurula.talkyo.chatroom.factory.AbstractConversation;
-import com.gurula.talkyo.chatroom.factory.ConversationFactory;
 import com.gurula.talkyo.interceptor.LoginInterceptor;
 import com.gurula.talkyo.member.Member;
-import com.gurula.talkyo.member.MemberContext;
-import com.gurula.talkyo.member.MemberRepository;
+import com.gurula.talkyo.member.MemberService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;
-import org.springframework.messaging.simp.SimpMessageSendingOperations;
+import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
+import org.springframework.messaging.support.MessageHeaderAccessor;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.messaging.SessionConnectedEvent;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 import org.springframework.web.socket.messaging.SessionSubscribeEvent;
 import org.springframework.web.socket.messaging.SessionUnsubscribeEvent;
 
+import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 
 /**
  * WebSocket連線事件監聽器
@@ -37,6 +28,11 @@ public class WebSocketEventListener {
      * STOMP 訊息發送器
      */
     private final Logger logger = LoggerFactory.getLogger(LoginInterceptor.class);
+    private final MemberService memberService;
+
+    public WebSocketEventListener(MemberService memberService) {
+        this.memberService = memberService;
+    }
 
     /**
      * 連線時的處理
@@ -68,10 +64,23 @@ public class WebSocketEventListener {
     public void handleSessionSubscribeEvent(SessionSubscribeEvent event) {
         String destination = event.getMessage().getHeaders().get("simpDestination", String.class);
         if (destination != null && destination.startsWith("/chatroom")) {
-            final Member member = MemberContext.getMember();
             final String chatroomId = destination.split("/")[2];
-            final String conversationType = destination.split("/")[3];
-            logger.info("使用者 [{} {}] 進入聊天室 {} [{}]", member.getName(), member.getId(), chatroomId, conversationType);
+
+            // 從 WebSocket session attributes 取得 Member
+            SimpMessageHeaderAccessor headerAccessor = MessageHeaderAccessor.getAccessor(event.getMessage(), SimpMessageHeaderAccessor.class);
+            if (headerAccessor != null) {
+                Map<String, Object> sessionAttributes = headerAccessor.getSessionAttributes();
+                if (sessionAttributes != null) {
+                    Member member = (Member) sessionAttributes.get("member");
+
+                    if (member != null) {
+                        logger.info("使用者 [{},{}] 進入聊天室ID: {}", member.getName(), member.getId(), chatroomId);
+                        return;
+                    }
+                }
+            }
+
+            logger.warn("無法取得 Member，拒絕進入聊天室ID {}", chatroomId);
         }
     }
 

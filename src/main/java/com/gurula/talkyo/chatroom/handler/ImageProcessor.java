@@ -7,6 +7,7 @@ import com.gurula.talkyo.properties.ConfigProperties;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class ImageProcessor extends MessageTypeHandler{
     public ImageProcessor(MessageTypeHandler next) {
@@ -20,7 +21,8 @@ public class ImageProcessor extends MessageTypeHandler{
 
     @Override
     protected String doHandler(ChatDTO chatDTO, ConfigProperties configProperties) throws IOException {
-        Path path = FileUtils.saveUploadedFile(chatDTO.getMultipartFile(), configProperties.getPicSavePath());
+        Path uploadPath = Paths.get(configProperties.getPicSavePath(), chatDTO.getChatroomId());
+        Path path = FileUtils.saveUploadedFile(chatDTO.getMultipartFile(), MessageType.IMAGE, uploadPath);
         return path.getFileName().toString();
     }
 }

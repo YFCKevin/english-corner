@@ -4,6 +4,9 @@ public class Feedback {
     private String comment;
     private String translation;
 
+    public Feedback() {
+    }
+
     public Feedback(String comment, String translation) {
         this.comment = comment;
         this.translation = translation;
