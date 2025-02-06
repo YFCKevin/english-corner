@@ -36,12 +36,13 @@ public class ChatRequestDTO {
         this.partnerId = partnerId;
     }
 
-    public ChatRequestDTO(String chatroomId, String memberId, String partnerId, String messageId, String lessonId) {
+    public ChatRequestDTO(String chatroomId, String memberId, String partnerId, String messageId, String lessonId, ChatroomType chatroomType) {
         this.chatroomId = chatroomId;
         this.memberId = memberId;
         this.partnerId = partnerId;
         this.messageId = messageId;
         this.lessonId = lessonId;
+        this.chatroomType = chatroomType;
     }
 
     // for chat init

@@ -6,4 +6,6 @@ import java.util.List;
 
 public interface PartnerRepository extends MongoRepository<Partner, String> {
     List<Partner> findByLocale(String locale);
+
+    List<Partner> findByDisplayNameIn(List<String> list);
 }

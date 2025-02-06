@@ -5,6 +5,7 @@ import org.springframework.data.mongodb.repository.Query;
 import org.springframework.data.mongodb.repository.Update;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface MessageRepository extends MongoRepository<Message, String> {
     List<Message> findAllByChatroomIdOrderByCreatedDateTimeAsc(String chatroomId);
@@ -27,4 +28,6 @@ public interface MessageRepository extends MongoRepository<Message, String> {
 
     // 用於確認聊天室 Chatroom 是否新舊
     boolean existsByChatroomId(String chatroomId);
+
+    Optional<Message> findFirstByChatroomIdAndCreatedDateTimeLessThanOrderByCreatedDateTimeDesc(String chatroomId, String createdDateTime);
 }

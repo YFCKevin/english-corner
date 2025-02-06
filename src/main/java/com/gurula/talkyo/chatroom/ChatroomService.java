@@ -14,7 +14,7 @@ public interface ChatroomService {
 
     ConversationChainDTO reply(ChatDTO chatDTO, Member member) throws ExecutionException, InterruptedException, IOException;
 
-    void genLearningReport(ChatDTO chatDTO) throws IOException, ExecutionException, InterruptedException;
+    void genLearningReport(String chatroomId) throws IOException, ExecutionException, InterruptedException;
 
     CompletableFuture<Void> speechToText(ChatRequestDTO chatRequestDTO) throws ExecutionException, InterruptedException;
 
@@ -37,4 +37,6 @@ public interface ChatroomService {
     ConversationScore pronunciationResult(ReportRequestDTO reportRequestDTO);
 
     ContentAssessment topicResult(ReportRequestDTO reportRequestDTO);
+
+    void close(String chatroomId);
 }

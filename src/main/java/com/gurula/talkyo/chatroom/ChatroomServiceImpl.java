@@ -73,14 +73,14 @@ public class ChatroomServiceImpl implements ChatroomService {
     public String createChatroom(Member member, ChatroomDTO chatroomDTO) {
         final ChatroomType chatroomType = chatroomDTO.getChatroomType();
         List<Chatroom> chatrooms = chatroomRepository.findByOwnerIdAndChatroomTypeAndRoomStatusOrderByCreationDateDesc(member.getId(), chatroomType, RoomStatus.ACTIVE);
-        System.out.println("chatrooms.size() = " + chatrooms.size());
+
         switch (chatroomType) {
-            case PROJECT -> {
+            case PROJECT, SITUATION, IMAGE -> {
                 if (chatrooms.size() > 0) {
                     // 已有聊天室，則回傳chatroomId
                     return chatrooms.get(0).getId();
                 } else {
-                    // 創建新的學習課程聊天室
+                    // 創建新的聊天室
                     Chatroom chatroom = new Chatroom();
                     chatroom.setOwnerId(member.getId());
                     chatroom.setChatroomType(chatroomType);
@@ -137,6 +137,19 @@ public class ChatroomServiceImpl implements ChatroomService {
                         messagingTemplate.convertAndSend(chatroomDestination, new ConversationChainDTO(List.of(finalMessage)));
                     });
                 }
+                case SITUATION -> {
+                    // load scenario
+                    loadScenario(new ChatRequestDTO(chatroomId, chatroomType, scenario));
+
+                    // partner opening line
+                    final String openingLineMessage = openingLine(new ChatRequestDTO(chatroomId, scenario, memberId, partnerId, lessonId));
+
+                    // show opening line
+                    messageRepository.findById(openingLineMessage).ifPresent(finalMessage -> {
+                        String chatroomDestination = "/chatroom/" + chatroomId + "/" + chatroomType;
+                        messagingTemplate.convertAndSend(chatroomDestination, new ConversationChainDTO(List.of(finalMessage)));
+                    });
+                }
             }
         }
 
@@ -153,13 +166,8 @@ public class ChatroomServiceImpl implements ChatroomService {
 
         final String chatroomId = chatRequestDTO.getChatroomId();
         final Scenario scenario = chatRequestDTO.getScenario();
-        final ChatroomType chatroomType = chatRequestDTO.getChatroomType();
         final Chatroom chatroom = chatroomRepository.findById(chatroomId).get();
-        if (ChatroomType.PROJECT.equals(chatroomType)) {
-            chatroom.setScenario(scenario);
-        } else if (ChatroomType.SITUATION.equals(chatroomType)) {
-            chatroom.setScenario(scenario);
-        }
+        chatroom.setScenario(scenario);
         chatroomRepository.save(chatroom);
     }
 
@@ -249,18 +257,29 @@ public class ChatroomServiceImpl implements ChatroomService {
         }
         final Message savedMessage = messageRepository.save(message);
 
-        ConversationChainDTO conversationChainDTO = null;
         final ChatRequestDTO chatRequestDTO = new ChatRequestDTO(
                 chatroomId,
                 member.getId(),
                 member.getPartnerId(),
                 savedMessage.getId(),
-                chatDTO.getLessonId()
+                chatDTO.getLessonId(),
+                chatDTO.getChatroomType()
         );
 
-        // speechToText
-        CompletableFuture<Void> future = speechToText(chatRequestDTO);
-        future.get();
+        ConversationChainDTO conversationChainDTO = null;
+        if (StringUtils.isNotBlank(audioFileName)) {    // audio
+
+            // speechToText 處理使用者的音訊檔案
+            CompletableFuture<Void> future = speechToText(chatRequestDTO);
+            future.get();
+
+        } else if (StringUtils.isNotBlank(content)) {   // text
+
+            CompletableFuture<Void> grammarFuture = new CompletableFuture<>();
+            CompletableFuture<Void> partnerFuture = new CompletableFuture<>();
+
+            CompletableFuture.allOf(grammarFuture, partnerFuture).join();
+        }
 
         final Message finalMsg = messageRepository.findById(savedMessage.getId()).get();
         conversationChainDTO = new ConversationChainDTO(List.of(finalMsg));
@@ -281,6 +300,8 @@ public class ChatroomServiceImpl implements ChatroomService {
         System.out.println("speechToText");
 
         final String messageId = chatRequestDTO.getMessageId();
+        final ChatroomType chatroomType = chatRequestDTO.getChatroomType();
+
         final Optional<Message> opt = messageRepository.findById(messageId);
         if (opt.isPresent()) {
             final Message message = opt.get();
@@ -293,24 +314,45 @@ public class ChatroomServiceImpl implements ChatroomService {
             messageRepository.save(message);
             System.out.println("speechToText儲存成功");
 
-            System.out.println("執行 [文法校正、取得進階語句、夥伴回應、發音分析] 攜帶的參數：" + chatRequestDTO);
+            switch (chatroomType) {
+                case PROJECT -> {
+                    System.out.println("執行 [文法校正、取得進階語句、夥伴回應、發音分析] 攜帶的參數：" + chatRequestDTO);
 
-            // 呼叫廣播，執行文法校正、取得進階語句、夥伴回應、發音分析
-            CompletableFuture<Void> grammarFuture = new CompletableFuture<>();
-            CompletableFuture<Void> advancedFuture = new CompletableFuture<>();
-            CompletableFuture<Void> partnerFuture = new CompletableFuture<>();
-            CompletableFuture<Void> pronunciationFuture = new CompletableFuture<>();
+                    // 呼叫廣播，執行文法校正、取得進階語句、夥伴回應、發音分析
+                    CompletableFuture<Void> grammarFuture = new CompletableFuture<>();
+                    CompletableFuture<Void> advancedFuture = new CompletableFuture<>();
+                    CompletableFuture<Void> partnerFuture = new CompletableFuture<>();
+                    CompletableFuture<Void> pronunciationFuture = new CompletableFuture<>();
 
-            chattingFutures.put(chatRequestDTO.getMessageId(), new ArrayList<>(List.of(partnerFuture, grammarFuture, advancedFuture, pronunciationFuture)));
+                    chattingFutures.put(chatRequestDTO.getMessageId(), new ArrayList<>(List.of(partnerFuture, grammarFuture, advancedFuture, pronunciationFuture)));
 
-            rabbitTemplate.convertAndSend(
-                    RabbitMQConfig.TALKYO_CHAT_FANOUT_EXCHANGE,
-                    "",
-                    chatRequestDTO
-            );
+                    rabbitTemplate.convertAndSend(
+                            RabbitMQConfig.TALKYO_PROJECT_FANOUT_EXCHANGE,
+                            "",
+                            chatRequestDTO
+                    );
 
-            // 等待所有 Queue 完成
-            return CompletableFuture.allOf(partnerFuture, grammarFuture, advancedFuture, pronunciationFuture);
+                    // 等待所有 Queue 完成
+                    return CompletableFuture.allOf(partnerFuture, grammarFuture, advancedFuture, pronunciationFuture);
+                }
+                case SITUATION -> {
+                    System.out.println("執行 [文法校正、夥伴回應] 攜帶的參數：" + chatRequestDTO);
+
+                    CompletableFuture<Void> grammarFuture = new CompletableFuture<>();
+                    CompletableFuture<Void> partnerFuture = new CompletableFuture<>();
+
+                    chattingFutures.put(chatRequestDTO.getMessageId(), new ArrayList<>(List.of(partnerFuture, grammarFuture)));
+
+                    rabbitTemplate.convertAndSend(
+                            RabbitMQConfig.TALKYO_SITUATION_FANOUT_EXCHANGE,
+                            "",
+                            chatRequestDTO
+                    );
+
+                    // 等待所有 Queue 完成
+                    return CompletableFuture.allOf(partnerFuture, grammarFuture);
+                }
+            }
 
         }
         return CompletableFuture.completedFuture(null);
@@ -328,18 +370,35 @@ public class ChatroomServiceImpl implements ChatroomService {
         System.out.println("GrammarCheck");
 
         final String messageId = chatRequestDTO.getMessageId();
+        final String chatroomId = chatRequestDTO.getChatroomId();
+
         final Optional<Message> opt = messageRepository.findById(messageId);
         if (opt.isPresent()) {
             final Message message = opt.get();
-            String grammarInputText = "";
+            String currentMsgContent = "";
 
             if (StringUtils.isNotBlank(message.getParsedText())) {
-                grammarInputText = message.getParsedText();
+                currentMsgContent = message.getParsedText();
             } else if (StringUtils.isNotBlank(message.getText())) {
-                grammarInputText = message.getText();
+                currentMsgContent = message.getText();
             }
 
-            GrammarResponseDTO grammarResponseDTO = llmService.grammarCheck(grammarInputText);
+            GrammarResponseDTO grammarResponseDTO = null;
+
+            final Optional<Message> previewMsgOpt = messageRepository.findFirstByChatroomIdAndCreatedDateTimeLessThanOrderByCreatedDateTimeDesc(chatroomId, message.getCreatedDateTime());
+            if (previewMsgOpt.isPresent()) {
+                final Message previewMsg = previewMsgOpt.get();
+                String previewMsgContent = "";
+                if (StringUtils.isNotBlank(previewMsg.getParsedText())) {
+                    previewMsgContent = previewMsg.getParsedText();
+                } else if (StringUtils.isNotBlank(previewMsg.getText())) {
+                    previewMsgContent = previewMsg.getText();
+                }
+                grammarResponseDTO = llmService.grammarCheck(currentMsgContent, previewMsgContent);
+            } else {
+                grammarResponseDTO = llmService.grammarCheck(currentMsgContent, null);
+            }
+
 
             GrammarResult grammarResult = new GrammarResult();
 
@@ -347,7 +406,7 @@ public class ChatroomServiceImpl implements ChatroomService {
                 grammarResult.setCorrectSentence(grammarResponseDTO.getCorrectSentence());
                 grammarResult.setErrorReason(grammarResponseDTO.getErrorReason());
                 grammarResult.setTranslation(grammarResponseDTO.getTranslation());
-                grammarResult.setErrorSentence(grammarInputText);
+                grammarResult.setErrorSentence(currentMsgContent);
             } else {    // 文法正確
                 messageRepository.updateAccuracy(messageId, true);
                 grammarResult.setCorrectSentence(grammarResponseDTO.getCorrectSentence());
@@ -482,17 +541,14 @@ public class ChatroomServiceImpl implements ChatroomService {
 
     /**
      * 產生學習報告
-     * @param chatDTO
      * @throws IOException
      */
     @Override
     @Transactional
-    public void genLearningReport(ChatDTO chatDTO) throws IOException {
+    public void genLearningReport(String chatroomId) throws IOException {
 
         System.out.println("genLearningReport");
 
-        final String chatroomId = chatDTO.getChatroomId();
-        System.out.println("chatroomId = " + chatroomId);
         final List<Message> messages = messageRepository.findAllByChatroomIdOrderByCreatedDateTimeAsc(chatroomId);
 
         // 組裝 reference text
@@ -599,6 +655,18 @@ public class ChatroomServiceImpl implements ChatroomService {
         final ContentAssessment contentAssessment = audioService.analyzeTopic(referenceText, destinationFilePath);
         System.out.println("topicResult完成");
         return contentAssessment;
+    }
+
+    @Override
+    public void close(String chatroomId) {
+        System.out.println("chatroom closed");
+        final Optional<Chatroom> opt = chatroomRepository.findById(chatroomId);
+        if (opt.isPresent()) {
+            final Chatroom chatroom = opt.get();
+            chatroom.setCloseDate(sdf.format(new Date()));
+            chatroom.setRoomStatus(RoomStatus.CLOSED);
+            chatroomRepository.save(chatroom);
+        }
     }
 
 

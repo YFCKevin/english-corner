@@ -131,7 +131,7 @@ public class LLMServiceImpl implements LLMService{
     }
 
     @Override
-    public GrammarResponseDTO grammarCheck(String content) throws JsonProcessingException {
+    public GrammarResponseDTO grammarCheck(String currentMsgContent, String previewMsgContent) throws JsonProcessingException {
 
         String url = "https://api.openai.com/v1/chat/completions";
 
@@ -139,7 +139,7 @@ public class LLMServiceImpl implements LLMService{
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setBearerAuth(configProperties.getOpenaiApiKey());
 
-        String payload = grammarCheckPayload(content);
+        String payload = grammarCheckPayload(currentMsgContent, previewMsgContent);
 
         System.out.println("payload = " + payload);
 
@@ -385,15 +385,16 @@ public class LLMServiceImpl implements LLMService{
         }
     }
 
-    private String grammarCheckPayload(String content) {
+    private String grammarCheckPayload(String currentMsgContent, String previewMsgContent) {
         String systemMessageContent = "You are a helpful assistant that helps correct grammar and provides reasons for the errors.";
         String userMessageContent = String.format(
-                "Please correct the grammar of the following sentence, translate the corrected sentence into Traditional Chinese, and explain the reason for the mistake in Traditional Chinese. Return the result in the following format: \n" +
+                "Please correct the grammar of the following sentence, translate the corrected sentence into Traditional Chinese, and explain the reason for the mistake in Traditional Chinese. Consider the context provided by the previous sentence. Return the result in the following format: \n" +
                         "{\"correctSentence\": \"<corrected sentence>\", \"translation\": \"<corrected sentence in Traditional Chinese>\", \"errorReason\": \"<explanation of the error in Traditional Chinese>\"}\n" +
                         "If the input sentence is already grammatically correct, return the result in the following format: \n" +
                         "{\"correctSentence\": \"<original sentence>\", \"translation\": \"<original sentence in Traditional Chinese>\", \"errorReason\": \"\"}\n" +
                         "Do not modify the original sentence if it is correct. Always ensure that the errorReason is an empty string if there is no error.\n\n" +
-                        "Original sentence: %s", content
+                        "Previous sentence: %s\n" +
+                        "Original sentence: %s", currentMsgContent, previewMsgContent
         );
 
         MsgDTO systemMessage = new MsgDTO(Role.system, systemMessageContent);

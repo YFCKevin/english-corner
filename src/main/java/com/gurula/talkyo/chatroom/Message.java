@@ -3,12 +3,14 @@ package com.gurula.talkyo.chatroom;
 import com.gurula.talkyo.chatroom.enums.MessageType;
 import com.gurula.talkyo.chatroom.enums.SenderRole;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Document(collection = "message")
+@CompoundIndex(name = "chatroomId_createdDateTime", def = "{'chatroomId': 1, 'createdDateTime': -1}")
 public class Message {
     @Id
     private String id;

@@ -16,13 +16,14 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class RabbitMQConfig {
+    public static final String TALKYO_PROJECT_FANOUT_EXCHANGE = "talkyo-project-fanout-exchange";
+    public static final String TALKYO_SITUATION_FANOUT_EXCHANGE = "talkyo-situation-fanout-exchange";
     private final RabbitMQProperties rabbitMQProperties;
     public static final String PRONUNCIATION_QUEUE = "pronunciation.queue";
     public static final String GRAMMAR_QUEUE = "grammar.queue";
     public static final String ADVANCED_SENTENCE_QUEUE = "advancedSentence.queue";
     public static final String PARTNER_REPLY_QUEUE = "partnerReply.queue";
     public static final String ERROR_QUEUE = "error.queue";
-    public static final String TALKYO_CHAT_FANOUT_EXCHANGE = "talkyo-chat-fanout-exchange";
     public static final String ERROR_EXCHANGE = "error-exchange";
 
 
@@ -73,8 +74,12 @@ public class RabbitMQConfig {
         return new Queue(PRONUNCIATION_QUEUE, true);
     }
     @Bean
-    public FanoutExchange chatFanoutExchange() {
-        return new FanoutExchange(TALKYO_CHAT_FANOUT_EXCHANGE);
+    public FanoutExchange projectFanoutExchange() {
+        return new FanoutExchange(TALKYO_PROJECT_FANOUT_EXCHANGE);
+    }
+    @Bean
+    public FanoutExchange situationFanoutExchange() {
+        return new FanoutExchange(TALKYO_SITUATION_FANOUT_EXCHANGE);
     }
     @Bean
     public TopicExchange errorExchange() {
@@ -88,22 +93,32 @@ public class RabbitMQConfig {
     }
 
     @Bean
-    public Binding bindGrammar() {
-        return BindingBuilder.bind(grammarQueue()).to(chatFanoutExchange());
+    public Binding bindProjectGrammar() {
+        return BindingBuilder.bind(grammarQueue()).to(projectFanoutExchange());
+    }
+
+    @Bean
+    public Binding bindSituationGrammar() {
+        return BindingBuilder.bind(grammarQueue()).to(situationFanoutExchange());
     }
 
     @Bean
     public Binding bindAdvancedSentence() {
-        return BindingBuilder.bind(advancedSentenceQueue()).to(chatFanoutExchange());
+        return BindingBuilder.bind(advancedSentenceQueue()).to(projectFanoutExchange());
     }
 
     @Bean
     public Binding bindPronunciation() {
-        return BindingBuilder.bind(pronunciationQueue()).to(chatFanoutExchange());
+        return BindingBuilder.bind(pronunciationQueue()).to(projectFanoutExchange());
     }
 
     @Bean
-    public Binding bindPartnerReply() {
-        return BindingBuilder.bind(partnerReplyQueue()).to(chatFanoutExchange());
+    public Binding bindProjectPartnerReply() {
+        return BindingBuilder.bind(partnerReplyQueue()).to(projectFanoutExchange());
+    }
+
+    @Bean
+    public Binding bindSituationPartnerReply() {
+        return BindingBuilder.bind(partnerReplyQueue()).to(situationFanoutExchange());
     }
 }

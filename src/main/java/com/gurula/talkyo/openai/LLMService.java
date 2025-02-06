@@ -16,7 +16,7 @@ public interface LLMService {
 
     LLMChatResponseDTO genWelcomeMessage(LLMChatRequestDTO llmChatRequestDTO) throws JsonProcessingException;
 
-    GrammarResponseDTO grammarCheck(String content) throws JsonProcessingException;
+    GrammarResponseDTO grammarCheck(String currentMsgContent, String previewMsgContent) throws JsonProcessingException;
 
     List<AdvanceSentencesResponseDTO> advanceSentences(String content) throws JsonProcessingException;
 

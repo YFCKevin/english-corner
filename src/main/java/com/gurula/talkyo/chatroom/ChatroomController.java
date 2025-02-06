@@ -100,7 +100,7 @@ public class ChatroomController {
      * @throws IOException
      */
     @PostMapping("/chatroom/upload")
-    public ResponseEntity<ResultStatus<Map<String, String>>> uploadAudio (
+    public ResponseEntity<?> upload (
             @RequestParam("multipartFile") MultipartFile multipartFile,
             @RequestParam("messageType") MessageType messageType,
             @RequestParam("chatroomId") String chatroomId
@@ -108,7 +108,7 @@ public class ChatroomController {
         final Member member = MemberContext.getMember();
         logger.info("[{} {}] [upload]", member.getName(), member.getId());
 
-        ResultStatus<Map<String, String>> resultStatus = new ResultStatus<>();
+        ResultStatus<String> resultStatus = new ResultStatus<>();
 
         ChatDTO chatDTO = new ChatDTO();
         chatDTO.setMultipartFile(multipartFile);
@@ -118,11 +118,16 @@ public class ChatroomController {
         // 儲存音檔 or 圖片
         final String fileName = handler.saveMultipartFile(chatDTO, configProperties);
 
-        if (Files.size(Paths.get(configProperties.getAudioSavePath(), chatroomId, fileName)) > 0) {  // 代表檔案儲存成功
-            resultStatus.setCode("C000");
-            resultStatus.setMessage("成功");
-            resultStatus.setData(Map.of(chatDTO.getMessageType().toString(), fileName));
+        resultStatus.setCode("C000");
+        resultStatus.setMessage("成功");
+
+        String filePath = "";
+        switch (messageType) {
+            case AUDIO -> filePath = configProperties.getAudioShowPath() + fileName;
+            case IMAGE -> filePath = configProperties.getPicShowPath() + fileName;
         }
+
+        resultStatus.setData(filePath);
 
         return ResponseEntity.ok(resultStatus);
     }
@@ -151,28 +156,41 @@ public class ChatroomController {
     }
 
 
-    @PostMapping("/chatroom/end")
-    public void end (@RequestBody ChatDTO chatDTO) throws IOException, ExecutionException, InterruptedException {
+    @PostMapping("/chatroom/leave")
+    public void leave (@RequestBody ChatDTO chatDTO) throws IOException, ExecutionException, InterruptedException {
         final Member member = MemberContext.getMember();
-        logger.info("[{} {}] [conversation end]", member.getName(), member.getId());
+        logger.info("[{} {}] [chatroom leave]", member.getName(), member.getId());
 
-        // generate learning report
-        chatroomService.genLearningReport(chatDTO);
-
-        // mark learning record finish
-        learningRecordService.finish(chatDTO.getChatroomId());
-
-        // member and partner leave chatroom
         final String chatroomId = chatDTO.getChatroomId();
-        conversationRepository.leaveChatroom(chatroomId, member.getId(), sdf.format(new Date()));
-        conversationRepository.leaveChatroom(chatroomId, member.getPartnerId(), sdf.format(new Date()));
+        final ChatroomType chatroomType = chatDTO.getChatroomType();
 
-        if (StringUtils.isNotBlank(chatDTO.getLessonId())) {
-            // 導向測驗結束結果頁面
-            System.out.println("導向測驗結束結果頁面");
-        } else {
-            // 導向首頁
-            System.out.println("導向首頁");
+        switch (chatroomType) {
+            case PROJECT -> {
+                // generate learning report
+                chatroomService.genLearningReport(chatroomId);
+
+                // mark learning record finish
+                learningRecordService.finish(chatroomId);
+
+                // member and partner leave chatroom
+                conversationRepository.leaveChatroom(chatroomId, member.getId(), sdf.format(new Date()));
+                conversationRepository.leaveChatroom(chatroomId, member.getPartnerId(), sdf.format(new Date()));
+
+                // 導向測驗結束結果頁面
+                System.out.println("導向測驗結束結果頁面");
+            }
+            case SITUATION -> {
+
+                // member and partner leave chatroom
+                conversationRepository.leaveChatroom(chatroomId, member.getId(), sdf.format(new Date()));
+                conversationRepository.leaveChatroom(chatroomId, member.getPartnerId(), sdf.format(new Date()));
+
+                // mark the chatroom as closed
+                chatroomService.close(chatroomId);
+
+                // 導向首頁
+                System.out.println("導向首頁");
+            }
         }
     }
 }
