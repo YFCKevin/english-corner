@@ -11,6 +11,8 @@ public class Lesson {
     private String id;
     private String lessonNumber;
     private String name;
+    private String coverName;   // 封面照名稱
+    private String desc;        // 情境單元描述
     private List<Sentence> sentences = new ArrayList<>();
     private String courseId;
 
@@ -54,5 +56,21 @@ public class Lesson {
 
     public void genLessonNumber() {
         this.lessonNumber = CourseUtil.genLessonNumber();
+    }
+
+    public String getCoverName() {
+        return coverName;
+    }
+
+    public void setCoverName(String coverName) {
+        this.coverName = coverName;
+    }
+
+    public String getDesc() {
+        return desc;
+    }
+
+    public void setDesc(String desc) {
+        this.desc = desc;
     }
 }

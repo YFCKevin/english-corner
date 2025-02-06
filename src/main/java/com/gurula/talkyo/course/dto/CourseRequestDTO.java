@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CourseRequestDTO {
+    private String courseId;
     private String topic;
     private Level level;
     private List<LessonDTO> lessons = new ArrayList<>();
@@ -32,5 +33,13 @@ public class CourseRequestDTO {
 
     public void setLessons(List<LessonDTO> lessons) {
         this.lessons = lessons;
+    }
+
+    public String getCourseId() {
+        return courseId;
+    }
+
+    public void setCourseId(String courseId) {
+        this.courseId = courseId;
     }
 }

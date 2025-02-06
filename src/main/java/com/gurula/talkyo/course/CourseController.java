@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 @RestController
@@ -33,10 +34,12 @@ public class CourseController {
 
         ResultStatus resultStatus = new ResultStatus();
 
-        String courseId = courseService.importCourse(dto, member);
+        Map<String, String> courseLessonMap = courseService.importCourse(dto, member);
+        final String courseId = courseLessonMap.get("courseId");
+        final String lessonId = courseLessonMap.get("lessonId");
         if (StringUtils.isNotBlank(courseId)) {
             // 產生sentence的翻譯和語音
-            final ResultStatus result = courseService.genTranslationAndAudio(courseId);
+            final ResultStatus result = courseService.genTranslationAndAudio(courseId, lessonId);
 
             resultStatus.setCode(result.getCode());
             resultStatus.setMessage(result.getMessage());

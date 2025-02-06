@@ -11,6 +11,7 @@ import com.gurula.talkyo.course.dto.LessonDTO;
 import com.gurula.talkyo.exception.ResultStatus;
 import com.gurula.talkyo.member.Member;
 import com.gurula.talkyo.openai.LLMService;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,20 +47,29 @@ public class CourseServiceImpl implements CourseService{
 
     @Transactional
     @Override
-    public String importCourse(CourseRequestDTO dto, Member member) {
-        Course course = new Course();
-        course.setTopic(dto.getTopic());
-        course.setLevel(dto.getLevel());
-        course.setCreationDate(sdf.format(new Date()));
-        course.setCreator(member.getId());
-        final Course savedCourse = courseRepository.save(course);
+    public Map<String, String> importCourse(CourseRequestDTO dto, Member member) {
+
+        final String courseId = dto.getCourseId();
+        Course newCourse = null;
+        if (StringUtils.isBlank(courseId)) {
+            Course course = new Course();
+            course.setTopic(dto.getTopic());
+            course.setLevel(dto.getLevel());
+            course.setCreationDate(sdf.format(new Date()));
+            course.setCreator(member.getId());
+            newCourse = courseRepository.save(course);
+        } else {
+            newCourse = courseRepository.findById(courseId).get();
+        }
 
         final List<LessonDTO> lessons = dto.getLessons();
+        Course finalNewCourse = newCourse;
         final List<Lesson> lessonList = lessons.stream().map(l -> {
             Lesson lesson = new Lesson();
-            lesson.setCourseId(savedCourse.getId());
+            lesson.setCourseId(finalNewCourse.getId());
             lesson.setName(l.getName());
             lesson.genLessonNumber();
+            lesson.setDesc(l.getDesc());
             final List<Sentence> sentenceList = l.getSentences().stream().map(s -> {
                 Sentence sentence = new Sentence();
                 sentence.genUnitNumber();
@@ -71,9 +81,13 @@ public class CourseServiceImpl implements CourseService{
             lesson.setSentences(sentenceList);
             return lesson;
         }).toList();
-        lessonRepository.saveAll(lessonList);
+        final List<Lesson> savedLessons = lessonRepository.saveAll(lessonList);
 
-        return savedCourse.getId();
+        Map<String, String> courseLessonMap = new HashMap<>();
+        courseLessonMap.put("courseId", newCourse.getId());
+        courseLessonMap.put("lessonId", savedLessons.get(0).getId());
+
+        return courseLessonMap;
     }
 
 
@@ -87,10 +101,10 @@ public class CourseServiceImpl implements CourseService{
      */
     @Override
     @Transactional
-    public ResultStatus<Void> genTranslationAndAudio(String courseId) throws JsonProcessingException, ExecutionException, InterruptedException {
+    public ResultStatus<Void> genTranslationAndAudio(String courseId, String lessonId) throws JsonProcessingException, ExecutionException, InterruptedException {
         ResultStatus<Void> resultStatus = new ResultStatus<>();
         final Course course = courseRepository.findById(courseId).get();
-        List<Lesson> lessons = lessonRepository.findByCourseId(courseId);
+        List<Lesson> lessons = lessonRepository.findByCourseIdAndId(courseId, lessonId);
         if (lessons.size() == 0) {
             resultStatus.setMessage("C002");
             resultStatus.setMessage("查無情境單元");
@@ -103,7 +117,15 @@ public class CourseServiceImpl implements CourseService{
 
             List<Sentence> sentences = objectMapper.readValue(translationJson, new TypeReference<>() {});
 
-            final List<Partner> partners = partnerRepository.findByLocale("EN_US");
+            final List<Partner> partners = partnerRepository.findByDisplayNameIn(
+                    Arrays.asList(
+                            "Neerja", "Aarav",
+                            "Ada Multilingual", "Ollie Multilingual",
+                            "Emma Multilingual", "Brian Multilingual", "Jane", "Jason",
+                            "Guy", "Brandon", "Christopher", "Cora", "Jenny Multilingual",
+                            "Ryan Multilingual"
+                    )
+            );
             List<Lesson> finalLessons = lessons;
             sentences = sentences.stream().map(sentence -> {
                 try {

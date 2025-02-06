@@ -5,6 +5,8 @@ import java.util.List;
 
 public class LessonDTO {
     private String name;
+    private String desc;
+    private String coverName;
     private List<SentenceDTO> sentences = new ArrayList<>();
 
     public String getName() {
@@ -21,5 +23,21 @@ public class LessonDTO {
 
     public void setSentences(List<SentenceDTO> sentences) {
         this.sentences = sentences;
+    }
+
+    public String getDesc() {
+        return desc;
+    }
+
+    public void setDesc(String desc) {
+        this.desc = desc;
+    }
+
+    public String getCoverName() {
+        return coverName;
+    }
+
+    public void setCoverName(String coverName) {
+        this.coverName = coverName;
     }
 }
