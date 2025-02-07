@@ -11,6 +11,7 @@ import java.util.List;
 
 @Document(collection = "message")
 @CompoundIndex(name = "chatroomId_createdDateTime", def = "{'chatroomId': 1, 'createdDateTime': -1}")
+@CompoundIndex(name = "branch_createdDateTime", def = "{'branch': 1, 'createdDateTime': -1}")
 public class Message {
     @Id
     private String id;
@@ -20,6 +21,9 @@ public class Message {
     private String updatedDateTime;
     private boolean accuracy;
     private SenderRole senderRole;
+    private String previewMessageId;    // 指向回覆的訊息編號
+    private String branch; // 分支號碼 (UUID)
+    private int version;    // 訊息編輯次數 (從 1 開始)
 
     // human
     private GrammarResult grammarResult;
@@ -166,5 +170,41 @@ public class Message {
 
     public void setSize(long size) {
         this.size = size;
+    }
+
+    public String getPreviewMessageId() {
+        return previewMessageId;
+    }
+
+    public void setPreviewMessageId(String previewMessageId) {
+        this.previewMessageId = previewMessageId;
+    }
+
+    public String getBranch() {
+        return branch;
+    }
+
+    public void setBranch(String branch) {
+        this.branch = branch;
+    }
+
+    public int getVersion() {
+        return version;
+    }
+
+    public void setVersion(int version) {
+        this.version = version;
+    }
+
+    @Override
+    public String toString() {
+        return "Message{" +
+                "id='" + id + '\'' +
+                ", createdDateTime='" + createdDateTime + '\'' +
+                ", senderRole=" + senderRole +
+                ", previewMessageId='" + previewMessageId + '\'' +
+                ", branch=" + branch +
+                ", version=" + version +
+                '}';
     }
 }

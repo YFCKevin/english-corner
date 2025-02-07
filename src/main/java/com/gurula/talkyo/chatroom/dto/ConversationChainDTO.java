@@ -5,6 +5,7 @@ import com.gurula.talkyo.chatroom.Message;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class ConversationChainDTO {
 
@@ -12,7 +13,7 @@ public class ConversationChainDTO {
     private String conversationId;
 
     // chatting chain
-    private List<Message> messages = new ArrayList<>();
+    private List<Map<Integer, Message>> messages = new ArrayList<>();
 
     // end chain
     private ConversationScore conversationScore;
@@ -24,11 +25,11 @@ public class ConversationChainDTO {
         this.conversationId = conversationId;
     }
 
-    public ConversationChainDTO(List<Message> messages) {
+    public ConversationChainDTO(List<Map<Integer, Message>> messages) {
         this.messages = messages;
     }
 
-    public ConversationChainDTO(String conversationId, List<Message> messages, ConversationScore conversationScore) {
+    public ConversationChainDTO(String conversationId, List<Map<Integer, Message>> messages, ConversationScore conversationScore) {
         this.conversationId = conversationId;
         this.messages = messages;
         this.conversationScore = conversationScore;
@@ -42,7 +43,7 @@ public class ConversationChainDTO {
         this.conversationId = conversationId;
     }
 
-    public List<Message> getMessages() {
+    public List<Map<Integer, Message>> getMessages() {
         return messages;
     }
 

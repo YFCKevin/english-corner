@@ -16,7 +16,7 @@ public interface ChatroomService {
 
     void genLearningReport(String chatroomId) throws IOException, ExecutionException, InterruptedException;
 
-    CompletableFuture<Void> speechToText(ChatRequestDTO chatRequestDTO) throws ExecutionException, InterruptedException;
+    CompletableFuture<Void> speechToText(ChatRequestDTO chatRequestDTO) throws ExecutionException, InterruptedException, IOException;
 
     void grammarCheck(ChatRequestDTO chatRequestDTO) throws JsonProcessingException, ExecutionException, InterruptedException;
 

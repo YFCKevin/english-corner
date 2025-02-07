@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.gurula.talkyo.azureai.AudioService;
 import com.gurula.talkyo.azureai.dto.ChatAudioDTO;
 import com.gurula.talkyo.chatroom.dto.*;
+import com.gurula.talkyo.chatroom.enums.ActionType;
 import com.gurula.talkyo.chatroom.enums.ChatroomType;
 import com.gurula.talkyo.chatroom.enums.RoomStatus;
 import com.gurula.talkyo.chatroom.enums.SenderRole;
@@ -25,6 +26,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,10 +53,11 @@ public class ChatroomServiceImpl implements ChatroomService {
     private final LessonRepository lessonRepository;
     private final SimpMessageSendingOperations messagingTemplate;
     private final LearningRecordService learningRecordService;
+    private final MessageService messageService;
     private final Map<String, List<CompletableFuture<Void>>> chattingFutures = new ConcurrentHashMap<>();
 
     public ChatroomServiceImpl(ChatroomRepository chatroomRepository, @Qualifier("sdf") SimpleDateFormat sdf,
-                               ConversationRepository conversationRepository, MessageRepository messageRepository, AudioService audioService, ConfigProperties configProperties, LLMService llmService, RabbitTemplate rabbitTemplate, LessonRepository lessonRepository, SimpMessageSendingOperations messagingTemplate, LearningRecordService learningRecordService) {
+                               ConversationRepository conversationRepository, MessageRepository messageRepository, AudioService audioService, ConfigProperties configProperties, LLMService llmService, RabbitTemplate rabbitTemplate, LessonRepository lessonRepository, SimpMessageSendingOperations messagingTemplate, LearningRecordService learningRecordService, MessageService messageService) {
         this.chatroomRepository = chatroomRepository;
         this.sdf = sdf;
         this.conversationRepository = conversationRepository;
@@ -66,12 +69,16 @@ public class ChatroomServiceImpl implements ChatroomService {
         this.lessonRepository = lessonRepository;
         this.messagingTemplate = messagingTemplate;
         this.learningRecordService = learningRecordService;
+        this.messageService = messageService;
     }
 
     @Transactional
     @Override
     public String createChatroom(Member member, ChatroomDTO chatroomDTO) {
+
         final ChatroomType chatroomType = chatroomDTO.getChatroomType();
+        final ActionType action = chatroomDTO.getAction();
+
         List<Chatroom> chatrooms = chatroomRepository.findByOwnerIdAndChatroomTypeAndRoomStatusOrderByCreationDateDesc(member.getId(), chatroomType, RoomStatus.ACTIVE);
 
         switch (chatroomType) {
@@ -81,23 +88,44 @@ public class ChatroomServiceImpl implements ChatroomService {
                     return chatrooms.get(0).getId();
                 } else {
                     // 創建新的聊天室
-                    Chatroom chatroom = new Chatroom();
-                    chatroom.setOwnerId(member.getId());
-                    chatroom.setChatroomType(chatroomType);
-                    chatroom.setRoomStatus(RoomStatus.ACTIVE);
-                    chatroom.setCreationDate(sdf.format(new Date()));
-                    final Chatroom savedChatroom = chatroomRepository.save(chatroom);
-
-                    // 紀錄 member 進入聊天室的紀錄
-                    Conversation conversation = new Conversation()
-                            .enterChatroom(member.getId(), savedChatroom.getId());
-
-                    conversationRepository.save(conversation);
-                    return savedChatroom.getId();
+                    return createChatroom(member, chatroomType);
+                }
+            }
+            case FREE_TALK -> {
+                switch (action) {
+                    case LEGACY -> {
+                        if (chatrooms.size() > 0) {
+                            // 已有聊天室，則回傳最新的chatroomId
+                            return chatrooms.get(chatrooms.size() - 1).getId();
+                        } else {
+                            // 創建新的聊天室
+                            return createChatroom(member, chatroomType);
+                        }
+                    }
+                    case CREATE -> {
+                        // 創建新的聊天室
+                        return createChatroom(member, chatroomType);
+                    }
                 }
             }
         }
         return null;
+    }
+
+    private String createChatroom(Member member, ChatroomType chatroomType) {
+        Chatroom chatroom = new Chatroom();
+        chatroom.setOwnerId(member.getId());
+        chatroom.setChatroomType(chatroomType);
+        chatroom.setRoomStatus(RoomStatus.ACTIVE);
+        chatroom.setCreationDate(sdf.format(new Date()));
+        final Chatroom savedChatroom = chatroomRepository.save(chatroom);
+
+        // 紀錄 member 進入聊天室的紀錄
+        Conversation conversation = new Conversation()
+                .enterChatroom(member.getId(), savedChatroom.getId());
+
+        conversationRepository.save(conversation);
+        return savedChatroom.getId();
     }
 
     @Transactional
@@ -111,46 +139,81 @@ public class ChatroomServiceImpl implements ChatroomService {
         final Scenario scenario = chatInitDTO.getScenario();
         final String partnerId = member.getPartnerId();
         final ChatroomType chatroomType = chatInitDTO.getChatroomType();
+        final String currentMessageId = chatInitDTO.getCurrentMessageId();
 
         boolean exists = messageRepository.existsByChatroomId(chatroomId);
         if (exists) {    // 代表聊天室已有聊天記錄
             // 取聊天記錄
-            final List<Message> historyMsgs = messageRepository.findAllByChatroomIdOrderByCreatedDateTimeAsc(chatroomId);
             System.out.println("取聊天記錄");
+            List<Map<Integer, Message>> historyMsgs = new ArrayList<>();
+
+            switch (chatroomType) {
+                case PROJECT, SITUATION -> {
+                    final List<Message> messages = messageRepository.findAllByChatroomIdOrderByCreatedDateTimeAsc(chatroomId);
+                    for (Message message : messages) {
+                        historyMsgs.add(Map.of(1, message));
+                    }
+                }
+                case FREE_TALK -> {
+                    if (StringUtils.isNotBlank(currentMessageId)) { // 有歷史聊天記錄
+                        historyMsgs = messageService.getHistoryMessages(currentMessageId);
+                    }
+                }
+            }
+
+            System.out.println("聊天記錄====> " + historyMsgs);
+
             String chatroomDestination = "/chatroom/" + chatroomId + "/" + chatroomType;
             messagingTemplate.convertAndSend(chatroomDestination, new ConversationChainDTO(historyMsgs));
         } else {
+            String openingLineMessage = "";
             switch (chatroomType) {
                 case PROJECT -> {
                     // load scenario
                     loadScenario(new ChatRequestDTO(chatroomId, chatroomType, scenario));
 
+                    // partner 參與聊天室紀錄
+                    Conversation conversation = new Conversation()
+                            .enterChatroom(partnerId, chatroomId);
+                    conversationRepository.save(conversation);
+
                     // partner opening line
-                    final String openingLineMessage = openingLine(new ChatRequestDTO(chatroomId, scenario, memberId, partnerId, lessonId));
+                    openingLineMessage = openingLine(new ChatRequestDTO(chatroomId, scenario, memberId, partnerId, lessonId, chatroomType));
 
                     // learning record
                     learningRecordService.saveRecord(new RecordDTO(courseId, lessonId, chatroomId), memberId);
-
-                    // show opening line
-                    messageRepository.findById(openingLineMessage).ifPresent(finalMessage -> {
-                        String chatroomDestination = "/chatroom/" + chatroomId + "/" + chatroomType;
-                        messagingTemplate.convertAndSend(chatroomDestination, new ConversationChainDTO(List.of(finalMessage)));
-                    });
                 }
                 case SITUATION -> {
                     // load scenario
                     loadScenario(new ChatRequestDTO(chatroomId, chatroomType, scenario));
 
-                    // partner opening line
-                    final String openingLineMessage = openingLine(new ChatRequestDTO(chatroomId, scenario, memberId, partnerId, lessonId));
+                    // partner 參與聊天室紀錄
+                    Conversation conversation = new Conversation()
+                            .enterChatroom(partnerId, chatroomId);
+                    conversationRepository.save(conversation);
 
-                    // show opening line
-                    messageRepository.findById(openingLineMessage).ifPresent(finalMessage -> {
-                        String chatroomDestination = "/chatroom/" + chatroomId + "/" + chatroomType;
-                        messagingTemplate.convertAndSend(chatroomDestination, new ConversationChainDTO(List.of(finalMessage)));
-                    });
+                    // partner opening line
+                    openingLineMessage = openingLine(new ChatRequestDTO(chatroomId, scenario, memberId, partnerId, lessonId, chatroomType));
+                }
+                case FREE_TALK -> {
+                    // load scenario
+                    loadScenario(new ChatRequestDTO(chatroomId, chatroomType, scenario));
+
+                    // partner 參與聊天室紀錄
+                    Conversation conversation = new Conversation()
+                            .enterChatroom(partnerId, chatroomId);
+                    conversationRepository.save(conversation);
+
+                    // partner opening line
+                    openingLineMessage = openingLine(new ChatRequestDTO(chatroomId, partnerId, chatroomType));
                 }
             }
+
+            // show opening line
+            messageRepository.findById(openingLineMessage).ifPresent(finalMessage -> {
+                String chatroomDestination = "/chatroom/" + chatroomId + "/" + chatroomType;
+                messagingTemplate.convertAndSend(chatroomDestination, new ConversationChainDTO(List.of(Map.of(1, finalMessage))));
+            });
         }
 
     }
@@ -189,27 +252,40 @@ public class ChatroomServiceImpl implements ChatroomService {
         final String lessonId = chatRequestDTO.getLessonId();
         final Scenario scenario = chatRequestDTO.getScenario();
         final String memberId = chatRequestDTO.getMemberId();
-
-        // partner 參與聊天室紀錄
-        Conversation conversation = new Conversation()
-                .enterChatroom(partnerId, chatroomId);
-        conversationRepository.save(conversation);
+        final ChatroomType chatroomType = chatRequestDTO.getChatroomType();
 
         LLMChatResponseDTO llmChatResponseDTO = new LLMChatResponseDTO();
 
-        if (StringUtils.isNotBlank(lessonId)) { // 學習
-            final Optional<Lesson> opt = lessonRepository.findById(lessonId);
-            if (opt.isPresent()) {
-                final Lesson lesson = opt.get();
-                final String sentenceStr = lesson.getSentences().stream()
-                        .map(Sentence::getContent)
-                        .collect(Collectors.joining("\n"));
-                llmChatResponseDTO = llmService.genWelcomeMessage(new LLMChatRequestDTO(scenario, sentenceStr));
+        switch (chatroomType) {
+            case PROJECT -> {
+                final Optional<Lesson> opt = lessonRepository.findById(lessonId);
+                if (opt.isPresent()) {
+                    final Lesson lesson = opt.get();
+                    final String sentenceStr = lesson.getSentences().stream()
+                            .map(Sentence::getContent)
+                            .collect(Collectors.joining("\n"));
+                    llmChatResponseDTO = llmService.genWelcomeMessage(new LLMChatRequestDTO(scenario, sentenceStr));
+                }
             }
-        } else {
-            llmChatResponseDTO = llmService.genWelcomeMessage(new LLMChatRequestDTO(scenario));
+            case SITUATION -> llmChatResponseDTO = llmService.genWelcomeMessage(new LLMChatRequestDTO(scenario));
+            case FREE_TALK -> {
+                Message message = new Message();
+                message.setCreatedDateTime(sdf.format(new Date()));
+                message.setChatroomId(chatroomId);
+                message.setSender(partnerId);
+                message.setSenderRole(SenderRole.AI);
+                message.setText("你好，我是你在 Talkyo 的私人老師！你在練習過程中遇到的任何問題，都可以隨時問我，我會為你解答，你有什麼想練習的內容嗎？獲續我可以幫助你！");
+                message.setBranch(UUID.randomUUID().toString());
+                message.setVersion(1);
+                final Message savedMessage = messageRepository.save(message);
+                return savedMessage.getId();
+            }
         }
 
+        return saveMessage(chatroomId, partnerId, memberId, llmChatResponseDTO);
+    }
+
+    private String saveMessage(String chatroomId, String partnerId, String memberId, LLMChatResponseDTO llmChatResponseDTO) throws ExecutionException, InterruptedException, IOException {
         final Message message = new Message();
         message.setTranslation(llmChatResponseDTO.getTranslation());
         message.setCreatedDateTime(sdf.format(new Date()));
@@ -236,11 +312,18 @@ public class ChatroomServiceImpl implements ChatroomService {
      */
     @Override
     public ConversationChainDTO reply(ChatDTO chatDTO, Member member) throws ExecutionException, InterruptedException, IOException {
-        Message message = new Message();
+
         final String chatroomId = chatDTO.getChatroomId();
         final String audioFileName = chatDTO.getAudioFileName();
         final String imageFileName = chatDTO.getImageFileName();
         final String content = chatDTO.getContent();    // 文字輸入
+        final String lessonId = chatDTO.getLessonId();
+        final ChatroomType chatroomType = chatDTO.getChatroomType();
+        final String previewMessageId = chatDTO.getPreviewMessageId();
+        final ActionType action = chatDTO.getAction();
+
+
+        Message message = new Message();
         if (StringUtils.isNotBlank(audioFileName)) {
             message.setAudioName(audioFileName);
             message.setSize(Files.size(Paths.get(configProperties.getAudioSavePath(), chatroomId, audioFileName)));
@@ -255,36 +338,90 @@ public class ChatroomServiceImpl implements ChatroomService {
         if (StringUtils.isNotBlank(content)) {
             message.setText(content);
         }
-        final Message savedMessage = messageRepository.save(message);
 
-        final ChatRequestDTO chatRequestDTO = new ChatRequestDTO(
-                chatroomId,
-                member.getId(),
-                member.getPartnerId(),
-                savedMessage.getId(),
-                chatDTO.getLessonId(),
-                chatDTO.getChatroomType()
-        );
+        switch (chatroomType) {
+            case PROJECT, SITUATION -> {
+                message = messageRepository.save(message);
 
-        ConversationChainDTO conversationChainDTO = null;
-        if (StringUtils.isNotBlank(audioFileName)) {    // audio
+                final ChatRequestDTO chatRequestDTO = new ChatRequestDTO(
+                        chatroomId,
+                        member.getId(),
+                        member.getPartnerId(),
+                        message.getId(),
+                        lessonId,
+                        chatroomType,
+                        null,
+                        previewMessageId
+                );
 
-            // speechToText 處理使用者的音訊檔案
-            CompletableFuture<Void> future = speechToText(chatRequestDTO);
-            future.get();
+                if (StringUtils.isNotBlank(audioFileName)) {    // audio
 
-        } else if (StringUtils.isNotBlank(content)) {   // text
+                    // speechToText 處理使用者的音訊檔案
+                    CompletableFuture<Void> future = speechToText(chatRequestDTO);
+                    future.get();
 
-            CompletableFuture<Void> grammarFuture = new CompletableFuture<>();
-            CompletableFuture<Void> partnerFuture = new CompletableFuture<>();
+                } else if (StringUtils.isNotBlank(content)) {   // text
 
-            CompletableFuture.allOf(grammarFuture, partnerFuture).join();
+                    CompletableFuture<Void> grammarFuture = new CompletableFuture<>();
+                    CompletableFuture<Void> partnerFuture = new CompletableFuture<>();
+
+                    CompletableFuture.allOf(grammarFuture, partnerFuture).join();
+                }
+
+                final Message finalMsg = messageRepository.findById(message .getId()).get();
+                return new ConversationChainDTO(List.of(Map.of(1, finalMsg)));
+            }
+            case FREE_TALK -> {
+                int maxVersion = 1;
+                if (ActionType.EDIT.equals(action)) {   // 開立新分支並新增訊息 (編輯)
+                    List<Message> messages = messageRepository.findByPreviewMessageId(previewMessageId);
+
+                    maxVersion = messages.stream()
+                            .mapToInt(Message::getVersion)
+                            .max()
+                            .orElse(1);
+
+                    message.setPreviewMessageId(previewMessageId);
+                    message.setBranch(UUID.randomUUID().toString());
+                    message.setVersion(maxVersion + 1);
+                } else {    // 在該分支新增、在舊分支新增
+                    final Message previewMessage = messageRepository.findById(previewMessageId).get();
+
+                    message.setPreviewMessageId(previewMessageId);
+                    message.setBranch(previewMessage.getBranch());
+                    message.setVersion(1);
+                }
+                message = messageRepository.save(message);
+
+                final ChatRequestDTO chatRequestDTO = new ChatRequestDTO(
+                        chatroomId,
+                        member.getId(),
+                        member.getPartnerId(),
+                        message.getId(),
+                        lessonId,
+                        chatroomType,
+                        message.getBranch(),
+                        previewMessageId
+                );
+
+                if (StringUtils.isNotBlank(audioFileName)) {    // audio
+
+                    // speechToText 處理使用者的音訊檔案
+                    CompletableFuture<Void> future = speechToText(chatRequestDTO);
+                    future.get();
+
+                } else if (StringUtils.isNotBlank(content)) {   // text
+
+                    CompletableFuture<Void> partnerFuture = new CompletableFuture<>();
+
+                    CompletableFuture.allOf(partnerFuture).join();
+                }
+
+                final Message finalMsg = messageRepository.findById(message.getId()).get();
+                return new ConversationChainDTO(List.of(Map.of(maxVersion, finalMsg)));
+            }
         }
-
-        final Message finalMsg = messageRepository.findById(savedMessage.getId()).get();
-        conversationChainDTO = new ConversationChainDTO(List.of(finalMsg));
-
-        return conversationChainDTO;
+        return null;
     }
 
 
@@ -296,11 +433,13 @@ public class ChatroomServiceImpl implements ChatroomService {
      * @throws InterruptedException
      */
     @Override
-    public CompletableFuture<Void> speechToText(ChatRequestDTO chatRequestDTO) throws ExecutionException, InterruptedException {
+    public CompletableFuture<Void> speechToText(ChatRequestDTO chatRequestDTO) throws ExecutionException, InterruptedException, IOException {
         System.out.println("speechToText");
 
         final String messageId = chatRequestDTO.getMessageId();
         final ChatroomType chatroomType = chatRequestDTO.getChatroomType();
+        final String branch = chatRequestDTO.getBranch();
+        final String previewMessageId = chatRequestDTO.getPreviewMessageId();
 
         final Optional<Message> opt = messageRepository.findById(messageId);
         if (opt.isPresent()) {
@@ -324,7 +463,7 @@ public class ChatroomServiceImpl implements ChatroomService {
                     CompletableFuture<Void> partnerFuture = new CompletableFuture<>();
                     CompletableFuture<Void> pronunciationFuture = new CompletableFuture<>();
 
-                    chattingFutures.put(chatRequestDTO.getMessageId(), new ArrayList<>(List.of(partnerFuture, grammarFuture, advancedFuture, pronunciationFuture)));
+                    chattingFutures.put(messageId, new ArrayList<>(List.of(partnerFuture, grammarFuture, advancedFuture, pronunciationFuture)));
 
                     rabbitTemplate.convertAndSend(
                             RabbitMQConfig.TALKYO_PROJECT_FANOUT_EXCHANGE,
@@ -341,7 +480,7 @@ public class ChatroomServiceImpl implements ChatroomService {
                     CompletableFuture<Void> grammarFuture = new CompletableFuture<>();
                     CompletableFuture<Void> partnerFuture = new CompletableFuture<>();
 
-                    chattingFutures.put(chatRequestDTO.getMessageId(), new ArrayList<>(List.of(partnerFuture, grammarFuture)));
+                    chattingFutures.put(messageId, new ArrayList<>(List.of(partnerFuture, grammarFuture)));
 
                     rabbitTemplate.convertAndSend(
                             RabbitMQConfig.TALKYO_SITUATION_FANOUT_EXCHANGE,
@@ -351,6 +490,13 @@ public class ChatroomServiceImpl implements ChatroomService {
 
                     // 等待所有 Queue 完成
                     return CompletableFuture.allOf(partnerFuture, grammarFuture);
+                }
+                case FREE_TALK -> {
+                    message.setBranch(branch);
+                    message.setPreviewMessageId(previewMessageId);
+                    messageRepository.save(message);
+
+                    partnerReply(chatRequestDTO);
                 }
             }
 
@@ -486,28 +632,62 @@ public class ChatroomServiceImpl implements ChatroomService {
         final String chatroomId = chatRequestDTO.getChatroomId();
         final String memberId = chatRequestDTO.getMemberId();
         final String partnerId = chatRequestDTO.getPartnerId();
+        final String messageId = chatRequestDTO.getMessageId();     // human message
+        final String branch = chatRequestDTO.getBranch();
+        final ChatroomType chatroomType = chatRequestDTO.getChatroomType();
 
         final Scenario scenario = chatroomRepository.findById(chatroomId).get().getScenario();
 
         LLMChatResponseDTO llmChatResponseDTO = new LLMChatResponseDTO();
 
-        List<Message> messages = messageRepository.findAllByChatroomIdOrderByCreatedDateTimeAsc(chatroomId);
-        final String historyMessages = messages.stream()
-                .map(message -> Optional.ofNullable(message.getParsedText()).orElse(message.getText()))
-                .collect(Collectors.joining("\n"));
+        switch (chatroomType) {
+            case PROJECT, SITUATION -> {
+                List<Message> messages = messageRepository.findAllByChatroomIdOrderByCreatedDateTimeAsc(chatroomId);
+                final String historyMessages = messages.stream()
+                        .map(message -> Optional.ofNullable(message.getParsedText()).orElse(message.getText()))
+                        .collect(Collectors.joining("\n"));
 
-        llmChatResponseDTO = llmService.replyMsg(new LLMChatRequestDTO(historyMessages, scenario));
-        final Message message = new Message();
-        message.setTranslation(llmChatResponseDTO.getTranslation());
-        message.setChatroomId(chatroomId);
-        message.setCreatedDateTime(sdf.format(new Date()));
-        message.setSender(partnerId);
-        message.setSenderRole(SenderRole.AI);
-        final String fileName = audioService.textToSpeechInChatting(List.of(new ChatAudioDTO(llmChatResponseDTO.getContent(), memberId, partnerId, chatroomId))).get(0).getFileName().toString();
-        message.setAudioName(fileName);
-        message.setSize(Files.size(Paths.get(configProperties.getAudioSavePath(), chatroomId, fileName)));
-        message.setParsedText(llmChatResponseDTO.getContent());
-        messageRepository.save(message);
+                llmChatResponseDTO = llmService.replyMsg(new LLMChatRequestDTO(historyMessages, scenario));
+                final Message message = new Message();
+                message.setTranslation(llmChatResponseDTO.getTranslation());
+                message.setChatroomId(chatroomId);
+                message.setCreatedDateTime(sdf.format(new Date()));
+                message.setSender(partnerId);
+                message.setSenderRole(SenderRole.AI);
+                final String fileName = audioService.textToSpeechInChatting(List.of(new ChatAudioDTO(llmChatResponseDTO.getContent(), memberId, partnerId, chatroomId))).get(0).getFileName().toString();
+                message.setAudioName(fileName);
+                message.setSize(Files.size(Paths.get(configProperties.getAudioSavePath(), chatroomId, fileName)));
+                message.setParsedText(llmChatResponseDTO.getContent());
+                messageRepository.save(message);
+            }
+            case FREE_TALK -> {
+                List<Message> historyMsgs = messageService.getHistoryMessages(messageId).stream()
+                        .flatMap(map -> map.values().stream())
+                        .toList();
+
+                final String historyMessages = historyMsgs.stream()
+                        .map(message -> Optional.ofNullable(message.getParsedText()).orElse(message.getText()))
+                        .collect(Collectors.joining("\n"));
+
+                llmChatResponseDTO = llmService.replyMsg(new LLMChatRequestDTO(historyMessages, scenario));
+                final Message message = new Message();
+                message.setTranslation(llmChatResponseDTO.getTranslation());
+                message.setChatroomId(chatroomId);
+                message.setCreatedDateTime(sdf.format(new Date()));
+                message.setSender(partnerId);
+                message.setSenderRole(SenderRole.AI);
+                final String fileName = audioService.textToSpeechInChatting(List.of(new ChatAudioDTO(llmChatResponseDTO.getContent(), memberId, partnerId, chatroomId))).get(0).getFileName().toString();
+                message.setAudioName(fileName);
+                message.setSize(Files.size(Paths.get(configProperties.getAudioSavePath(), chatroomId, fileName)));
+                message.setParsedText(llmChatResponseDTO.getContent());
+                message.setVersion(1);
+                message.setBranch(branch);
+                message.setPreviewMessageId(messageId);
+                messageRepository.save(message);
+            }
+        }
+
+
         System.out.println("partnerReply成功");
     }
 

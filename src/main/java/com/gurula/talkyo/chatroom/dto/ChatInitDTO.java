@@ -9,6 +9,7 @@ public class ChatInitDTO {
     private Scenario scenario;
     private String lessonId;
     private String courseId;
+    private String currentMessageId;    // 當前訊息的編號 (儲存在 localStorage)
 
     public ChatroomType getChatroomType() {
         return chatroomType;
@@ -28,6 +29,10 @@ public class ChatInitDTO {
 
     public String getCourseId() {
         return courseId;
+    }
+
+    public String getCurrentMessageId() {
+        return currentMessageId;
     }
 
     @Override

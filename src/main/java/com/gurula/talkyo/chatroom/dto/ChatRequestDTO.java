@@ -16,6 +16,10 @@ public class ChatRequestDTO {
     private String referenceText;
     private String audioFilePath;
 
+    // for free talk
+    private String branch;
+    private String previewMessageId;
+
     public ChatRequestDTO() {
     }
 
@@ -36,22 +40,31 @@ public class ChatRequestDTO {
         this.partnerId = partnerId;
     }
 
-    public ChatRequestDTO(String chatroomId, String memberId, String partnerId, String messageId, String lessonId, ChatroomType chatroomType) {
+    public ChatRequestDTO(String chatroomId, String memberId, String partnerId, String messageId, String lessonId, ChatroomType chatroomType, String branch, String previewMessageId) {
         this.chatroomId = chatroomId;
         this.memberId = memberId;
         this.partnerId = partnerId;
         this.messageId = messageId;
         this.lessonId = lessonId;
         this.chatroomType = chatroomType;
+        this.branch = branch;
+        this.previewMessageId = previewMessageId;
     }
 
     // for chat init
-    public ChatRequestDTO(String chatroomId, Scenario scenario, String memberId, String partnerId, String lessonId) {
+    public ChatRequestDTO(String chatroomId, Scenario scenario, String memberId, String partnerId, String lessonId, ChatroomType chatroomType) {
         this.chatroomId = chatroomId;
         this.scenario = scenario;
         this.memberId = memberId;
         this.partnerId = partnerId;
         this.lessonId = lessonId;
+        this.chatroomType = chatroomType;
+    }
+
+    public ChatRequestDTO(String chatroomId, String partnerId, ChatroomType chatroomType) {
+        this.chatroomId = chatroomId;
+        this.partnerId = partnerId;
+        this.chatroomType = chatroomType;
     }
 
     public String getMessageId() {
@@ -124,6 +137,14 @@ public class ChatRequestDTO {
 
     public void setAudioFilePath(String audioFilePath) {
         this.audioFilePath = audioFilePath;
+    }
+
+    public String getBranch() {
+        return branch;
+    }
+
+    public String getPreviewMessageId() {
+        return previewMessageId;
     }
 
     @Override

@@ -1,5 +1,6 @@
 package com.gurula.talkyo.chatroom.dto;
 
+import com.gurula.talkyo.chatroom.enums.ActionType;
 import com.gurula.talkyo.chatroom.enums.ChatroomType;
 import com.gurula.talkyo.chatroom.enums.MessageType;
 import org.springframework.web.multipart.MultipartFile;
@@ -13,6 +14,9 @@ public class ChatDTO {
     private String imageFileName;
     private String lessonId;
     private MessageType messageType;
+    private String previewMessageId;
+    private int branch;
+    private ActionType action; // 在 FREE_TALK 用來辨識是新增訊息 or 修改訊息
 
     public String getContent() {
         return content;
@@ -78,6 +82,30 @@ public class ChatDTO {
         this.messageType = messageType;
     }
 
+    public String getPreviewMessageId() {
+        return previewMessageId;
+    }
+
+    public void setPreviewMessageId(String previewMessageId) {
+        this.previewMessageId = previewMessageId;
+    }
+
+    public int getBranch() {
+        return branch;
+    }
+
+    public void setBranch(int branch) {
+        this.branch = branch;
+    }
+
+    public ActionType getAction() {
+        return action;
+    }
+
+    public void setAction(ActionType action) {
+        this.action = action;
+    }
+
     @Override
     public String toString() {
         return "ChatDTO{" +
@@ -89,6 +117,9 @@ public class ChatDTO {
                 ", imageFileName='" + imageFileName + '\'' +
                 ", lessonId='" + lessonId + '\'' +
                 ", messageType=" + messageType +
+                ", previewMessageId='" + previewMessageId + '\'' +
+                ", branch=" + branch +
+                ", action=" + action +
                 '}';
     }
 }

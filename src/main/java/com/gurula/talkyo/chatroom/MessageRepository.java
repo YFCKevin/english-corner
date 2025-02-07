@@ -30,4 +30,8 @@ public interface MessageRepository extends MongoRepository<Message, String> {
     boolean existsByChatroomId(String chatroomId);
 
     Optional<Message> findFirstByChatroomIdAndCreatedDateTimeLessThanOrderByCreatedDateTimeDesc(String chatroomId, String createdDateTime);
+
+    List<Message> findByPreviewMessageId(String previewMessageId);
+
+    Optional<Message> findFirstByBranchOrderByCreatedDateTimeDesc(String branch);
 }
