@@ -8,39 +8,24 @@ import java.util.List;
 import java.util.Map;
 
 public class ConversationChainDTO {
-
-    // start chain
-    private String conversationId;
-
-    // chatting chain
-    private List<Map<Integer, Message>> messages = new ArrayList<>();
+    private boolean humanMsg;
 
     // end chain
+    private List<Map<Integer, Message>> messages = new ArrayList<>();
+
     private ConversationScore conversationScore;
 
     public ConversationChainDTO() {
     }
 
-    public ConversationChainDTO(String conversationId) {
-        this.conversationId = conversationId;
-    }
-
-    public ConversationChainDTO(List<Map<Integer, Message>> messages) {
+    public ConversationChainDTO(boolean humanMsg, List<Map<Integer, Message>> messages) {
+        this.humanMsg = humanMsg;
         this.messages = messages;
     }
 
-    public ConversationChainDTO(String conversationId, List<Map<Integer, Message>> messages, ConversationScore conversationScore) {
-        this.conversationId = conversationId;
+    public ConversationChainDTO(List<Map<Integer, Message>> messages, ConversationScore conversationScore) {
         this.messages = messages;
         this.conversationScore = conversationScore;
-    }
-
-    public String getConversationId() {
-        return conversationId;
-    }
-
-    public void setConversationId(String conversationId) {
-        this.conversationId = conversationId;
     }
 
     public List<Map<Integer, Message>> getMessages() {

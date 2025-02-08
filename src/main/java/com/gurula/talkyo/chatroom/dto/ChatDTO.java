@@ -17,6 +17,7 @@ public class ChatDTO {
     private String previewMessageId;
     private int branch;
     private ActionType action; // 在 FREE_TALK 用來辨識是新增訊息 or 修改訊息
+    private String messageId;   // human msg id 傳遞給 reply 方法
 
     public String getContent() {
         return content;
@@ -106,6 +107,14 @@ public class ChatDTO {
         this.action = action;
     }
 
+    public String getMessageId() {
+        return messageId;
+    }
+
+    public void setMessageId(String messageId) {
+        this.messageId = messageId;
+    }
+
     @Override
     public String toString() {
         return "ChatDTO{" +
@@ -120,6 +129,7 @@ public class ChatDTO {
                 ", previewMessageId='" + previewMessageId + '\'' +
                 ", branch=" + branch +
                 ", action=" + action +
+                ", messageId='" + messageId + '\'' +
                 '}';
     }
 }

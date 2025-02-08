@@ -5,6 +5,7 @@ import com.gurula.talkyo.chatroom.dto.*;
 import com.gurula.talkyo.member.Member;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
@@ -16,13 +17,15 @@ public interface ChatroomService {
 
     void genLearningReport(String chatroomId) throws IOException, ExecutionException, InterruptedException;
 
-    CompletableFuture<Void> speechToText(ChatRequestDTO chatRequestDTO) throws ExecutionException, InterruptedException, IOException;
+    String speechToText(Message message) throws ExecutionException, InterruptedException, IOException;
+
+    CompletableFuture<Void> advancedCheck(ChatRequestDTO chatRequestDTO) throws IOException, ExecutionException, InterruptedException;
 
     void grammarCheck(ChatRequestDTO chatRequestDTO) throws JsonProcessingException, ExecutionException, InterruptedException;
 
     void genAdvanceSentences(ChatRequestDTO chatRequestDTO) throws ExecutionException, InterruptedException, JsonProcessingException;
 
-    void partnerReply(ChatRequestDTO chatRequestDTO) throws ExecutionException, InterruptedException, IOException;
+    Message partnerReply(ChatRequestDTO chatRequestDTO) throws ExecutionException, InterruptedException, IOException;
 
     void loadScenario(ChatRequestDTO chatRequestDTO);
 
@@ -39,4 +42,6 @@ public interface ChatroomService {
     ContentAssessment topicResult(ReportRequestDTO reportRequestDTO);
 
     void close(String chatroomId);
+
+    ConversationChainDTO handleHumanMsg(ChatDTO chatDTO, Member member) throws IOException, ExecutionException, InterruptedException;
 }

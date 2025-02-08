@@ -26,6 +26,7 @@ import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 @Controller
@@ -38,9 +39,13 @@ public class ChatroomController {
     private final LearningRecordService learningRecordService;
     private final ConversationRepository conversationRepository;
     private final SimpleDateFormat sdf;
+    private final MessageRepository messageRepository;
+    private final ChatroomRepository chatroomRepository;
 
     public ChatroomController(ChatroomService chatroomService, SimpMessageSendingOperations messagingTemplate, ConfigProperties configProperties, MessageTypeHandler handler, LearningRecordService learningRecordService,
-                              ConversationRepository conversationRepository, SimpleDateFormat sdf) {
+                              ConversationRepository conversationRepository, SimpleDateFormat sdf,
+                              MessageRepository messageRepository,
+                              ChatroomRepository chatroomRepository) {
         this.chatroomService = chatroomService;
         this.messagingTemplate = messagingTemplate;
         this.configProperties = configProperties;
@@ -48,6 +53,8 @@ public class ChatroomController {
         this.learningRecordService = learningRecordService;
         this.conversationRepository = conversationRepository;
         this.sdf = sdf;
+        this.messageRepository = messageRepository;
+        this.chatroomRepository = chatroomRepository;
     }
 
     @PostMapping("/chatroom/createChatroom")
@@ -136,7 +143,7 @@ public class ChatroomController {
 
 
     @MessageMapping("/chat")
-    public void chat (@RequestBody ChatDTO chatDTO, SimpMessageHeaderAccessor headerAccessor) throws ExecutionException, InterruptedException, IOException {
+    public void chat(@RequestBody ChatDTO chatDTO, SimpMessageHeaderAccessor headerAccessor) throws ExecutionException, InterruptedException, IOException {
         Map<String, Object> sessionAttributes = headerAccessor.getSessionAttributes();
         Member member = (sessionAttributes != null) ? (Member) sessionAttributes.get("member") : null;
 
@@ -150,9 +157,56 @@ public class ChatroomController {
         final String chatroomId = chatDTO.getChatroomId();
         final ChatroomType chatroomType = chatDTO.getChatroomType();
 
-        ConversationChainDTO conversationChainDTO = chatroomService.reply(chatDTO, member);
-        String chatroomDestination = "/chatroom/" + chatroomId + "/" + chatroomType;
+        ConversationChainDTO conversationChainDTO = null;
+        String chatroomDestination = "/chatroom/" + chatroomId;
+
+        conversationChainDTO = chatroomService.handleHumanMsg(chatDTO, member);
         messagingTemplate.convertAndSend(chatroomDestination, conversationChainDTO);
+
+        boolean hasMessage = conversationChainDTO.getMessages() != null &&
+                conversationChainDTO.getMessages().stream()
+                        .anyMatch(map -> map != null && !map.isEmpty());
+
+        if (hasMessage) {
+            String messageId = conversationChainDTO.getMessages().stream()
+                    .flatMap(map -> map.values().stream())
+                    .map(Message::getId)
+                    .findFirst()
+                    .orElse(null);
+
+            if (messageId != null) {
+                chatDTO.setMessageId(messageId);
+            }
+            conversationChainDTO = chatroomService.reply(chatDTO, member);
+            messagingTemplate.convertAndSend(chatroomDestination, conversationChainDTO);
+        }
+
+    }
+
+
+    @GetMapping("/chatroom/advancedCheck/{messageId}")
+    public ResponseEntity<?> advancedCheck(@PathVariable String messageId) throws IOException, ExecutionException, InterruptedException {
+        final Member member = MemberContext.getMember();
+        logger.info("[{} {}] [chatroom advancedCheck]", member.getName(), member.getId());
+
+        ResultStatus resultStatus = new ResultStatus();
+
+        final Optional<Message> opt = messageRepository.findById(messageId);
+        if (opt.isPresent()) {
+            final Message message = opt.get();
+            final Chatroom chatroom = chatroomRepository.findById(message.getChatroomId()).get();
+
+            chatroomService.advancedCheck(new ChatRequestDTO(
+                    messageId,
+                    chatroom.getChatroomType(),
+                    message.getBranch(),
+                    message.getPreviewMessageId()
+            ));
+        }
+
+        resultStatus.setCode("C000");
+        resultStatus.setMessage("成功");
+        return ResponseEntity.ok(resultStatus);
     }
 
 

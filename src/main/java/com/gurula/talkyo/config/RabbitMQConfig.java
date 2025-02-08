@@ -22,7 +22,6 @@ public class RabbitMQConfig {
     public static final String PRONUNCIATION_QUEUE = "pronunciation.queue";
     public static final String GRAMMAR_QUEUE = "grammar.queue";
     public static final String ADVANCED_SENTENCE_QUEUE = "advancedSentence.queue";
-    public static final String PARTNER_REPLY_QUEUE = "partnerReply.queue";
     public static final String ERROR_QUEUE = "error.queue";
     public static final String ERROR_EXCHANGE = "error-exchange";
 
@@ -66,10 +65,6 @@ public class RabbitMQConfig {
         return new Queue(ADVANCED_SENTENCE_QUEUE, true);
     }
     @Bean
-    public Queue partnerReplyQueue() {
-        return new Queue(PARTNER_REPLY_QUEUE, true);
-    }
-    @Bean
     public Queue pronunciationQueue() {
         return new Queue(PRONUNCIATION_QUEUE, true);
     }
@@ -110,15 +105,5 @@ public class RabbitMQConfig {
     @Bean
     public Binding bindPronunciation() {
         return BindingBuilder.bind(pronunciationQueue()).to(projectFanoutExchange());
-    }
-
-    @Bean
-    public Binding bindProjectPartnerReply() {
-        return BindingBuilder.bind(partnerReplyQueue()).to(projectFanoutExchange());
-    }
-
-    @Bean
-    public Binding bindSituationPartnerReply() {
-        return BindingBuilder.bind(partnerReplyQueue()).to(situationFanoutExchange());
     }
 }

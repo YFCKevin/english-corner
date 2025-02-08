@@ -163,8 +163,8 @@ public class ChatroomServiceImpl implements ChatroomService {
 
             System.out.println("聊天記錄====> " + historyMsgs);
 
-            String chatroomDestination = "/chatroom/" + chatroomId + "/" + chatroomType;
-            messagingTemplate.convertAndSend(chatroomDestination, new ConversationChainDTO(historyMsgs));
+            String chatroomDestination = "/chatroom/" + chatroomId;
+            messagingTemplate.convertAndSend(chatroomDestination, new ConversationChainDTO(false, historyMsgs));
         } else {
             String openingLineMessage = "";
             switch (chatroomType) {
@@ -211,8 +211,8 @@ public class ChatroomServiceImpl implements ChatroomService {
 
             // show opening line
             messageRepository.findById(openingLineMessage).ifPresent(finalMessage -> {
-                String chatroomDestination = "/chatroom/" + chatroomId + "/" + chatroomType;
-                messagingTemplate.convertAndSend(chatroomDestination, new ConversationChainDTO(List.of(Map.of(1, finalMessage))));
+                String chatroomDestination = "/chatroom/" + chatroomId;
+                messagingTemplate.convertAndSend(chatroomDestination, new ConversationChainDTO(false, List.of(Map.of(1, finalMessage))));
             });
         }
 
@@ -301,6 +301,74 @@ public class ChatroomServiceImpl implements ChatroomService {
     }
 
 
+    @Override
+    public ConversationChainDTO handleHumanMsg(ChatDTO chatDTO, Member member) throws IOException, ExecutionException, InterruptedException {
+
+        final String memberId = member.getId();
+        final String chatroomId = chatDTO.getChatroomId();
+        final String audioFileName = chatDTO.getAudioFileName();
+        final String imageFileName = chatDTO.getImageFileName();
+        final String content = chatDTO.getContent();    // 文字輸入
+        final ChatroomType chatroomType = chatDTO.getChatroomType();
+        final String previewMessageId = chatDTO.getPreviewMessageId();
+        final ActionType action = chatDTO.getAction();
+
+        Message message = new Message();
+        if (StringUtils.isNotBlank(audioFileName)) {
+            message.setAudioName(audioFileName);
+            message.setSize(Files.size(Paths.get(configProperties.getAudioSavePath(), chatroomId, audioFileName)));
+        } else if (StringUtils.isNotBlank(imageFileName)) {
+            message.setImageName(imageFileName);
+            message.setSize(Files.size(Paths.get(configProperties.getPicSavePath(), chatroomId, imageFileName)));
+        }
+        message.setChatroomId(chatroomId);
+        message.setSender(memberId);
+        message.setSenderRole(SenderRole.HUMAN);
+        message.setCreatedDateTime(sdf.format(new Date()));
+        if (StringUtils.isNotBlank(content)) {
+            message.setText(content);
+        }
+        final String recognitionText = speechToText(message);
+        message.setParsedText(recognitionText);
+
+        switch (chatroomType) {
+            case PROJECT, SITUATION -> {
+                message = messageRepository.save(message);
+            }
+            case FREE_TALK -> {
+                switch (action) {
+                    case EDIT -> { // 開立新分支並新增訊息 (編輯)
+                        System.out.println("開立新分支並新增訊息 (編輯)");
+                        int maxVersion = 1;
+                        List<Message> messages = messageRepository.findByPreviewMessageId(previewMessageId);
+
+                        maxVersion = messages.stream()
+                                .mapToInt(Message::getVersion)
+                                .max()
+                                .orElse(1);
+
+                        message.setPreviewMessageId(previewMessageId);
+                        message.setBranch(UUID.randomUUID().toString());
+                        message.setVersion(maxVersion + 1);
+                    }
+                    case CREATE -> { // 在該分支新增、在舊分支新增
+                        System.out.println("在該分支新增、在舊分支新增");
+                        final Message previewMessage = messageRepository.findById(previewMessageId).get();
+                        System.out.println("previewMessage = " + previewMessage);
+                        message.setPreviewMessageId(previewMessageId);
+                        message.setBranch(previewMessage.getBranch());
+                        message.setVersion(1);
+                    }
+                }
+
+                message = messageRepository.save(message);
+            }
+        }
+
+        return new ConversationChainDTO(true, List.of(Map.of(1, message)));
+    }
+
+
     /**
      * 使用者回應訊息，觸發 audio to text
      * @param chatDTO
@@ -314,192 +382,104 @@ public class ChatroomServiceImpl implements ChatroomService {
     public ConversationChainDTO reply(ChatDTO chatDTO, Member member) throws ExecutionException, InterruptedException, IOException {
 
         final String chatroomId = chatDTO.getChatroomId();
-        final String audioFileName = chatDTO.getAudioFileName();
-        final String imageFileName = chatDTO.getImageFileName();
-        final String content = chatDTO.getContent();    // 文字輸入
         final String lessonId = chatDTO.getLessonId();
         final ChatroomType chatroomType = chatDTO.getChatroomType();
         final String previewMessageId = chatDTO.getPreviewMessageId();
-        final ActionType action = chatDTO.getAction();
+        final String messageId = chatDTO.getMessageId();    // human msg id
 
+        final Message message = messageRepository.findById(messageId).get();
 
-        Message message = new Message();
-        if (StringUtils.isNotBlank(audioFileName)) {
-            message.setAudioName(audioFileName);
-            message.setSize(Files.size(Paths.get(configProperties.getAudioSavePath(), chatroomId, audioFileName)));
-        } else if (StringUtils.isNotBlank(imageFileName)) {
-            message.setImageName(imageFileName);
-            message.setSize(Files.size(Paths.get(configProperties.getPicSavePath(), chatroomId, imageFileName)));
-        }
-        message.setChatroomId(chatroomId);
-        message.setSender(member.getId());
-        message.setSenderRole(SenderRole.HUMAN);
-        message.setCreatedDateTime(sdf.format(new Date()));
-        if (StringUtils.isNotBlank(content)) {
-            message.setText(content);
-        }
+        final ChatRequestDTO chatRequestDTO = new ChatRequestDTO(
+                chatroomId,
+                member.getId(),
+                member.getPartnerId(),
+                messageId,
+                lessonId,
+                chatroomType,
+                message.getBranch(),
+                previewMessageId
+        );
 
-        switch (chatroomType) {
-            case PROJECT, SITUATION -> {
-                message = messageRepository.save(message);
+        Message partnerReplyMsg = partnerReply(chatRequestDTO);
 
-                final ChatRequestDTO chatRequestDTO = new ChatRequestDTO(
-                        chatroomId,
-                        member.getId(),
-                        member.getPartnerId(),
-                        message.getId(),
-                        lessonId,
-                        chatroomType,
-                        null,
-                        previewMessageId
-                );
-
-                if (StringUtils.isNotBlank(audioFileName)) {    // audio
-
-                    // speechToText 處理使用者的音訊檔案
-                    CompletableFuture<Void> future = speechToText(chatRequestDTO);
-                    future.get();
-
-                } else if (StringUtils.isNotBlank(content)) {   // text
-
-                    CompletableFuture<Void> grammarFuture = new CompletableFuture<>();
-                    CompletableFuture<Void> partnerFuture = new CompletableFuture<>();
-
-                    CompletableFuture.allOf(grammarFuture, partnerFuture).join();
-                }
-
-                final Message finalMsg = messageRepository.findById(message .getId()).get();
-                return new ConversationChainDTO(List.of(Map.of(1, finalMsg)));
-            }
-            case FREE_TALK -> {
-                int maxVersion = 1;
-                if (ActionType.EDIT.equals(action)) {   // 開立新分支並新增訊息 (編輯)
-                    List<Message> messages = messageRepository.findByPreviewMessageId(previewMessageId);
-
-                    maxVersion = messages.stream()
-                            .mapToInt(Message::getVersion)
-                            .max()
-                            .orElse(1);
-
-                    message.setPreviewMessageId(previewMessageId);
-                    message.setBranch(UUID.randomUUID().toString());
-                    message.setVersion(maxVersion + 1);
-                } else {    // 在該分支新增、在舊分支新增
-                    final Message previewMessage = messageRepository.findById(previewMessageId).get();
-
-                    message.setPreviewMessageId(previewMessageId);
-                    message.setBranch(previewMessage.getBranch());
-                    message.setVersion(1);
-                }
-                message = messageRepository.save(message);
-
-                final ChatRequestDTO chatRequestDTO = new ChatRequestDTO(
-                        chatroomId,
-                        member.getId(),
-                        member.getPartnerId(),
-                        message.getId(),
-                        lessonId,
-                        chatroomType,
-                        message.getBranch(),
-                        previewMessageId
-                );
-
-                if (StringUtils.isNotBlank(audioFileName)) {    // audio
-
-                    // speechToText 處理使用者的音訊檔案
-                    CompletableFuture<Void> future = speechToText(chatRequestDTO);
-                    future.get();
-
-                } else if (StringUtils.isNotBlank(content)) {   // text
-
-                    CompletableFuture<Void> partnerFuture = new CompletableFuture<>();
-
-                    CompletableFuture.allOf(partnerFuture).join();
-                }
-
-                final Message finalMsg = messageRepository.findById(message.getId()).get();
-                return new ConversationChainDTO(List.of(Map.of(maxVersion, finalMsg)));
-            }
-        }
-        return null;
+        return new ConversationChainDTO(false, List.of(Map.of(1, partnerReplyMsg)));
     }
 
 
     /**
      * audio to text 完成後，觸發文法校正、取得進階語句、夥伴回應、發音分析
-     * @param chatRequestDTO
+     * @param message
      * @return
      * @throws ExecutionException
      * @throws InterruptedException
      */
     @Override
-    public CompletableFuture<Void> speechToText(ChatRequestDTO chatRequestDTO) throws ExecutionException, InterruptedException, IOException {
+    public String speechToText(Message message) throws ExecutionException, InterruptedException, IOException {
         System.out.println("speechToText");
 
-        final String messageId = chatRequestDTO.getMessageId();
+        if (StringUtils.isBlank(message.getText())) {
+            return null;
+        }
+
+        String audioFilePath = Paths.get(configProperties.getAudioSavePath(), message.getChatroomId(), message.getAudioName()).toString();
+        String recognitionText = audioService.speechToText(audioFilePath);
+        message.setParsedText(recognitionText);
+        messageRepository.save(message);
+        System.out.println("speechToText儲存成功");
+        return recognitionText;
+    }
+
+    @Override
+    public CompletableFuture<Void> advancedCheck(ChatRequestDTO chatRequestDTO) throws IOException, ExecutionException, InterruptedException {
+
         final ChatroomType chatroomType = chatRequestDTO.getChatroomType();
+        final String messageId = chatRequestDTO.getMessageId();
         final String branch = chatRequestDTO.getBranch();
         final String previewMessageId = chatRequestDTO.getPreviewMessageId();
 
-        final Optional<Message> opt = messageRepository.findById(messageId);
-        if (opt.isPresent()) {
-            final Message message = opt.get();
+        final Message message = messageRepository.findById(messageId).get();
 
-            String audioFilePath = Paths.get(configProperties.getAudioSavePath(), message.getChatroomId(), message.getAudioName()).toString();
-            String recognitionText = audioService.speechToText(audioFilePath);
-            chatRequestDTO.setAudioFilePath(audioFilePath);
-            chatRequestDTO.setReferenceText(recognitionText);
-            message.setParsedText(recognitionText);
-            messageRepository.save(message);
-            System.out.println("speechToText儲存成功");
+        switch (chatroomType) {
+            case PROJECT -> {
+                System.out.println("執行 [文法校正、取得進階語句、夥伴回應、發音分析] 攜帶的參數：" + chatRequestDTO);
 
-            switch (chatroomType) {
-                case PROJECT -> {
-                    System.out.println("執行 [文法校正、取得進階語句、夥伴回應、發音分析] 攜帶的參數：" + chatRequestDTO);
+                // 呼叫廣播，執行文法校正、取得進階語句、夥伴回應、發音分析
+                CompletableFuture<Void> grammarFuture = new CompletableFuture<>();
+                CompletableFuture<Void> advancedFuture = new CompletableFuture<>();
+                CompletableFuture<Void> pronunciationFuture = new CompletableFuture<>();
 
-                    // 呼叫廣播，執行文法校正、取得進階語句、夥伴回應、發音分析
-                    CompletableFuture<Void> grammarFuture = new CompletableFuture<>();
-                    CompletableFuture<Void> advancedFuture = new CompletableFuture<>();
-                    CompletableFuture<Void> partnerFuture = new CompletableFuture<>();
-                    CompletableFuture<Void> pronunciationFuture = new CompletableFuture<>();
+                chattingFutures.put(messageId, new ArrayList<>(List.of(grammarFuture, advancedFuture, pronunciationFuture)));
 
-                    chattingFutures.put(messageId, new ArrayList<>(List.of(partnerFuture, grammarFuture, advancedFuture, pronunciationFuture)));
+                rabbitTemplate.convertAndSend(
+                        RabbitMQConfig.TALKYO_PROJECT_FANOUT_EXCHANGE,
+                        "",
+                        chatRequestDTO
+                );
 
-                    rabbitTemplate.convertAndSend(
-                            RabbitMQConfig.TALKYO_PROJECT_FANOUT_EXCHANGE,
-                            "",
-                            chatRequestDTO
-                    );
-
-                    // 等待所有 Queue 完成
-                    return CompletableFuture.allOf(partnerFuture, grammarFuture, advancedFuture, pronunciationFuture);
-                }
-                case SITUATION -> {
-                    System.out.println("執行 [文法校正、夥伴回應] 攜帶的參數：" + chatRequestDTO);
-
-                    CompletableFuture<Void> grammarFuture = new CompletableFuture<>();
-                    CompletableFuture<Void> partnerFuture = new CompletableFuture<>();
-
-                    chattingFutures.put(messageId, new ArrayList<>(List.of(partnerFuture, grammarFuture)));
-
-                    rabbitTemplate.convertAndSend(
-                            RabbitMQConfig.TALKYO_SITUATION_FANOUT_EXCHANGE,
-                            "",
-                            chatRequestDTO
-                    );
-
-                    // 等待所有 Queue 完成
-                    return CompletableFuture.allOf(partnerFuture, grammarFuture);
-                }
-                case FREE_TALK -> {
-                    message.setBranch(branch);
-                    message.setPreviewMessageId(previewMessageId);
-                    messageRepository.save(message);
-
-                    partnerReply(chatRequestDTO);
-                }
+                // 等待所有 Queue 完成
+                return CompletableFuture.allOf(grammarFuture, advancedFuture, pronunciationFuture);
             }
+            case SITUATION -> {
+                System.out.println("執行 [文法校正、夥伴回應] 攜帶的參數：" + chatRequestDTO);
 
+                CompletableFuture<Void> grammarFuture = new CompletableFuture<>();
+
+                chattingFutures.put(messageId, new ArrayList<>(List.of(grammarFuture)));
+
+                rabbitTemplate.convertAndSend(
+                        RabbitMQConfig.TALKYO_SITUATION_FANOUT_EXCHANGE,
+                        "",
+                        chatRequestDTO
+                );
+
+                // 等待所有 Queue 完成
+                return CompletableFuture.allOf(grammarFuture);
+            }
+            case FREE_TALK -> {
+                message.setBranch(branch);
+                message.setPreviewMessageId(previewMessageId);
+                messageRepository.save(message);
+            }
         }
         return CompletableFuture.completedFuture(null);
     }
@@ -625,8 +605,8 @@ public class ChatroomServiceImpl implements ChatroomService {
      * @throws IOException
      */
     @Override
-    @RabbitListener(queues = RabbitMQConfig.PARTNER_REPLY_QUEUE)
-    public void partnerReply(ChatRequestDTO chatRequestDTO) throws ExecutionException, InterruptedException, IOException {
+//    @RabbitListener(queues = RabbitMQConfig.PARTNER_REPLY_QUEUE)
+    public Message partnerReply(ChatRequestDTO chatRequestDTO) throws ExecutionException, InterruptedException, IOException {
         System.out.println("partnerReply");
 
         final String chatroomId = chatRequestDTO.getChatroomId();
@@ -639,6 +619,8 @@ public class ChatroomServiceImpl implements ChatroomService {
         final Scenario scenario = chatroomRepository.findById(chatroomId).get().getScenario();
 
         LLMChatResponseDTO llmChatResponseDTO = new LLMChatResponseDTO();
+
+        Message replyMsg = null;
 
         switch (chatroomType) {
             case PROJECT, SITUATION -> {
@@ -658,7 +640,7 @@ public class ChatroomServiceImpl implements ChatroomService {
                 message.setAudioName(fileName);
                 message.setSize(Files.size(Paths.get(configProperties.getAudioSavePath(), chatroomId, fileName)));
                 message.setParsedText(llmChatResponseDTO.getContent());
-                messageRepository.save(message);
+                replyMsg = messageRepository.save(message);
             }
             case FREE_TALK -> {
                 List<Message> historyMsgs = messageService.getHistoryMessages(messageId).stream()
@@ -683,12 +665,12 @@ public class ChatroomServiceImpl implements ChatroomService {
                 message.setVersion(1);
                 message.setBranch(branch);
                 message.setPreviewMessageId(messageId);
-                messageRepository.save(message);
+                replyMsg = messageRepository.save(message);
             }
         }
 
-
         System.out.println("partnerReply成功");
+        return replyMsg;
     }
 
 

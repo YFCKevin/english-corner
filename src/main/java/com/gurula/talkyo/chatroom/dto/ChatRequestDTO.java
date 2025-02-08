@@ -29,8 +29,8 @@ public class ChatRequestDTO {
         this.scenario = scenario;
     }
 
-    public ChatRequestDTO(String lessonId) {
-        this.lessonId = lessonId;
+    public ChatRequestDTO(String messageId) {
+        this.messageId = messageId;
     }
 
     public ChatRequestDTO(String messageId, String referenceText, String audioFilePath, String partnerId) {
@@ -38,6 +38,20 @@ public class ChatRequestDTO {
         this.referenceText = referenceText;
         this.audioFilePath = audioFilePath;
         this.partnerId = partnerId;
+    }
+
+    public ChatRequestDTO(String messageId, String branch, String previewMessageId, ChatroomType chatroomType) {
+        this.messageId = messageId;
+        this.chatroomType = chatroomType;
+        this.branch = branch;
+        this.previewMessageId = previewMessageId;
+    }
+
+    public ChatRequestDTO(String chatroomId, ChatroomType chatroomType, String branch, String previewMessageId) {
+        this.chatroomId = chatroomId;
+        this.chatroomType = chatroomType;
+        this.branch = branch;
+        this.previewMessageId = previewMessageId;
     }
 
     public ChatRequestDTO(String chatroomId, String memberId, String partnerId, String messageId, String lessonId, ChatroomType chatroomType, String branch, String previewMessageId) {
