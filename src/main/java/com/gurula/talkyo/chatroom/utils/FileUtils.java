@@ -63,4 +63,21 @@ public class FileUtils {
             throw new IOException("FFmpeg conversion was interrupted", e);
         }
     }
+
+
+    public static void deleteFile(Path filePath) throws IOException {
+        // 檢查檔案是否存在
+        if (Files.exists(filePath)) {
+            try {
+                // 刪除檔案
+                Files.delete(filePath);
+                System.out.println("File deleted successfully: " + filePath);
+            } catch (IOException e) {
+                System.err.println("Failed to delete file: " + filePath);
+                throw e;
+            }
+        } else {
+            System.out.println("File does not exist: " + filePath);
+        }
+    }
 }

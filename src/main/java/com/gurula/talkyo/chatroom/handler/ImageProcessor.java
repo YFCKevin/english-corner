@@ -20,9 +20,16 @@ public class ImageProcessor extends MessageTypeHandler{
     }
 
     @Override
-    protected String doHandler(ChatDTO chatDTO, ConfigProperties configProperties) throws IOException {
+    protected String doSaveHandler(ChatDTO chatDTO, ConfigProperties configProperties) throws IOException {
         Path uploadPath = Paths.get(configProperties.getPicSavePath(), chatDTO.getChatroomId());
         Path path = FileUtils.saveUploadedFile(chatDTO.getMultipartFile(), MessageType.IMAGE, uploadPath);
         return path.getFileName().toString();
+    }
+
+    @Override
+    protected void doDeleteHandler(ChatDTO chatDTO, ConfigProperties configProperties) throws IOException {
+        final String imageFileName = chatDTO.getImageFileName();
+        Path filePath = Paths.get(configProperties.getAudioSavePath(), chatDTO.getChatroomId(), imageFileName);
+        FileUtils.deleteFile(filePath);
     }
 }

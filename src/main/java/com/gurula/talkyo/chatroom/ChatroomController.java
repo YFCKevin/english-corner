@@ -21,10 +21,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
@@ -95,7 +94,11 @@ public class ChatroomController {
 
         logger.info("[{} {}] [chat init]", member.getName(), member.getId());
 
-        chatroomService.init(chatInitDTO, member);
+        final String chatroomId = chatInitDTO.getChatroomId();
+
+        final List<Map<Integer, Message>> messages = chatroomService.init(chatInitDTO, member);
+        String chatroomDestination = "/chatroom/" + chatroomId;
+        messagingTemplate.convertAndSend(chatroomDestination, new ConversationChainDTO(false, messages));
     }
 
 
@@ -139,7 +142,36 @@ public class ChatroomController {
         return ResponseEntity.ok(resultStatus);
     }
 
-    //TODO: 刪除檔案
+
+
+    @DeleteMapping("/chatroom/file/delete")
+    public ResponseEntity<?> fileDelete(@RequestBody FileRequestDTO fileRequestDTO) throws IOException {
+        final Member member = MemberContext.getMember();
+        logger.info("[{} {}] [file delete]", member.getName(), member.getId());
+
+        ResultStatus<String> resultStatus = new ResultStatus<>();
+
+        final MessageType messageType = fileRequestDTO.getMessageType();
+        ChatDTO chatDTO = new ChatDTO();
+        chatDTO.setChatroomId(fileRequestDTO.getChatroomId());
+        chatDTO.setMessageType(messageType);
+        if (MessageType.AUDIO.equals(messageType)) {
+            chatDTO.setAudioFileName(fileRequestDTO.getFileName());
+        } else if (MessageType.IMAGE.equals(messageType)) {
+            chatDTO.setImageFileName(fileRequestDTO.getFileName());
+        }
+
+        try {
+            handler.deleteFile(chatDTO, configProperties);
+            resultStatus.setCode("C000");
+            resultStatus.setMessage("成功");
+        } catch (Exception e) {
+            resultStatus.setCode("C999");
+            resultStatus.setMessage("失敗");
+        }
+
+        return ResponseEntity.ok(resultStatus);
+    }
 
 
     @MessageMapping("/chat")
@@ -178,6 +210,8 @@ public class ChatroomController {
                 chatDTO.setMessageId(messageId);
             }
             conversationChainDTO = chatroomService.reply(chatDTO, member);
+            MessageResponseDTO dto = new MessageResponseDTO();
+
             messagingTemplate.convertAndSend(chatroomDestination, conversationChainDTO);
         }
 

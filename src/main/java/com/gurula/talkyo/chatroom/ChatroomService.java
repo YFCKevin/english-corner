@@ -5,6 +5,7 @@ import com.gurula.talkyo.chatroom.dto.*;
 import com.gurula.talkyo.member.Member;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -31,7 +32,7 @@ public interface ChatroomService {
 
     String openingLine(ChatRequestDTO chatRequestDTO) throws IOException, ExecutionException, InterruptedException;
 
-    void init(ChatInitDTO chatInitDTO, Member member) throws IOException, ExecutionException, InterruptedException;
+    List<Map<Integer, Message>> init(ChatInitDTO chatInitDTO, Member member) throws IOException, ExecutionException, InterruptedException;
 
     void analyzePronunciation(ChatRequestDTO chatRequestDTO) throws InterruptedException, JsonProcessingException, ExecutionException;
 

@@ -16,13 +16,22 @@ public abstract class MessageTypeHandler {
     public String saveMultipartFile (ChatDTO chatDTO, ConfigProperties configProperties) throws IOException {
         String fileName = "";
         if (match(chatDTO.getMessageType())) {
-            fileName = doHandler(chatDTO, configProperties);
+            fileName = doSaveHandler(chatDTO, configProperties);
         } else if (next != null){
-            fileName = doHandler(chatDTO, configProperties);
+            fileName = doSaveHandler(chatDTO, configProperties);
         }
         return fileName;
     }
 
+    public void deleteFile (ChatDTO chatDTO, ConfigProperties configProperties) throws IOException {
+        if (match(chatDTO.getMessageType())) {
+            doDeleteHandler(chatDTO, configProperties);
+        } else if (next != null){
+            doDeleteHandler(chatDTO, configProperties);
+        }
+    }
+
     protected abstract boolean match(MessageType messageType);
-    protected abstract String doHandler(ChatDTO chatDTO, ConfigProperties configProperties) throws IOException;
+    protected abstract String doSaveHandler(ChatDTO chatDTO, ConfigProperties configProperties) throws IOException;
+    protected abstract void doDeleteHandler(ChatDTO chatDTO, ConfigProperties configProperties) throws IOException;
 }

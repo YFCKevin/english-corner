@@ -21,9 +21,16 @@ public class AudioProcessor extends MessageTypeHandler{
     }
 
     @Override
-    protected String doHandler(ChatDTO chatDTO, ConfigProperties configProperties) throws IOException {
+    protected String doSaveHandler(ChatDTO chatDTO, ConfigProperties configProperties) throws IOException {
         Path uploadPath = Paths.get(configProperties.getAudioSavePath(), chatDTO.getChatroomId());
         Path path = FileUtils.saveUploadedFile(chatDTO.getMultipartFile(), MessageType.AUDIO, uploadPath);
         return path.getFileName().toString();
+    }
+
+    @Override
+    protected void doDeleteHandler(ChatDTO chatDTO, ConfigProperties configProperties) throws IOException {
+        final String audioFileName = chatDTO.getAudioFileName();
+        Path filePath = Paths.get(configProperties.getAudioSavePath(), chatDTO.getChatroomId(), audioFileName);
+        FileUtils.deleteFile(filePath);
     }
 }

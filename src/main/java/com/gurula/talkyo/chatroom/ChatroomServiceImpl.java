@@ -130,7 +130,7 @@ public class ChatroomServiceImpl implements ChatroomService {
 
     @Transactional
     @Override
-    public void init(ChatInitDTO chatInitDTO, Member member) throws IOException, ExecutionException, InterruptedException {
+    public List<Map<Integer, Message>> init(ChatInitDTO chatInitDTO, Member member) throws IOException, ExecutionException, InterruptedException {
 
         final String chatroomId = chatInitDTO.getChatroomId();
         final String courseId = chatInitDTO.getCourseId();
@@ -163,9 +163,8 @@ public class ChatroomServiceImpl implements ChatroomService {
 
             System.out.println("聊天記錄====> " + historyMsgs);
 
-            String chatroomDestination = "/chatroom/" + chatroomId;
-            messagingTemplate.convertAndSend(chatroomDestination, new ConversationChainDTO(false, historyMsgs));
-        } else {
+            return historyMsgs;
+        } else {    // 無聊天記錄，產生一則開場白
             String openingLineMessage = "";
             switch (chatroomType) {
                 case PROJECT -> {
@@ -210,10 +209,13 @@ public class ChatroomServiceImpl implements ChatroomService {
             }
 
             // show opening line
-            messageRepository.findById(openingLineMessage).ifPresent(finalMessage -> {
-                String chatroomDestination = "/chatroom/" + chatroomId;
-                messagingTemplate.convertAndSend(chatroomDestination, new ConversationChainDTO(false, List.of(Map.of(1, finalMessage))));
-            });
+            final Optional<Message> opt = messageRepository.findById(openingLineMessage);
+            if (opt.isPresent()) {
+                final Message finalMessage = opt.get();
+                return List.of(Map.of(1, finalMessage));
+            } else {
+                return List.of(Map.of(1, new Message()));
+            }
         }
 
     }
