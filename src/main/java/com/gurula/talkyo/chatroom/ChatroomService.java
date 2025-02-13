@@ -50,4 +50,6 @@ public interface ChatroomService {
     LearningReport getLearningReport(String chatroomId);
 
     LLMChatResponseDTO genGuidingSentence(String messageId) throws JsonProcessingException;
+
+    List<ScenarioDTO> getScenarios() throws IOException;
 }

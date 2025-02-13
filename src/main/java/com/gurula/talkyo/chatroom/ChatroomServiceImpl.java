@@ -9,6 +9,7 @@ import com.gurula.talkyo.chatroom.enums.ChatroomType;
 import com.gurula.talkyo.chatroom.enums.RoomStatus;
 import com.gurula.talkyo.chatroom.enums.SenderRole;
 import com.gurula.talkyo.chatroom.utils.AudioUtil;
+import com.gurula.talkyo.chatroom.utils.ConfigurationUtil;
 import com.gurula.talkyo.config.RabbitMQConfig;
 import com.gurula.talkyo.course.Lesson;
 import com.gurula.talkyo.course.LessonRepository;
@@ -22,6 +23,8 @@ import com.gurula.talkyo.openai.dto.LLMChatResponseDTO;
 import com.gurula.talkyo.properties.ConfigProperties;
 import com.gurula.talkyo.record.LearningRecordService;
 import com.gurula.talkyo.record.dto.RecordDTO;
+import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.TypeRef;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -30,6 +33,7 @@ import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -880,5 +884,14 @@ public class ChatroomServiceImpl implements ChatroomService {
             }
         }
         return new LLMChatResponseDTO();
+    }
+
+    @Override
+    public List<ScenarioDTO> getScenarios() throws IOException {
+        ConfigurationUtil.Configuration();
+        File file = new File(configProperties.getJsonPath() + "scenario.json");
+        TypeRef<List<ScenarioDTO>> typeRefCourse = new TypeRef<>() {
+        };
+        return JsonPath.parse(file).read("$", typeRefCourse);
     }
 }

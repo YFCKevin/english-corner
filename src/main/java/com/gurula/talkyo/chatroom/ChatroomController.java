@@ -13,7 +13,6 @@ import com.gurula.talkyo.member.MemberContext;
 import com.gurula.talkyo.openai.dto.LLMChatResponseDTO;
 import com.gurula.talkyo.properties.ConfigProperties;
 import com.gurula.talkyo.record.LearningRecordService;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +23,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -397,6 +397,23 @@ public class ChatroomController {
         resultStatus.setCode("C000");
         resultStatus.setMessage("成功");
         resultStatus.setData(llmChatResponseDTO);
+        return ResponseEntity.ok(resultStatus);
+    }
+
+
+
+    @GetMapping("/scenario-list")
+    public ResponseEntity<?> scenarioList () throws IOException {
+        final Member member = MemberContext.getMember();
+        logger.info("[{} {}] [scenario list]", member.getName(), member.getId());
+
+        ResultStatus<List<ScenarioDTO>> resultStatus = new ResultStatus<>();
+
+        List<ScenarioDTO> scenarioDTOList = chatroomService.getScenarios();
+
+        resultStatus.setCode("C000");
+        resultStatus.setMessage("成功");
+        resultStatus.setData(scenarioDTOList);
         return ResponseEntity.ok(resultStatus);
     }
 }

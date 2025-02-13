@@ -1,0 +1,42 @@
+[
+  {
+    "unitNumber": "S0001",
+    "coverName": "S0001.jpeg",
+    "category": "WORKPLACE",
+    "zhTitle": "請假",
+    "enTitle": "Requesting Leave",
+    "humanRole": "員工",
+    "partnerRole": "領導",
+    "subject": "員工因為一些事情向老闆請假，需要說明請假原因以及時間。"
+  },
+  {
+    "unitNumber": "S0002",
+    "coverName": "S0002.jpeg",
+    "category": "WORKPLACE",
+    "zhTitle": "績效評估",
+    "enTitle": "Performance Evaluation",
+    "humanRole": "員工",
+    "partnerRole": "領導",
+    "subject": "領導告知員工上個季度的績效表現很好，並給予鼓勵。"
+  },
+  {
+    "unitNumber": "S0003",
+    "coverName": "S0003.jpeg",
+    "category": "WORKPLACE",
+    "zhTitle": "方案講解",
+    "enTitle": "Solution Explanation",
+    "humanRole": "職員",
+    "partnerRole": "領導",
+    "subject": "一位職員在一個方案溝通會議上，向領導講解自己的產品或者服務方案。"
+  },
+  {
+    "unitNumber": "S0004",
+    "coverName": "S0004.jpeg",
+    "category": "WORKPLACE",
+    "zhTitle": "安排會議",
+    "enTitle": "Scheduling a Meeting",
+    "humanRole": "職員",
+    "partnerRole": "領導",
+    "subject": "領導告知職員明天要進行一場會議，職員需要詢問會議主題、時間、參會人等信息，完成會議預定。"
+  }
+]
