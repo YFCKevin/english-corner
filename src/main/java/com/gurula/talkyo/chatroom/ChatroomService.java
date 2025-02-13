@@ -3,6 +3,7 @@ package com.gurula.talkyo.chatroom;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.gurula.talkyo.chatroom.dto.*;
 import com.gurula.talkyo.member.Member;
+import com.gurula.talkyo.openai.dto.LLMChatResponseDTO;
 
 import java.io.IOException;
 import java.util.List;
@@ -47,4 +48,6 @@ public interface ChatroomService {
     ConversationChainDTO handleHumanMsg(ChatDTO chatDTO, Member member) throws IOException, ExecutionException, InterruptedException;
 
     LearningReport getLearningReport(String chatroomId);
+
+    LLMChatResponseDTO genGuidingSentence(String messageId) throws JsonProcessingException;
 }

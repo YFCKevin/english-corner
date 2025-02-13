@@ -1,5 +1,6 @@
 package com.gurula.talkyo.chatroom;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.gurula.talkyo.chatroom.dto.*;
 import com.gurula.talkyo.chatroom.enums.ChatroomType;
 import com.gurula.talkyo.chatroom.enums.MessageType;
@@ -9,6 +10,7 @@ import com.gurula.talkyo.course.LessonRepository;
 import com.gurula.talkyo.exception.ResultStatus;
 import com.gurula.talkyo.member.Member;
 import com.gurula.talkyo.member.MemberContext;
+import com.gurula.talkyo.openai.dto.LLMChatResponseDTO;
 import com.gurula.talkyo.properties.ConfigProperties;
 import com.gurula.talkyo.record.LearningRecordService;
 import org.apache.commons.lang3.StringUtils;
@@ -61,6 +63,12 @@ public class ChatroomController {
         this.lessonRepository = lessonRepository;
     }
 
+
+    /**
+     * 開啟新的聊天室
+     * @param chatroomDTO
+     * @return
+     */
     @PostMapping("/chatroom/createChatroom")
     public ResponseEntity<?> createChatroom (@RequestBody ChatroomDTO chatroomDTO){
         final Member member = MemberContext.getMember();
@@ -148,7 +156,12 @@ public class ChatroomController {
     }
 
 
-
+    /**
+     * 刪除上傳的檔案
+     * @param fileRequestDTO
+     * @return
+     * @throws IOException
+     */
     @DeleteMapping("/chatroom/file/delete")
     public ResponseEntity<?> fileDelete(@RequestBody FileRequestDTO fileRequestDTO) throws IOException {
         final Member member = MemberContext.getMember();
@@ -179,6 +192,14 @@ public class ChatroomController {
     }
 
 
+    /**
+     * 對話
+     * @param chatDTO
+     * @param headerAccessor
+     * @throws ExecutionException
+     * @throws InterruptedException
+     * @throws IOException
+     */
     @MessageMapping("/chat")
     public void chat(@RequestBody ChatDTO chatDTO, SimpMessageHeaderAccessor headerAccessor) throws ExecutionException, InterruptedException, IOException {
         Map<String, Object> sessionAttributes = headerAccessor.getSessionAttributes();
@@ -223,6 +244,14 @@ public class ChatroomController {
     }
 
 
+    /**
+     * 產生進階語句
+     * @param messageId
+     * @return
+     * @throws IOException
+     * @throws ExecutionException
+     * @throws InterruptedException
+     */
     @GetMapping("/chatroom/advancedCheck/{messageId}")
     public ResponseEntity<?> advancedCheck(@PathVariable String messageId) throws IOException, ExecutionException, InterruptedException {
         final Member member = MemberContext.getMember();
@@ -249,6 +278,13 @@ public class ChatroomController {
     }
 
 
+    /**
+     * 離開聊天室
+     * @param chatDTO
+     * @throws IOException
+     * @throws ExecutionException
+     * @throws InterruptedException
+     */
     @PostMapping("/chatroom/leave")
     public void leave (@RequestBody ChatDTO chatDTO) throws IOException, ExecutionException, InterruptedException {
         final Member member = MemberContext.getMember();
@@ -288,6 +324,12 @@ public class ChatroomController {
     }
 
 
+    /**
+     * 取得個人學習報告
+     * @param chatroomId
+     * @param lessonId
+     * @return
+     */
     @GetMapping("/learningReport/{chatroomId}/{lessonId}")
     public ResponseEntity<?> learningReport (@PathVariable String chatroomId, @PathVariable String lessonId) {
         final Member member = MemberContext.getMember();
@@ -314,7 +356,11 @@ public class ChatroomController {
     }
 
 
-
+    /**
+     * 預覽情境
+     * @param lessonId
+     * @return
+     */
     @GetMapping("/previewLesson/{lessonId}")
     public ResponseEntity<?> previewLesson(@PathVariable String lessonId){
         final Member member = MemberContext.getMember();
@@ -329,6 +375,28 @@ public class ChatroomController {
             resultStatus.setMessage("成功");
             resultStatus.setData(lesson);
         }
+        return ResponseEntity.ok(resultStatus);
+    }
+
+
+    /**
+     * 產生引導提示句子
+     * @param messageId
+     * @return
+     * @throws JsonProcessingException
+     */
+    @GetMapping("/guidingSentence/{messageId}")
+    public ResponseEntity<?> guidingSentence(@PathVariable String messageId) throws JsonProcessingException {
+        final Member member = MemberContext.getMember();
+        logger.info("[{} {}] [guiding sentence]", member.getName(), member.getId());
+
+        ResultStatus<LLMChatResponseDTO> resultStatus = new ResultStatus<>();
+
+        LLMChatResponseDTO llmChatResponseDTO = chatroomService.genGuidingSentence(messageId);
+
+        resultStatus.setCode("C000");
+        resultStatus.setMessage("成功");
+        resultStatus.setData(llmChatResponseDTO);
         return ResponseEntity.ok(resultStatus);
     }
 }

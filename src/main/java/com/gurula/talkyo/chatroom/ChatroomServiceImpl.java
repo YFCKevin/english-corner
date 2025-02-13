@@ -26,7 +26,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -368,17 +367,6 @@ public class ChatroomServiceImpl implements ChatroomService {
         }
 
         return new ConversationChainDTO(true, List.of(Map.of(1, message)));
-    }
-
-    @Override
-    public LearningReport getLearningReport(String chatroomId) {
-        final Optional<Chatroom> opt = chatroomRepository.findById(chatroomId);
-        if (opt.isPresent()) {
-            final Chatroom chatroom = opt.get();
-            return chatroom.getReport();
-        } else {
-            return new LearningReport();
-        }
     }
 
 
@@ -858,5 +846,39 @@ public class ChatroomServiceImpl implements ChatroomService {
         final Feedback feedback = llmService.feedback(dialogueText);
         System.out.println("feedback完成");
         return feedback;
+    }
+
+
+    @Override
+    public LearningReport getLearningReport(String chatroomId) {
+        final Optional<Chatroom> opt = chatroomRepository.findById(chatroomId);
+        if (opt.isPresent()) {
+            final Chatroom chatroom = opt.get();
+            return chatroom.getReport();
+        } else {
+            return new LearningReport();
+        }
+    }
+
+
+    @Override
+    public LLMChatResponseDTO genGuidingSentence(String messageId) throws JsonProcessingException {
+        final Optional<Message> msgOpt = messageRepository.findById(messageId);
+        if (msgOpt.isPresent()) {
+            final Message message = msgOpt.get();
+            final String chatroomId = message.getChatroomId();
+            final String partnerAskMsg = message.getParsedText();
+            final Optional<Chatroom> chatroomOpt = chatroomRepository.findById(chatroomId);
+            if (chatroomOpt.isPresent()) {
+                final Chatroom chatroom = chatroomOpt.get();
+                final Scenario scenario = chatroom.getScenario();
+                LLMChatRequestDTO llmChatRequestDTO = new LLMChatRequestDTO(
+                        partnerAskMsg,
+                        scenario
+                );
+                return llmService.replyMsg(llmChatRequestDTO);
+            }
+        }
+        return new LLMChatResponseDTO();
     }
 }
