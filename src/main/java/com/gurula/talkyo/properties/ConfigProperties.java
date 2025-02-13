@@ -29,8 +29,6 @@ public class ConfigProperties {
     private String tokenUri;
     @Value("${spring.security.oauth2.client.provider.line.user-info-uri}")
     private String userInfoUri;
-    @Value("${config.geminiApiKey}")
-    private String geminiApiKey;
     @Value("${config.cloudTranslateApiKey}")
     private String cloudTranslateApiKey;
 
@@ -80,10 +78,6 @@ public class ConfigProperties {
 
     public String getAudioShowPath() {
         return audioShowPath;
-    }
-
-    public String getGeminiApiKey() {
-        return geminiApiKey;
     }
 
     public String getCloudTranslateApiKey() {
@@ -136,10 +130,6 @@ public class ConfigProperties {
 
     public void setUserInfoUri(String userInfoUri) {
         this.userInfoUri = userInfoUri;
-    }
-
-    public void setGeminiApiKey(String geminiApiKey) {
-        this.geminiApiKey = geminiApiKey;
     }
 
     public void setCloudTranslateApiKey(String cloudTranslateApiKey) {
