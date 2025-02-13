@@ -38,6 +38,7 @@ public class Message {
 
     // image
     private String imageName;
+    private String imageDesc;
 
     // audio
     private String audioName;
@@ -194,6 +195,14 @@ public class Message {
 
     public void setVersion(int version) {
         this.version = version;
+    }
+
+    public String getImageDesc() {
+        return imageDesc;
+    }
+
+    public void setImageDesc(String imageDesc) {
+        this.imageDesc = imageDesc;
     }
 
     @Override

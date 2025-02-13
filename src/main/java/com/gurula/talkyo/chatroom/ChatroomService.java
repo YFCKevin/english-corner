@@ -19,7 +19,7 @@ public interface ChatroomService {
 
     void genLearningReport(String chatroomId) throws IOException, ExecutionException, InterruptedException;
 
-    String speechToText(Message message) throws ExecutionException, InterruptedException, IOException;
+    String speechToText(SpeechToTextDTO speechToTextDTO) throws ExecutionException, InterruptedException, IOException;
 
     CompletableFuture<Void> advancedCheck(ChatRequestDTO chatRequestDTO) throws IOException, ExecutionException, InterruptedException;
 

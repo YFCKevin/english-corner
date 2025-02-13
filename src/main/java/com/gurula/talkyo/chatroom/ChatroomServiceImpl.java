@@ -14,6 +14,7 @@ import com.gurula.talkyo.config.RabbitMQConfig;
 import com.gurula.talkyo.course.Lesson;
 import com.gurula.talkyo.course.LessonRepository;
 import com.gurula.talkyo.course.Sentence;
+import com.gurula.talkyo.gemini.ImageAnalysisService;
 import com.gurula.talkyo.member.Member;
 import com.gurula.talkyo.openai.LLMService;
 import com.gurula.talkyo.openai.dto.AdvanceSentencesResponseDTO;
@@ -29,7 +30,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -54,13 +54,13 @@ public class ChatroomServiceImpl implements ChatroomService {
     private final LLMService llmService;
     private final RabbitTemplate rabbitTemplate;
     private final LessonRepository lessonRepository;
-    private final SimpMessageSendingOperations messagingTemplate;
+    private final ImageAnalysisService imageAnalysisService;
     private final LearningRecordService learningRecordService;
     private final MessageService messageService;
     private final Map<String, List<CompletableFuture<Void>>> chattingFutures = new ConcurrentHashMap<>();
 
     public ChatroomServiceImpl(ChatroomRepository chatroomRepository, @Qualifier("sdf") SimpleDateFormat sdf,
-                               ConversationRepository conversationRepository, MessageRepository messageRepository, AudioService audioService, ConfigProperties configProperties, LLMService llmService, RabbitTemplate rabbitTemplate, LessonRepository lessonRepository, SimpMessageSendingOperations messagingTemplate, LearningRecordService learningRecordService, MessageService messageService) {
+                               ConversationRepository conversationRepository, MessageRepository messageRepository, AudioService audioService, ConfigProperties configProperties, LLMService llmService, RabbitTemplate rabbitTemplate, LessonRepository lessonRepository, ImageAnalysisService imageAnalysisService, LearningRecordService learningRecordService, MessageService messageService) {
         this.chatroomRepository = chatroomRepository;
         this.sdf = sdf;
         this.conversationRepository = conversationRepository;
@@ -70,7 +70,7 @@ public class ChatroomServiceImpl implements ChatroomService {
         this.llmService = llmService;
         this.rabbitTemplate = rabbitTemplate;
         this.lessonRepository = lessonRepository;
-        this.messagingTemplate = messagingTemplate;
+        this.imageAnalysisService = imageAnalysisService;
         this.learningRecordService = learningRecordService;
         this.messageService = messageService;
     }
@@ -319,22 +319,58 @@ public class ChatroomServiceImpl implements ChatroomService {
         final ActionType action = chatDTO.getAction();
 
         Message message = new Message();
+
+        CompletableFuture<String> speechToTextFuture = null;
+        CompletableFuture<String> imageAnalysisFuture = null;
+
         if (StringUtils.isNotBlank(audioFileName)) {
             message.setAudioName(audioFileName);
             message.setSize(Files.size(Paths.get(configProperties.getAudioSavePath(), chatroomId, audioFileName)));
-        } else if (StringUtils.isNotBlank(imageFileName)) {
+
+            SpeechToTextDTO speechToTextDTO = new SpeechToTextDTO(
+                    chatroomId,
+                    content,
+                    audioFileName
+            );
+            speechToTextFuture = CompletableFuture.supplyAsync(() -> {
+                try {
+                    return speechToText(speechToTextDTO);
+                } catch (ExecutionException | IOException | InterruptedException e) {
+                    e.printStackTrace();
+                    throw new RuntimeException(e);
+                }
+            });
+        }
+
+        if (StringUtils.isNotBlank(imageFileName)) {
             message.setImageName(imageFileName);
             message.setSize(Files.size(Paths.get(configProperties.getPicSavePath(), chatroomId, imageFileName)));
+
+            imageAnalysisFuture = CompletableFuture.supplyAsync(() -> {
+                try {
+                    return imageAnalysisService.imageAnalysis(imageFileName, chatDTO.getContent());
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    throw new RuntimeException(e);
+                }
+            });
         }
+
+        if (speechToTextFuture != null) {
+            message.setParsedText(speechToTextFuture.join());
+        }
+        if (imageAnalysisFuture != null) {
+            message.setImageDesc(imageAnalysisFuture.join());
+        }
+
+        if (StringUtils.isNotBlank(content)) {
+            message.setText(content);
+        }
+
         message.setChatroomId(chatroomId);
         message.setSender(memberId);
         message.setSenderRole(SenderRole.HUMAN);
         message.setCreatedDateTime(sdf.format(new Date()));
-        if (StringUtils.isNotBlank(content)) {
-            message.setText(content);
-        }
-        final String recognitionText = speechToText(message);
-        message.setParsedText(recognitionText);
 
         switch (chatroomType) {
             case PROJECT, SITUATION -> {
@@ -359,7 +395,6 @@ public class ChatroomServiceImpl implements ChatroomService {
                     case CREATE -> { // 在該分支新增、在舊分支新增
                         System.out.println("在該分支新增、在舊分支新增");
                         final Message previewMessage = messageRepository.findById(previewMessageId).get();
-                        System.out.println("previewMessage = " + previewMessage);
                         message.setPreviewMessageId(previewMessageId);
                         message.setBranch(previewMessage.getBranch());
                         message.setVersion(1);
@@ -413,23 +448,20 @@ public class ChatroomServiceImpl implements ChatroomService {
 
     /**
      * audio to text 完成後，觸發文法校正、取得進階語句、夥伴回應、發音分析
-     * @param message
      * @return
      * @throws ExecutionException
      * @throws InterruptedException
      */
     @Override
-    public String speechToText(Message message) throws ExecutionException, InterruptedException, IOException {
+    public String speechToText(SpeechToTextDTO speechToTextDTO) throws ExecutionException, InterruptedException, IOException {
         System.out.println("speechToText");
 
-        if (StringUtils.isBlank(message.getText())) {
+        if (StringUtils.isBlank(speechToTextDTO.getText())) {
             return null;
         }
 
-        String audioFilePath = Paths.get(configProperties.getAudioSavePath(), message.getChatroomId(), message.getAudioName()).toString();
+        String audioFilePath = Paths.get(configProperties.getAudioSavePath(), speechToTextDTO.getChatroomId(), speechToTextDTO.getAudioName()).toString();
         String recognitionText = audioService.speechToText(audioFilePath);
-        message.setParsedText(recognitionText);
-        messageRepository.save(message);
         System.out.println("speechToText儲存成功");
         return recognitionText;
     }
@@ -610,7 +642,6 @@ public class ChatroomServiceImpl implements ChatroomService {
      * @throws IOException
      */
     @Override
-//    @RabbitListener(queues = RabbitMQConfig.PARTNER_REPLY_QUEUE)
     public Message partnerReply(ChatRequestDTO chatRequestDTO) throws ExecutionException, InterruptedException, IOException {
         System.out.println("partnerReply");
 

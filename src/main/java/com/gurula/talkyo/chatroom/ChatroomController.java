@@ -23,7 +23,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -45,12 +44,13 @@ public class ChatroomController {
     private final MessageRepository messageRepository;
     private final ChatroomRepository chatroomRepository;
     private final LessonRepository lessonRepository;
+    private final MessageService messageService;
 
     public ChatroomController(ChatroomService chatroomService, SimpMessageSendingOperations messagingTemplate, ConfigProperties configProperties, MessageTypeHandler handler, LearningRecordService learningRecordService,
                               ConversationRepository conversationRepository, SimpleDateFormat sdf,
                               MessageRepository messageRepository,
                               ChatroomRepository chatroomRepository,
-                              LessonRepository lessonRepository) {
+                              LessonRepository lessonRepository, MessageService messageService) {
         this.chatroomService = chatroomService;
         this.messagingTemplate = messagingTemplate;
         this.configProperties = configProperties;
@@ -61,6 +61,7 @@ public class ChatroomController {
         this.messageRepository = messageRepository;
         this.chatroomRepository = chatroomRepository;
         this.lessonRepository = lessonRepository;
+        this.messageService = messageService;
     }
 
 
@@ -69,8 +70,8 @@ public class ChatroomController {
      * @param chatroomDTO
      * @return
      */
-    @PostMapping("/chatroom/createChatroom")
-    public ResponseEntity<?> createChatroom (@RequestBody ChatroomDTO chatroomDTO){
+    @PostMapping("/chatroom/create")
+    public ResponseEntity<?> create (@RequestBody ChatroomDTO chatroomDTO){
         final Member member = MemberContext.getMember();
         logger.info("[{} {}] [createChatroom]", member.getName(), member.getId());
 
@@ -213,7 +214,6 @@ public class ChatroomController {
         logger.info("[{} {}] [chat]", member.getName(), member.getId());
 
         final String chatroomId = chatDTO.getChatroomId();
-        final ChatroomType chatroomType = chatDTO.getChatroomType();
 
         ConversationChainDTO conversationChainDTO = null;
         String chatroomDestination = "/chatroom/" + chatroomId;
@@ -236,7 +236,6 @@ public class ChatroomController {
                 chatDTO.setMessageId(messageId);
             }
             conversationChainDTO = chatroomService.reply(chatDTO, member);
-            MessageResponseDTO dto = new MessageResponseDTO();
 
             messagingTemplate.convertAndSend(chatroomDestination, conversationChainDTO);
         }
@@ -330,7 +329,7 @@ public class ChatroomController {
      * @param lessonId
      * @return
      */
-    @GetMapping("/learningReport/{chatroomId}/{lessonId}")
+    @GetMapping("/chatroom/learningReport/{chatroomId}/{lessonId}")
     public ResponseEntity<?> learningReport (@PathVariable String chatroomId, @PathVariable String lessonId) {
         final Member member = MemberContext.getMember();
         logger.info("[{} {}] [learningReport]", member.getName(), member.getId());
@@ -361,7 +360,7 @@ public class ChatroomController {
      * @param lessonId
      * @return
      */
-    @GetMapping("/previewLesson/{lessonId}")
+    @GetMapping("/chatroom/previewLesson/{lessonId}")
     public ResponseEntity<?> previewLesson(@PathVariable String lessonId){
         final Member member = MemberContext.getMember();
         logger.info("[{} {}] [previewLesson]", member.getName(), member.getId());
@@ -385,7 +384,7 @@ public class ChatroomController {
      * @return
      * @throws JsonProcessingException
      */
-    @GetMapping("/guidingSentence/{messageId}")
+    @GetMapping("/chatroom/guidingSentence/{messageId}")
     public ResponseEntity<?> guidingSentence(@PathVariable String messageId) throws JsonProcessingException {
         final Member member = MemberContext.getMember();
         logger.info("[{} {}] [guiding sentence]", member.getName(), member.getId());
@@ -402,7 +401,7 @@ public class ChatroomController {
 
 
 
-    @GetMapping("/scenario-list")
+    @GetMapping("/chatroom/scenario-list")
     public ResponseEntity<?> scenarioList () throws IOException {
         final Member member = MemberContext.getMember();
         logger.info("[{} {}] [scenario list]", member.getName(), member.getId());
@@ -414,6 +413,22 @@ public class ChatroomController {
         resultStatus.setCode("C000");
         resultStatus.setMessage("成功");
         resultStatus.setData(scenarioDTOList);
+        return ResponseEntity.ok(resultStatus);
+    }
+
+
+    @GetMapping("/chatroom/switchMsg/{branch}")
+    public ResponseEntity<?> switchMsg (@PathVariable String branch){
+        final Member member = MemberContext.getMember();
+        logger.info("[{} {}] [switch message]", member.getName(), member.getId());
+
+        ResultStatus<List<Map<Integer, Message>>> resultStatus = new ResultStatus<>();
+
+        final List<Map<Integer, Message>> historyMsgs = messageService.getHistoryMessageWhenSwitchBranch(branch);
+
+        resultStatus.setCode("C000");
+        resultStatus.setMessage("成功");
+        resultStatus.setData(historyMsgs);
         return ResponseEntity.ok(resultStatus);
     }
 }

@@ -73,6 +73,13 @@ azure:
         key: ${azure-text-analytics-api-key}
       endpoint: ${azure-text-analytics-endpoint}
 
+gemini:
+  ai:
+    image:
+      analytics:
+        key: ${gemini-image-analytics-api-key}
+      url: ${gemini-image-analytics-url}
+
 config:
   globalDomain: https://gurula.cc/talkyo/
   audioSavePath: /opt/talkyo/audio/
