@@ -1,5 +1,6 @@
 package com.gurula.talkyo.member;
 
+import com.gurula.talkyo.member.dto.LearningPlanDTO;
 import com.gurula.talkyo.properties.ConfigProperties;
 import com.gurula.talkyo.exception.ResultStatus;
 import org.slf4j.Logger;
@@ -7,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Objects;
 
 @RestController
@@ -37,6 +39,21 @@ public class MemberController {
         ResultStatus<Void> result = memberService.choosePartner(id);
         resultStatus.setCode(result.getCode());
         resultStatus.setMessage(result.getMessage());
+        return ResponseEntity.ok(resultStatus);
+    }
+
+
+    @GetMapping("/projects")
+    public ResponseEntity<?> projects (){
+        final Member member = MemberContext.getMember();
+        logger.info("[{} {}] [projects]", member.getName(), member.getId());
+
+        List<LearningPlanDTO> learningPlanDTOList = memberService.getMyLearningPlans(member);
+
+        ResultStatus<List<LearningPlanDTO>> resultStatus = new ResultStatus<>();
+        resultStatus.setCode("C000");
+        resultStatus.setMessage("成功");
+        resultStatus.setData(learningPlanDTOList);
         return ResponseEntity.ok(resultStatus);
     }
 

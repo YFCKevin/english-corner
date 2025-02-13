@@ -1,5 +1,6 @@
 package com.gurula.talkyo.member;
 
+import com.gurula.talkyo.course.enums.Level;
 import com.gurula.talkyo.member.enums.Provider;
 import com.gurula.talkyo.member.enums.Role;
 import org.springframework.data.annotation.Id;
@@ -14,6 +15,7 @@ public class Member {
     private String name;
     private String email;
     private Role role;
+    private Level chosenLevel;
     private String partnerId;
     private String creationDate;
     private Provider provider;
@@ -106,5 +108,13 @@ public class Member {
 
     public void setPartnerId(String partnerId) {
         this.partnerId = partnerId;
+    }
+
+    public Level getChosenLevel() {
+        return chosenLevel;
+    }
+
+    public void setChosenLevel(Level chosenLevel) {
+        this.chosenLevel = chosenLevel;
     }
 }

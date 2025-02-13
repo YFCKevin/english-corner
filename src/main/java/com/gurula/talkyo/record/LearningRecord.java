@@ -18,9 +18,9 @@ public class LearningRecord {
     }
 
     public LearningRecord(RecordDTO recordDTO, boolean finish, String memberId) {
-        this.courseId = recordDTO.getCourseId();
+        this.courseId = (recordDTO.getCourseId() != null) ? recordDTO.getCourseId() : null;
         this.chatroomId = recordDTO.getChatroomId();
-        this.lessonId = recordDTO.getLessonId();
+        this.lessonId = (recordDTO.getLessonId() != null) ? recordDTO.getLessonId() : null;
         this.finish = finish;
         this.memberId = memberId;
     }

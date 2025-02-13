@@ -8,6 +8,10 @@ public class RecordDTO {
     public RecordDTO() {
     }
 
+    public RecordDTO(String chatroomId) {
+        this.chatroomId = chatroomId;
+    }
+
     public RecordDTO(String courseId, String lessonId, String chatroomId) {
         this.courseId = courseId;
         this.lessonId = lessonId;
