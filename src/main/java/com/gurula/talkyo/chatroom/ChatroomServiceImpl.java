@@ -370,6 +370,17 @@ public class ChatroomServiceImpl implements ChatroomService {
         return new ConversationChainDTO(true, List.of(Map.of(1, message)));
     }
 
+    @Override
+    public LearningReport getLearningReport(String chatroomId) {
+        final Optional<Chatroom> opt = chatroomRepository.findById(chatroomId);
+        if (opt.isPresent()) {
+            final Chatroom chatroom = opt.get();
+            return chatroom.getReport();
+        } else {
+            return new LearningReport();
+        }
+    }
+
 
     /**
      * 使用者回應訊息，觸發 audio to text

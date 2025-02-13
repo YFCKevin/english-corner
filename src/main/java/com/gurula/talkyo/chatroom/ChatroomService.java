@@ -45,4 +45,6 @@ public interface ChatroomService {
     void close(String chatroomId);
 
     ConversationChainDTO handleHumanMsg(ChatDTO chatDTO, Member member) throws IOException, ExecutionException, InterruptedException;
+
+    LearningReport getLearningReport(String chatroomId);
 }

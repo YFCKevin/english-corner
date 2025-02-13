@@ -4,6 +4,8 @@ import com.gurula.talkyo.chatroom.dto.*;
 import com.gurula.talkyo.chatroom.enums.ChatroomType;
 import com.gurula.talkyo.chatroom.enums.MessageType;
 import com.gurula.talkyo.chatroom.handler.MessageTypeHandler;
+import com.gurula.talkyo.course.Lesson;
+import com.gurula.talkyo.course.LessonRepository;
 import com.gurula.talkyo.exception.ResultStatus;
 import com.gurula.talkyo.member.Member;
 import com.gurula.talkyo.member.MemberContext;
@@ -40,11 +42,13 @@ public class ChatroomController {
     private final SimpleDateFormat sdf;
     private final MessageRepository messageRepository;
     private final ChatroomRepository chatroomRepository;
+    private final LessonRepository lessonRepository;
 
     public ChatroomController(ChatroomService chatroomService, SimpMessageSendingOperations messagingTemplate, ConfigProperties configProperties, MessageTypeHandler handler, LearningRecordService learningRecordService,
                               ConversationRepository conversationRepository, SimpleDateFormat sdf,
                               MessageRepository messageRepository,
-                              ChatroomRepository chatroomRepository) {
+                              ChatroomRepository chatroomRepository,
+                              LessonRepository lessonRepository) {
         this.chatroomService = chatroomService;
         this.messagingTemplate = messagingTemplate;
         this.configProperties = configProperties;
@@ -54,6 +58,7 @@ public class ChatroomController {
         this.sdf = sdf;
         this.messageRepository = messageRepository;
         this.chatroomRepository = chatroomRepository;
+        this.lessonRepository = lessonRepository;
     }
 
     @PostMapping("/chatroom/createChatroom")
@@ -280,5 +285,50 @@ public class ChatroomController {
                 System.out.println("導向首頁");
             }
         }
+    }
+
+
+    @GetMapping("/learningReport/{chatroomId}/{lessonId}")
+    public ResponseEntity<?> learningReport (@PathVariable String chatroomId, @PathVariable String lessonId) {
+        final Member member = MemberContext.getMember();
+        logger.info("[{} {}] [learningReport]", member.getName(), member.getId());
+
+        ResultStatus<LearningReportDTO> resultStatus = new ResultStatus<>();
+
+        LearningReport learningReport = chatroomService.getLearningReport(chatroomId);
+        final Optional<Lesson> opt = lessonRepository.findById(lessonId);
+        LearningReportDTO dto = null;
+        if (opt.isPresent()) {
+            final Lesson lesson = opt.get();
+            dto = new LearningReportDTO(
+                    lesson.getName(),
+                    learningReport.getConversationScore(),
+                    learningReport.getFeedback()
+            );
+        }
+
+        resultStatus.setCode("C000");
+        resultStatus.setMessage("成功");
+        resultStatus.setData(dto);
+        return ResponseEntity.ok(resultStatus);
+    }
+
+
+
+    @GetMapping("/previewLesson/{lessonId}")
+    public ResponseEntity<?> previewLesson(@PathVariable String lessonId){
+        final Member member = MemberContext.getMember();
+        logger.info("[{} {}] [previewLesson]", member.getName(), member.getId());
+
+        ResultStatus<Lesson> resultStatus = new ResultStatus<>();
+
+        final Optional<Lesson> opt = lessonRepository.findById(lessonId);
+        if (opt.isPresent()) {
+            final Lesson lesson = opt.get();
+            resultStatus.setCode("C000");
+            resultStatus.setMessage("成功");
+            resultStatus.setData(lesson);
+        }
+        return ResponseEntity.ok(resultStatus);
     }
 }
