@@ -92,7 +92,6 @@ config:
   picSavePath: /Users/chenyifan/Documents/workspace-fan/talkyo/image/
   picShowPath: http://localhost:8086/talkyo/image/
   audioShowPath: http://localhost:8086/talkyo/audio/
-  jsonPath: /Users/chenyifan/Documents/workspace-fan/talkyo/src/main/resources/static/js/
+  jsonPath: /Users/chenyifan/Documents/workspace-fan/talkyo/src/main/resources/static/data/
   openaiApiKey: ${openai-api-key}
-  geminiApiKey: ${gemini-api-key}
   cloudTranslateApiKey: ${cloud-translate-api-key}

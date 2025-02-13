@@ -86,7 +86,6 @@ config:
   picSavePath: /opt/talkyo/image/
   picShowPath: https://gurula.cc/talkyo/image/
   audioShowPath: https://gurula.cc/talkyo/audio/
-  jsonPath: /opt/talkyo/static/js/
+  jsonPath: /opt/talkyo/static/data/
   openaiApiKey: ${openai-api-key}
-  geminiApiKey: ${gemini-api-key}
   cloudTranslateApiKey: ${cloud-translate-api-key}
