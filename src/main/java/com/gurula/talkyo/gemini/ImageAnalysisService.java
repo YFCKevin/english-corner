@@ -60,9 +60,6 @@ public class ImageAnalysisService {
 
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
 
-        System.out.println(geminiProperties.getImage().getUrl());
-        System.out.println(geminiProperties.getImage().getAnalytics().getKey());
-
         ResponseEntity<ImageCompletionResponseDTO> response = restTemplate.exchange(
                 geminiProperties.getImage().getUrl() + geminiProperties.getImage().getAnalytics().getKey(),
                 HttpMethod.POST,

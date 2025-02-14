@@ -2,6 +2,7 @@ package com.gurula.talkyo.azureai;
 
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Service
@@ -24,6 +25,13 @@ public class PartnerServiceImpl implements PartnerService{
 
     @Override
     public List<Partner> getPartnerList() {
-        return partnerRepository.findByLocale("en-US");
+        return partnerRepository.findByDisplayNameIn(
+                Arrays.asList(
+                        "Neerja", "Aarav",
+                        "Ada Multilingual", "Ollie Multilingual",
+                        "Emma Multilingual", "Brian Multilingual", "Jane", "Jason",
+                        "Guy", "Brandon", "Christopher", "Cora", "Jenny Multilingual",
+                        "Ryan Multilingual"
+                ));
     }
 }

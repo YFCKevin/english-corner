@@ -22,6 +22,7 @@ public class Partner {
     private String voiceType;
     private String status;
     private VoiceTag voiceTag;
+    private String coverName;
     private String creationDate;
     private String modificationDate;
     private String deletionDate;
@@ -152,5 +153,13 @@ public class Partner {
 
     public void setDeletionDate(String deletionDate) {
         this.deletionDate = deletionDate;
+    }
+
+    public String getCoverName() {
+        return coverName;
+    }
+
+    public void setCoverName(String coverName) {
+        this.coverName = coverName;
     }
 }

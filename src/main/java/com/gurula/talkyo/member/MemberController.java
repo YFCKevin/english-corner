@@ -1,6 +1,12 @@
 package com.gurula.talkyo.member;
 
+import com.gurula.talkyo.azureai.Partner;
+import com.gurula.talkyo.azureai.PartnerRepository;
+import com.gurula.talkyo.azureai.dto.PartnerResponseDTO;
+import com.gurula.talkyo.azureai.enums.TailoredScenario;
+import com.gurula.talkyo.azureai.enums.VoicePersonality;
 import com.gurula.talkyo.member.dto.LearningPlanDTO;
+import com.gurula.talkyo.member.dto.MemberDTO;
 import com.gurula.talkyo.properties.ConfigProperties;
 import com.gurula.talkyo.exception.ResultStatus;
 import org.slf4j.Logger;
@@ -10,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/member")
@@ -17,16 +24,43 @@ public class MemberController {
     private final Logger logger = LoggerFactory.getLogger(MemberController.class);
     private final ConfigProperties configProperties;
     private final MemberService memberService;
+    private final PartnerRepository partnerRepository;
 
-    public MemberController(ConfigProperties configProperties, MemberService memberService) {
+    public MemberController(ConfigProperties configProperties, MemberService memberService,
+                            PartnerRepository partnerRepository) {
         this.configProperties = configProperties;
         this.memberService = memberService;
+        this.partnerRepository = partnerRepository;
     }
 
     @GetMapping("/info")
-    public Member info () {
+    public MemberDTO info () {
         final Member member = MemberContext.getMember();
-        return Objects.requireNonNullElseGet(member, Member::new);
+        final Optional<Partner> partnerOpt = partnerRepository.findById(member.getPartnerId());
+        if (partnerOpt.isPresent()) {
+            final Partner partner = partnerOpt.get();
+            PartnerResponseDTO partnerResponseDTO = new PartnerResponseDTO(
+                    partner.getId(),
+                    partner.getDisplayName(),
+                    partner.getGender(),
+                    partner.getLocale().getLabel(),
+                    partner.getVoiceTag().getVoicePersonalities().stream().map(VoicePersonality::getLabel).toList(),
+                    partner.getVoiceTag().getTailoredScenarios().stream().map(TailoredScenario::getLabel).toList(),
+                    configProperties.getPicShowPath() + "partner/" + partner.getCoverName()
+            );
+            MemberDTO memberDTO = new MemberDTO(
+                    member.getId(),
+                    member.getUserId(),
+                    member.getPictureUrl(),
+                    member.getCoverName(),
+                    member.getName(),
+                    member.getEmail(),
+                    member.getChosenLevel(),
+                    partnerResponseDTO
+            );
+            return Objects.requireNonNullElseGet(memberDTO, MemberDTO::new);
+        }
+        return new MemberDTO();
     }
 
 

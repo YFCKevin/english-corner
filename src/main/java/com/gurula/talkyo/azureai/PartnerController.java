@@ -5,10 +5,14 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gurula.talkyo.azureai.dto.PartnerDTO;
+import com.gurula.talkyo.azureai.dto.PartnerResponseDTO;
+import com.gurula.talkyo.azureai.enums.TailoredScenario;
+import com.gurula.talkyo.azureai.enums.VoicePersonality;
 import com.gurula.talkyo.exception.ResultStatus;
 import com.gurula.talkyo.member.Member;
 import com.gurula.talkyo.member.MemberContext;
 import com.gurula.talkyo.properties.AzureProperties;
+import com.gurula.talkyo.properties.ConfigProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -23,9 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.gurula.talkyo.azureai.dto.PartnerDTO.convertToPartner;
@@ -39,13 +41,15 @@ public class PartnerController {
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
     private final AzureProperties azureProperties;
+    private final ConfigProperties configProperties;
 
-    public PartnerController(@Qualifier("sdf") SimpleDateFormat sdf, PartnerService partnerService, RestTemplate restTemplate, ObjectMapper objectMapper, AzureProperties azureProperties) {
+    public PartnerController(@Qualifier("sdf") SimpleDateFormat sdf, PartnerService partnerService, RestTemplate restTemplate, ObjectMapper objectMapper, AzureProperties azureProperties, ConfigProperties configProperties) {
         this.sdf = sdf;
         this.partnerService = partnerService;
         this.restTemplate = restTemplate;
         this.objectMapper = objectMapper;
         this.azureProperties = azureProperties;
+        this.configProperties = configProperties;
     }
 
     @PostMapping("/admin/save")
@@ -91,13 +95,28 @@ public class PartnerController {
         final Member member = MemberContext.getMember();
         logger.info("[{} {}] [partnerList]", member.getName(), member.getId());
 
-        ResultStatus<List<Partner>> resultStatus = new ResultStatus<>();
+        ResultStatus<List<PartnerResponseDTO>> resultStatus = new ResultStatus<>();
 
         List<Partner> partners = partnerService.getPartnerList();
 
+        List<PartnerResponseDTO> partnerResponseDTOList = new ArrayList<>();
+
+        partners.forEach(partner -> {
+            PartnerResponseDTO partnerResponseDTO = new PartnerResponseDTO(
+                    partner.getId(),
+                    partner.getDisplayName(),
+                    partner.getGender(),
+                    partner.getLocale().getLabel(),
+                    partner.getVoiceTag() != null ? partner.getVoiceTag().getVoicePersonalities().stream().map(VoicePersonality::getLabel).toList() : Collections.singletonList(""),
+                    partner.getVoiceTag() != null ? partner.getVoiceTag().getTailoredScenarios().stream().map(TailoredScenario::getLabel).toList() : Collections.singletonList(""),
+                    configProperties.getPicShowPath() + "partner/" + partner.getCoverName()
+            );
+            partnerResponseDTOList.add(partnerResponseDTO);
+        });
+
         resultStatus.setCode("C000");
         resultStatus.setMessage("成功");
-        resultStatus.setData(partners);
+        resultStatus.setData(partnerResponseDTOList);
         return ResponseEntity.ok(resultStatus);
     }
 }

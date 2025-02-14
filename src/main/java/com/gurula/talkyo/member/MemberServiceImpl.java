@@ -121,7 +121,7 @@ public class MemberServiceImpl implements MemberService{
                     LearningPlanDTO learningPlanDTO = new LearningPlanDTO(
                             lesson.getId(),
                             lesson.getName(),
-                            lesson.getCoverName(),
+                            "image/" + lesson.getLessonNumber() + "/" + lesson.getCoverName(),
                             earliestCloseDateChatroom.getId(),
                             earliestCloseDateChatroom.getCloseDate()
                     );
@@ -135,7 +135,7 @@ public class MemberServiceImpl implements MemberService{
                     LearningPlanDTO learningPlanDTO = new LearningPlanDTO(
                             lesson.getId(),
                             lesson.getName(),
-                            lesson.getCoverName(),
+                            "image/" + lesson.getLessonNumber() + "/" + lesson.getCoverName(),
                             ongoingChatroom.getId(),
                             ongoingChatroom.getCloseDate()
                     );
@@ -145,7 +145,7 @@ public class MemberServiceImpl implements MemberService{
                 LearningPlanDTO learningPlanDTO = new LearningPlanDTO(
                         lesson.getId(),
                         lesson.getName(),
-                        lesson.getCoverName(),
+                        "image/" + lesson.getLessonNumber() + "/" + lesson.getCoverName(),
                         null,
                         null
                 );

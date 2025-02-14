@@ -12,6 +12,7 @@ public class Member {
     private String id;
     private String userId;  //line使用
     private String pictureUrl;  //line大頭貼
+    private String coverName;   //上傳大頭貼
     private String name;
     private String email;
     private Role role;
@@ -116,5 +117,13 @@ public class Member {
 
     public void setChosenLevel(Level chosenLevel) {
         this.chosenLevel = chosenLevel;
+    }
+
+    public String getCoverName() {
+        return coverName;
+    }
+
+    public void setCoverName(String coverName) {
+        this.coverName = coverName;
     }
 }
