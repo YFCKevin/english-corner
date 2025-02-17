@@ -3,10 +3,12 @@ package com.gurula.talkyo.member;
 import com.gurula.talkyo.azureai.PartnerRepository;
 import com.gurula.talkyo.chatroom.Chatroom;
 import com.gurula.talkyo.chatroom.ChatroomRepository;
+import com.gurula.talkyo.chatroom.ConversationScore;
 import com.gurula.talkyo.course.Course;
 import com.gurula.talkyo.course.CourseRepository;
 import com.gurula.talkyo.course.Lesson;
 import com.gurula.talkyo.course.LessonRepository;
+import com.gurula.talkyo.course.enums.LessonType;
 import com.gurula.talkyo.exception.ResultStatus;
 import com.gurula.talkyo.member.dto.LearningPlanDTO;
 import com.gurula.talkyo.record.LearningRecord;
@@ -15,6 +17,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -118,12 +121,20 @@ public class MemberServiceImpl implements MemberService{
 
                 if (earliestCloseDateChatroomOpt.isPresent()) { // 已完課
                     final Chatroom earliestCloseDateChatroom = earliestCloseDateChatroomOpt.get();
+                    final ConversationScore conversationScore = earliestCloseDateChatroom.getReport().getConversationScore();
+                    final double accuracy = conversationScore.getAccuracy();
+                    final double completeness = conversationScore.getCompleteness();
+                    final double fluency = conversationScore.getFluency();
+                    final double prosody = conversationScore.getProsody();
+                    final double overallRating = (accuracy + completeness + fluency + prosody) / 4;
                     LearningPlanDTO learningPlanDTO = new LearningPlanDTO(
                             lesson.getId(),
                             lesson.getName(),
                             "image/" + lesson.getLessonNumber() + "/" + lesson.getCoverName(),
                             earliestCloseDateChatroom.getId(),
-                            earliestCloseDateChatroom.getCloseDate()
+                            earliestCloseDateChatroom.getCloseDate(),
+                            overallRating,
+                            LessonType.COMPLETED
                     );
                     learningPlanDTOList.add(learningPlanDTO);
                 } else {    // 進行中
@@ -137,7 +148,9 @@ public class MemberServiceImpl implements MemberService{
                             lesson.getName(),
                             "image/" + lesson.getLessonNumber() + "/" + lesson.getCoverName(),
                             ongoingChatroom.getId(),
-                            ongoingChatroom.getCloseDate()
+                            ongoingChatroom.getCloseDate(),
+                            -1,
+                            LessonType.IN_PROGRESS
                     );
                     learningPlanDTOList.add(learningPlanDTO);
                 }
@@ -147,10 +160,31 @@ public class MemberServiceImpl implements MemberService{
                         lesson.getName(),
                         "image/" + lesson.getLessonNumber() + "/" + lesson.getCoverName(),
                         null,
-                        null
+                        null,
+                        -1,
+                        LessonType.NOT_STARTED
                 );
                 learningPlanDTOList.add(learningPlanDTO);
             }
+        }
+
+        return learningPlanDTOList;
+    }
+
+    @Override
+    public List<LearningPlanDTO> getFinishedProjects(String memberId, String lessonId) {
+        List<LearningRecord> learningRecords = learningRecordRepository.findByMemberIdAndLessonIdAndFinish(memberId, lessonId, true);
+        final Map<String, Chatroom> chatroomMap = chatroomRepository.findAllById(learningRecords.stream().map(LearningRecord::getChatroomId).toList()).stream()
+                .collect(Collectors.toMap(Chatroom::getId, Function.identity()));
+
+        List<LearningPlanDTO> learningPlanDTOList = new ArrayList<>();
+        for (LearningRecord learningRecord : learningRecords) {
+            LearningPlanDTO learningPlanDTO = new LearningPlanDTO(
+                    lessonId,
+                    learningRecord.getChatroomId(),
+                    chatroomMap.get(learningRecord.getChatroomId()).getCloseDate()
+            );
+            learningPlanDTOList.add(learningPlanDTO);
         }
 
         return learningPlanDTOList;

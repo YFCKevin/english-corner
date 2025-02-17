@@ -253,20 +253,21 @@ public class LLMServiceImpl implements LLMService{
 
     private String feedbackPayload(String dialogueText) {
 
-        String systemMessageContent = "You are a language learning assistant. Your task is to evaluate only the user's sentences from the provided dialogue. " +
-                "Focus on identifying both errors and correct usage in the user's sentences. Provide feedback in a concise, bullet-point format with approximately 300 words. " +
-                "Translate only the feedback into Traditional Chinese. Do not evaluate or reference the partner's sentences. " +
-                "Do not translate the user's original sentences. Exclude any phrases of appreciation or gratitude, such as 'Thank you' or 'Great job'. " +
-                "Ensure that both 'comment' and 'translation' are single strings, not arrays or lists. Join multiple feedback points into a single string, separating them with newline characters ('\\n'). " +
-                "Return the feedback in the following JSON format:\n" +
+        String systemMessageContent = "You are a language learning assistant. Your task is to evaluate *only* the user's sentences from the provided dialogue. " +
+                "Focus on identifying *both* errors and correct usage in the user's sentences. Provide feedback in a concise, bullet-point format (using '*' as the bullet point indicator) with approximately 300 words. " +
+                "Translate *only* the feedback into Traditional Chinese. The translation should *also* be in a bullet-point format (using '*' as the bullet point indicator), with each bullet point being the translation of the corresponding English feedback point. Do *not* evaluate or reference the partner's sentences. Do *not* translate the user's original sentences. " +
+                "Exclude *any* phrases of appreciation or gratitude, such as 'Thank you' or 'Great job'. " +
+                "Ensure that both 'comment' and 'translation' are single strings, *not* arrays or lists. Each bullet point in *both* the English feedback and the Traditional Chinese translation should end with a `<br>` tag.  " +
+                "*Specifically, each English feedback item should look like this: '* [Feedback point]<br>', and each Traditional Chinese translation item should look like this: '* [Translation point]<br>'.*\n" +
+                "Return the feedback in the following *strict* JSON format:\n" +
                 "{\n" +
-                "  \"comment\": \"[300-word English feedback in bullet-point format without gratitude or appreciation statements]\",\n" +
-                "  \"translation\": \"[Traditional Chinese translation of the feedback only, do not translate the user's sentences]\"\n" +
+                "  \"comment\": \"[300-word English feedback in bullet-point format *without* gratitude or appreciation statements, *each item ending with <br>*]\",\n" +
+                "  \"translation\": \"[Traditional Chinese translation of the feedback *only*, do not translate the user's sentences, *in bullet-point format, each item ending with <br>*]\"\n" +
                 "}";
 
         String userMessageContent = String.format(
                 "Here is the dialogue:\n%s\n" +
-                        "Evaluate only the user's sentences, providing detailed feedback as specified above.",
+                        "Evaluate *only* the user's sentences, providing detailed feedback as specified above.",
                 dialogueText
         );
 

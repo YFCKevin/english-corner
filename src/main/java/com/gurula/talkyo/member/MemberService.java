@@ -18,4 +18,6 @@ public interface MemberService {
     ResultStatus<Void> choosePartner(String id);
 
     List<LearningPlanDTO> getMyLearningPlans(Member member);
+
+    List<LearningPlanDTO> getFinishedProjects(String memberId, String lessonId);
 }

@@ -92,10 +92,26 @@ public class MemberController {
     }
 
 
+    @GetMapping("/project/finish/{lessonId}")
+    public ResponseEntity<?> finishedProjects (@PathVariable String lessonId){
+        final Member member = MemberContext.getMember();
+        logger.info("[{} {}] [finished project]", member.getName(), member.getId());
+
+        List<LearningPlanDTO> learningPlanDTOList = memberService.getFinishedProjects(member.getId(), lessonId);
+
+        ResultStatus<List<LearningPlanDTO>> resultStatus = new ResultStatus<>();
+        resultStatus.setCode("C000");
+        resultStatus.setMessage("成功");
+        resultStatus.setData(learningPlanDTOList);
+
+        return ResponseEntity.ok(resultStatus);
+    }
+
+
     @GetMapping("/logout")
     public ResponseEntity<?> logout (){
         MemberContext.removeMember();
-        ResultStatus resultStatus = new ResultStatus();
+        ResultStatus<String> resultStatus = new ResultStatus<>();
         resultStatus.setCode("C000");
         resultStatus.setMessage("成功");
         resultStatus.setData(configProperties.getGlobalDomain() + "index.html");

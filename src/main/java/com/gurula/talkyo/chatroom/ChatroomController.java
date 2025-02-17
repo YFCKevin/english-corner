@@ -337,6 +337,14 @@ public class ChatroomController {
         ResultStatus<LearningReportDTO> resultStatus = new ResultStatus<>();
 
         LearningReport learningReport = chatroomService.getLearningReport(chatroomId);
+
+        final double prosody = learningReport.getConversationScore().getProsody();
+        final double fluency = learningReport.getConversationScore().getFluency();
+        final double completeness = learningReport.getConversationScore().getCompleteness();
+        final double accuracy = learningReport.getConversationScore().getAccuracy();
+
+        final double overallRating = (accuracy + completeness + fluency + prosody) / 4;
+
         final Optional<Lesson> opt = lessonRepository.findById(lessonId);
         LearningReportDTO dto = null;
         if (opt.isPresent()) {
@@ -344,7 +352,8 @@ public class ChatroomController {
             dto = new LearningReportDTO(
                     lesson.getName(),
                     learningReport.getConversationScore(),
-                    learningReport.getFeedback()
+                    learningReport.getFeedback(),
+                    overallRating
             );
         }
 
