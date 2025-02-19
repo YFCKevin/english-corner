@@ -25,10 +25,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 @Controller
@@ -308,6 +305,8 @@ public class ChatroomController {
                 System.out.println("導向測驗結束結果頁面");
             }
             case SITUATION -> {
+                // generate learning report
+                chatroomService.genLearningReport(chatroomId);
 
                 // member and partner leave chatroom
                 conversationRepository.leaveChatroom(chatroomId, member.getId(), sdf.format(new Date()));
@@ -438,6 +437,39 @@ public class ChatroomController {
         resultStatus.setCode("C000");
         resultStatus.setMessage("成功");
         resultStatus.setData(historyMsgs);
+        return ResponseEntity.ok(resultStatus);
+    }
+
+
+    @GetMapping("/scenario/history/record")
+    public ResponseEntity<?> scenarioHistoryRecord (){
+        final Member member = MemberContext.getMember();
+        logger.info("[{} {}] [scenarioHistoryRecord]", member.getName(), member.getId());
+
+        ResultStatus<List<ScenarioHistoryRecordDTO>> resultStatus = new ResultStatus<>();
+
+        List<Chatroom> chatrooms = chatroomService.getScenarioHistoryRecord(member.getId());
+
+        List<ScenarioHistoryRecordDTO> recordList = new ArrayList<>();
+        chatrooms.forEach(chatroom -> {
+            final ConversationScore conversationScore = chatroom.getReport().getConversationScore();
+            final double accuracy = conversationScore.getAccuracy();
+            final double completeness = conversationScore.getCompleteness();
+            final double fluency = conversationScore.getFluency();
+            final double prosody = conversationScore.getProsody();
+            final double overallRating = (accuracy + completeness + fluency + prosody) / 4;
+            ScenarioHistoryRecordDTO recordDTO = new ScenarioHistoryRecordDTO(
+                    chatroom.getId(),
+                    chatroom.getScenario().getUnitNumber(),
+                    chatroom.getCloseDate(),
+                    overallRating
+            );
+            recordList.add(recordDTO);
+        });
+
+        resultStatus.setCode("C000");
+        resultStatus.setMessage("成功");
+        resultStatus.setData(recordList);
         return ResponseEntity.ok(resultStatus);
     }
 }

@@ -52,4 +52,6 @@ public interface ChatroomService {
     LLMChatResponseDTO genGuidingSentence(String messageId) throws JsonProcessingException;
 
     List<ScenarioDTO> getScenarios() throws IOException;
+
+    List<Chatroom> getScenarioHistoryRecord(String memberId);
 }

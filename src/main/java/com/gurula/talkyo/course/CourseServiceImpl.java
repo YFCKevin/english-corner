@@ -8,6 +8,7 @@ import com.gurula.talkyo.azureai.Partner;
 import com.gurula.talkyo.azureai.PartnerRepository;
 import com.gurula.talkyo.course.dto.CourseRequestDTO;
 import com.gurula.talkyo.course.dto.LessonDTO;
+import com.gurula.talkyo.course.dto.LessonInfoDTO;
 import com.gurula.talkyo.exception.ResultStatus;
 import com.gurula.talkyo.member.Member;
 import com.gurula.talkyo.openai.LLMService;
@@ -166,5 +167,46 @@ public class CourseServiceImpl implements CourseService{
         }
 
         return resultStatus;
+    }
+
+    @Override
+    public LessonInfoDTO getLessonInfo(String lessonId, String partnerId) {
+        final Lesson lesson = lessonRepository.findById(lessonId).get();
+        final Partner partner = partnerRepository.findById(partnerId).get();
+        final Course course = courseRepository.findById(lesson.getCourseId()).get();
+        final String shortName = partner.getShortName();
+
+        final List<Sentence> updateSentenceList = lesson.getSentences().stream()
+                .filter(sentence -> sentence.getAudioName() != null)
+                .map(
+                        sentence -> {
+                            List<String> filteredAudioNames =
+                                    sentence.getAudioName().stream()
+                                            .filter(audioName -> audioName.contains(shortName))
+                                            .collect(Collectors.toList());
+
+                            if (!filteredAudioNames.isEmpty()) {
+                                Sentence newSentence = new Sentence();
+                                newSentence.setLessonNumber(sentence.getLessonNumber());
+                                newSentence.setContent(sentence.getContent());
+                                newSentence.setTranslation(sentence.getTranslation());
+                                newSentence.setAudioName(filteredAudioNames);
+                                return newSentence;
+                            } else {
+                                return null;
+                            }
+                        })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+        lesson.setSentences(updateSentenceList);
+
+        return new LessonInfoDTO(
+                lesson.getLessonNumber(),
+                lesson.getName(),
+                lesson.getCoverName(),
+                lesson.getDesc(),
+                lesson.getSentences(),
+                course.getTopic()
+        );
     }
 }

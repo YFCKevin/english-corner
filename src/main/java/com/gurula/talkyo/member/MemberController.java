@@ -12,13 +12,14 @@ import com.gurula.talkyo.exception.ResultStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-@RestController
+@Controller
 @RequestMapping("/member")
 public class MemberController {
     private final Logger logger = LoggerFactory.getLogger(MemberController.class);
@@ -34,7 +35,7 @@ public class MemberController {
     }
 
     @GetMapping("/info")
-    public MemberDTO info () {
+    public ResponseEntity<?> info () {
         final Member member = MemberContext.getMember();
         final Optional<Partner> partnerOpt = partnerRepository.findById(member.getPartnerId());
         if (partnerOpt.isPresent()) {
@@ -58,9 +59,9 @@ public class MemberController {
                     member.getChosenLevel(),
                     partnerResponseDTO
             );
-            return Objects.requireNonNullElseGet(memberDTO, MemberDTO::new);
+            return ResponseEntity.ok(Objects.requireNonNullElseGet(memberDTO, MemberDTO::new));
         }
-        return new MemberDTO();
+        return ResponseEntity.ok(new MemberDTO());
     }
 
 
@@ -109,12 +110,8 @@ public class MemberController {
 
 
     @GetMapping("/logout")
-    public ResponseEntity<?> logout (){
+    public String logout() {
         MemberContext.removeMember();
-        ResultStatus<String> resultStatus = new ResultStatus<>();
-        resultStatus.setCode("C000");
-        resultStatus.setMessage("成功");
-        resultStatus.setData(configProperties.getGlobalDomain() + "index.html");
-        return ResponseEntity.ok(resultStatus);
+        return "redirect:" + configProperties.getGlobalDomain() + "sign-in.html";
     }
 }

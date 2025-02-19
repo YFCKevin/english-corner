@@ -2,6 +2,7 @@ package com.gurula.talkyo.course;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.gurula.talkyo.course.dto.CourseRequestDTO;
+import com.gurula.talkyo.course.dto.LessonInfoDTO;
 import com.gurula.talkyo.exception.ResultStatus;
 import com.gurula.talkyo.member.Member;
 import com.gurula.talkyo.member.MemberContext;
@@ -41,6 +42,24 @@ public class CourseController {
             resultStatus.setCode(result.getCode());
             resultStatus.setMessage(result.getMessage());
         }
+        return ResponseEntity.ok(resultStatus);
+    }
+
+
+
+    @GetMapping("/lesson/info/{lessonId}")
+    public ResponseEntity<?> lessonInfo (@PathVariable String lessonId){
+        final Member member = MemberContext.getMember();
+        logger.info("[{} {}] [lesson info]", member.getName(), member.getId());
+
+        ResultStatus<LessonInfoDTO> resultStatus = new ResultStatus<>();
+
+        final String partnerId = member.getPartnerId();
+        LessonInfoDTO lesson = courseService.getLessonInfo(lessonId, partnerId);
+
+        resultStatus.setCode("C000");
+        resultStatus.setMessage("成功");
+        resultStatus.setData(lesson);
         return ResponseEntity.ok(resultStatus);
     }
 }

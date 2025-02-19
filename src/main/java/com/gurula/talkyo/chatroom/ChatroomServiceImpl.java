@@ -925,4 +925,9 @@ public class ChatroomServiceImpl implements ChatroomService {
         };
         return JsonPath.parse(file).read("$", typeRefCourse);
     }
+
+    @Override
+    public List<Chatroom> getScenarioHistoryRecord(String memberId) {
+        return chatroomRepository.findByOwnerIdAndChatroomTypeAndRoomStatusOrderByCloseDateAsc(memberId, ChatroomType.SITUATION, RoomStatus.CLOSED);
+    }
 }

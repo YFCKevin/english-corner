@@ -7,10 +7,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.List;
 
-@Document("sentence")
 public class Sentence {
-    @Id
-    private String id;
     private String unitNumber;
     private String content;
     private String translation;
@@ -76,14 +73,6 @@ public class Sentence {
         this.explanation = explanation;
     }
 
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
     public boolean isFormal() {
         return formal;
     }
@@ -95,7 +84,6 @@ public class Sentence {
     @Override
     public String toString() {
         return "Sentence{" +
-                "id='" + id + '\'' +
                 ", unitNumber='" + unitNumber + '\'' +
                 ", content='" + content + '\'' +
                 ", translation='" + translation + '\'' +
