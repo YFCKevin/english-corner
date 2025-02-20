@@ -22,6 +22,7 @@ public class Member {
     private Provider provider;
     private String modificationDate;
     private String suspendDate;
+    private int totalExp;
 
     public String getId() {
         return id;
@@ -125,5 +126,13 @@ public class Member {
 
     public void setCoverName(String coverName) {
         this.coverName = coverName;
+    }
+
+    public int getTotalExp() {
+        return totalExp;
+    }
+
+    public void setTotalExp(int totalExp) {
+        this.totalExp = totalExp;
     }
 }

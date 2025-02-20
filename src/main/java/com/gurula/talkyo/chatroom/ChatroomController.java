@@ -10,6 +10,7 @@ import com.gurula.talkyo.course.LessonRepository;
 import com.gurula.talkyo.exception.ResultStatus;
 import com.gurula.talkyo.member.Member;
 import com.gurula.talkyo.member.MemberContext;
+import com.gurula.talkyo.member.MemberService;
 import com.gurula.talkyo.openai.dto.LLMChatResponseDTO;
 import com.gurula.talkyo.properties.ConfigProperties;
 import com.gurula.talkyo.record.LearningRecordService;
@@ -42,12 +43,13 @@ public class ChatroomController {
     private final ChatroomRepository chatroomRepository;
     private final LessonRepository lessonRepository;
     private final MessageService messageService;
+    private final MemberService memberService;
 
     public ChatroomController(ChatroomService chatroomService, SimpMessageSendingOperations messagingTemplate, ConfigProperties configProperties, MessageTypeHandler handler, LearningRecordService learningRecordService,
                               ConversationRepository conversationRepository, SimpleDateFormat sdf,
                               MessageRepository messageRepository,
                               ChatroomRepository chatroomRepository,
-                              LessonRepository lessonRepository, MessageService messageService) {
+                              LessonRepository lessonRepository, MessageService messageService, MemberService memberService) {
         this.chatroomService = chatroomService;
         this.messagingTemplate = messagingTemplate;
         this.configProperties = configProperties;
@@ -59,6 +61,7 @@ public class ChatroomController {
         this.chatroomRepository = chatroomRepository;
         this.lessonRepository = lessonRepository;
         this.messageService = messageService;
+        this.memberService = memberService;
     }
 
 
@@ -297,6 +300,8 @@ public class ChatroomController {
                 // mark learning record finish
                 learningRecordService.finish(chatroomId);
 
+                memberService.addExp(member, 5);
+
                 // member and partner leave chatroom
                 conversationRepository.leaveChatroom(chatroomId, member.getId(), sdf.format(new Date()));
                 conversationRepository.leaveChatroom(chatroomId, member.getPartnerId(), sdf.format(new Date()));
@@ -307,6 +312,11 @@ public class ChatroomController {
             case SITUATION -> {
                 // generate learning report
                 chatroomService.genLearningReport(chatroomId);
+
+                // mark learning record finish
+                learningRecordService.finish(chatroomId);
+
+                memberService.addExp(member, 5);
 
                 // member and partner leave chatroom
                 conversationRepository.leaveChatroom(chatroomId, member.getId(), sdf.format(new Date()));

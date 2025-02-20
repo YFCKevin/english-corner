@@ -7,6 +7,8 @@ import com.gurula.talkyo.azureai.enums.TailoredScenario;
 import com.gurula.talkyo.azureai.enums.VoicePersonality;
 import com.gurula.talkyo.member.dto.LearningPlanDTO;
 import com.gurula.talkyo.member.dto.MemberDTO;
+import com.gurula.talkyo.member.dto.ProfileDTO;
+import com.gurula.talkyo.member.enums.Role;
 import com.gurula.talkyo.properties.ConfigProperties;
 import com.gurula.talkyo.exception.ResultStatus;
 import org.slf4j.Logger;
@@ -57,7 +59,8 @@ public class MemberController {
                     member.getName(),
                     member.getEmail(),
                     member.getChosenLevel(),
-                    partnerResponseDTO
+                    partnerResponseDTO,
+                    member.getRole().getLabel()
             );
             return ResponseEntity.ok(Objects.requireNonNullElseGet(memberDTO, MemberDTO::new));
         }
@@ -105,6 +108,37 @@ public class MemberController {
         resultStatus.setMessage("成功");
         resultStatus.setData(learningPlanDTOList);
 
+        return ResponseEntity.ok(resultStatus);
+    }
+
+
+
+    @GetMapping("/profile")
+    public ResponseEntity<?> profile (){
+        final Member member = MemberContext.getMember();
+        logger.info("[{} {}] [profile]", member.getName(), member.getId());
+
+        ProfileDTO profileDTO = memberService.profile(member);
+
+        ResultStatus<ProfileDTO> resultStatus = new ResultStatus<>();
+        resultStatus.setCode("C000");
+        resultStatus.setMessage("成功");
+        resultStatus.setData(profileDTO);
+        return ResponseEntity.ok(resultStatus);
+    }
+
+
+
+    @PatchMapping("/exp/add/{point}")
+    public ResponseEntity<?> addExp (@PathVariable int point){
+        final Member member = MemberContext.getMember();
+        logger.info("[{} {}] [add exp]", member.getName(), member.getId());
+
+        memberService.addExp(member, point);
+
+        ResultStatus<Void> resultStatus = new ResultStatus<>();
+        resultStatus.setCode("C000");
+        resultStatus.setMessage("成功");
         return ResponseEntity.ok(resultStatus);
     }
 

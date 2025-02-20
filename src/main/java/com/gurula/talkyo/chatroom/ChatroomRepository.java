@@ -13,4 +13,6 @@ public interface ChatroomRepository extends MongoRepository<Chatroom, String> {
     List<Chatroom> findByOwnerIdOrderByCreationDateAsc(String memberId);
 
     List<Chatroom> findByOwnerIdAndChatroomTypeAndRoomStatusOrderByCloseDateAsc(String memberId, ChatroomType chatroomType, RoomStatus roomStatus);
+
+    List<Chatroom> findByOwnerIdAndRoomStatusAndChatroomTypeInOrderByCloseDateAsc(String memberId, RoomStatus roomStatus, List<ChatroomType> project);
 }

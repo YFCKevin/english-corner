@@ -2,6 +2,7 @@ package com.gurula.talkyo.member.dto;
 
 import com.gurula.talkyo.azureai.dto.PartnerResponseDTO;
 import com.gurula.talkyo.course.enums.Level;
+import com.gurula.talkyo.member.enums.Role;
 
 public class MemberDTO {
     private String id;
@@ -12,11 +13,12 @@ public class MemberDTO {
     private String email;
     private Level chosenLevel;
     private PartnerResponseDTO partner;
+    private String role;
 
     public MemberDTO() {
     }
 
-    public MemberDTO(String id, String userId, String pictureUrl, String coverName, String name, String email, Level chosenLevel, PartnerResponseDTO partner) {
+    public MemberDTO(String id, String userId, String pictureUrl, String coverName, String name, String email, Level chosenLevel, PartnerResponseDTO partner, String role) {
         this.id = id;
         this.userId = userId;
         this.pictureUrl = pictureUrl;
@@ -25,6 +27,7 @@ public class MemberDTO {
         this.email = email;
         this.chosenLevel = chosenLevel;
         this.partner = partner;
+        this.role = role;
     }
 
     public String getId() {
@@ -57,5 +60,9 @@ public class MemberDTO {
 
     public PartnerResponseDTO getPartner() {
         return partner;
+    }
+
+    public String getRole() {
+        return role;
     }
 }

@@ -13,4 +13,6 @@ public interface LearningRecordRepository extends MongoRepository<LearningRecord
     Set<LearningRecord> findByChatroomIdIn(Set<String> chatroomIds);
 
     List<LearningRecord> findByMemberIdAndLessonIdAndFinish(String memberId, String lessonId, boolean finish);
+
+    List<LearningRecord> findByMemberIdAndFinish(String memberId, boolean finish);
 }

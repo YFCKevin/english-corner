@@ -170,7 +170,7 @@ public class ChatroomServiceImpl implements ChatroomService {
         } else {    // 無聊天記錄，產生一則開場白
             String openingLineMessage = "";
             switch (chatroomType) {
-                case PROJECT -> {
+                case PROJECT, SITUATION -> {
                     // load scenario
                     loadScenario(new ChatRequestDTO(chatroomId, chatroomType, scenario));
 
@@ -184,18 +184,6 @@ public class ChatroomServiceImpl implements ChatroomService {
 
                     // learning record
                     learningRecordService.saveRecord(new RecordDTO(courseId, lessonId, chatroomId), memberId);
-                }
-                case SITUATION -> {
-                    // load scenario
-                    loadScenario(new ChatRequestDTO(chatroomId, chatroomType, scenario));
-
-                    // partner 參與聊天室紀錄
-                    Conversation conversation = new Conversation()
-                            .enterChatroom(partnerId, chatroomId);
-                    conversationRepository.save(conversation);
-
-                    // partner opening line
-                    openingLineMessage = openingLine(new ChatRequestDTO(chatroomId, scenario, memberId, partnerId, lessonId, chatroomType));
                 }
                 case FREE_TALK -> {
                     // load scenario

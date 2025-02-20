@@ -1,9 +1,10 @@
 package com.gurula.talkyo.member;
 
 import com.gurula.talkyo.azureai.PartnerRepository;
-import com.gurula.talkyo.chatroom.Chatroom;
-import com.gurula.talkyo.chatroom.ChatroomRepository;
-import com.gurula.talkyo.chatroom.ConversationScore;
+import com.gurula.talkyo.azureai.utils.AudioUtil;
+import com.gurula.talkyo.chatroom.*;
+import com.gurula.talkyo.chatroom.enums.ChatroomType;
+import com.gurula.talkyo.chatroom.enums.RoomStatus;
 import com.gurula.talkyo.course.Course;
 import com.gurula.talkyo.course.CourseRepository;
 import com.gurula.talkyo.course.Lesson;
@@ -11,11 +12,15 @@ import com.gurula.talkyo.course.LessonRepository;
 import com.gurula.talkyo.course.enums.LessonType;
 import com.gurula.talkyo.exception.ResultStatus;
 import com.gurula.talkyo.member.dto.LearningPlanDTO;
+import com.gurula.talkyo.member.dto.ProfileDTO;
+import com.gurula.talkyo.properties.ConfigProperties;
 import com.gurula.talkyo.record.LearningRecord;
 import com.gurula.talkyo.record.LearningRecordRepository;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -28,18 +33,23 @@ public class MemberServiceImpl implements MemberService{
     private final LearningRecordRepository learningRecordRepository;
     private final LessonRepository lessonRepository;
     private final CourseRepository courseRepository;
+    private final MessageRepository messageRepository;
+    private final ConfigProperties configProperties;
 
     public MemberServiceImpl(MemberRepository memberRepository, PartnerRepository partnerRepository,
                              ChatroomRepository chatroomRepository,
                              LearningRecordRepository learningRecordRepository,
                              LessonRepository lessonRepository,
-                             CourseRepository courseRepository) {
+                             CourseRepository courseRepository,
+                             MessageRepository messageRepository, ConfigProperties configProperties) {
         this.memberRepository = memberRepository;
         this.partnerRepository = partnerRepository;
         this.chatroomRepository = chatroomRepository;
         this.learningRecordRepository = learningRecordRepository;
         this.lessonRepository = lessonRepository;
         this.courseRepository = courseRepository;
+        this.messageRepository = messageRepository;
+        this.configProperties = configProperties;
     }
 
     @Override
@@ -188,5 +198,119 @@ public class MemberServiceImpl implements MemberService{
         }
 
         return learningPlanDTOList;
+    }
+
+    @Override
+    public ProfileDTO profile(Member member) {
+        final String memberId = member.getId();
+        final int totalExp = member.getTotalExp();
+
+        // 已完成課程
+        List<LearningRecord> learningRecords = learningRecordRepository.findByMemberIdAndFinish(memberId, true);
+        final int finishedCourseSize = learningRecords.size();
+
+        // 說話次數
+        List<Message> messages = messageRepository.findBySenderAndAudioNameIsNotNull(memberId);
+        final int speakingFrequency = messages.size();
+
+        // 講話時長
+        final List<String> audioFilePaths = messages.stream()
+                .map(message -> configProperties.getAudioSavePath() + message.getChatroomId() + "/" + message.getAudioName())
+                .toList();
+        final String totalSpeakDurations = formatDuration(AudioUtil.getTotalAudioDuration(audioFilePaths));
+
+        // 最佳連勝 and 當前連勝
+        List<Chatroom> chatrooms = chatroomRepository.findByOwnerIdAndRoomStatusAndChatroomTypeInOrderByCloseDateAsc(memberId, RoomStatus.CLOSED, List.of(ChatroomType.PROJECT, ChatroomType.SITUATION, ChatroomType.IMAGE));
+        final Map<String, Integer> bestAndCurrentStreaks = calculateStreaks(chatrooms.stream().map(Chatroom::getCloseDate).toList());
+        final Integer bestStreak = bestAndCurrentStreaks.get("bestStreak");
+        final Integer currentStreak = bestAndCurrentStreaks.get("currentStreak");
+
+        return new ProfileDTO(
+                finishedCourseSize,
+                speakingFrequency,
+                totalSpeakDurations,
+                totalExp,
+                currentStreak,
+                bestStreak
+        );
+    }
+
+    @Override
+    public void addExp(Member member, int point) {
+        int totalExp = member.getTotalExp();
+        totalExp += point;
+        member.setTotalExp(totalExp);
+        memberRepository.save(member);
+    }
+
+
+    public static String formatDuration(double totalSeconds) {
+        if (totalSeconds < 60) {
+            return String.format("%d sec", (int) totalSeconds);
+        } else if (totalSeconds < 3600) {
+            long minutes = (long) (totalSeconds / 60);
+            long remainingSeconds = (long) (totalSeconds % 60);
+            return String.format("%d min %d sec", minutes, remainingSeconds);
+        } else {
+            long hours = (long) (totalSeconds / 3600);
+            long minutes = (long) ((totalSeconds % 3600) / 60);
+            return String.format("%d hr %d min", hours, minutes);
+        }
+    }
+
+    public static Map<String, Integer> calculateStreaks(List<String> dateStrings) {
+        if (dateStrings == null || dateStrings.isEmpty()) {
+            return Map.of("bestStreak", 0, "currentStreak", 0);
+        }
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        List<LocalDate> dates = new ArrayList<>();
+        for (String dateString : dateStrings) {
+            try {
+                LocalDate date = LocalDate.parse(dateString, formatter);
+                dates.add(date);
+            } catch (Exception e) {
+                System.err.println("Invalid date format: " + dateString);
+            }
+        }
+
+        if (dates.isEmpty()) {
+            return Map.of("bestStreak", 0, "currentStreak", 0);
+        }
+
+        Collections.sort(dates);
+
+        int bestStreak = 1;
+        int currentStreak = 1;
+        int maxBestStreak = 1;
+
+        //Calculate best streak
+        for (int i = 1; i < dates.size(); i++) {
+            LocalDate currentDate = dates.get(i);
+            LocalDate previousDate = dates.get(i - 1);
+
+            if (previousDate.plusDays(1).equals(currentDate)) {
+                bestStreak++;
+                maxBestStreak = Math.max(maxBestStreak, bestStreak);
+            } else if (!currentDate.equals(previousDate)) {
+                bestStreak = 1;
+            }
+        }
+
+        //Calculate current streak
+        LocalDate today = LocalDate.now();
+        for (int i = dates.size() - 1; i >= 0; i--) {
+            LocalDate currentDate = dates.get(i);
+            if (currentDate.equals(today) || currentDate.isBefore(today)) {
+                if (currentDate.plusDays(1).equals(today) || currentDate.equals(today)) {
+                    currentStreak++;
+                } else {
+                    break;
+                }
+                today = currentDate;
+            }
+        }
+
+        return Map.of("bestStreak", maxBestStreak, "currentStreak", currentStreak - 1);
     }
 }
