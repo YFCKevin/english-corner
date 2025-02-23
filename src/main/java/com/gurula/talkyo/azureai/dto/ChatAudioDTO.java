@@ -6,6 +6,9 @@ public class ChatAudioDTO {
     private String partnerId;
     private String chatroomId;
 
+    public ChatAudioDTO() {
+    }
+
     public ChatAudioDTO(String content, String memberId, String partnerId, String chatroomId) {
         this.content = content;
         this.memberId = memberId;
@@ -16,6 +19,22 @@ public class ChatAudioDTO {
     public ChatAudioDTO(String content, String partnerId, String chatroomId) {
         this.content = content;
         this.partnerId = partnerId;
+        this.chatroomId = chatroomId;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
+    }
+
+    public void setMemberId(String memberId) {
+        this.memberId = memberId;
+    }
+
+    public void setPartnerId(String partnerId) {
+        this.partnerId = partnerId;
+    }
+
+    public void setChatroomId(String chatroomId) {
         this.chatroomId = chatroomId;
     }
 

@@ -1,6 +1,8 @@
 package com.gurula.talkyo.chatroom;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.gurula.talkyo.azureai.AudioService;
+import com.gurula.talkyo.azureai.dto.ChatAudioDTO;
 import com.gurula.talkyo.chatroom.dto.*;
 import com.gurula.talkyo.chatroom.enums.ChatroomType;
 import com.gurula.talkyo.chatroom.enums.MessageType;
@@ -44,12 +46,13 @@ public class ChatroomController {
     private final LessonRepository lessonRepository;
     private final MessageService messageService;
     private final MemberService memberService;
+    private final AudioService audioService;
 
     public ChatroomController(ChatroomService chatroomService, SimpMessageSendingOperations messagingTemplate, ConfigProperties configProperties, MessageTypeHandler handler, LearningRecordService learningRecordService,
                               ConversationRepository conversationRepository, SimpleDateFormat sdf,
                               MessageRepository messageRepository,
                               ChatroomRepository chatroomRepository,
-                              LessonRepository lessonRepository, MessageService messageService, MemberService memberService) {
+                              LessonRepository lessonRepository, MessageService messageService, MemberService memberService, AudioService audioService) {
         this.chatroomService = chatroomService;
         this.messagingTemplate = messagingTemplate;
         this.configProperties = configProperties;
@@ -62,6 +65,7 @@ public class ChatroomController {
         this.lessonRepository = lessonRepository;
         this.messageService = messageService;
         this.memberService = memberService;
+        this.audioService = audioService;
     }
 
 
@@ -148,7 +152,7 @@ public class ChatroomController {
         String filePath = "";
         switch (messageType) {
             case AUDIO -> filePath = configProperties.getAudioShowPath() + fileName;
-            case IMAGE -> filePath = configProperties.getPicShowPath() + fileName;
+            case IMAGE -> filePath = configProperties.getPicShowPath() + chatroomId + "/" + fileName;
         }
 
         resultStatus.setData(filePath);
@@ -481,5 +485,21 @@ public class ChatroomController {
         resultStatus.setMessage("成功");
         resultStatus.setData(recordList);
         return ResponseEntity.ok(resultStatus);
+    }
+
+
+    @PostMapping("/chatroom/genAudio")
+    public void genAudio (@RequestBody ChatAudioDTO chatAudioDTO) {
+        final Member member = MemberContext.getMember();
+        logger.info("[{} {}] [genAudio]", member.getName(), member.getId());
+
+        chatAudioDTO.setPartnerId(member.getPartnerId());
+
+        try {
+            audioService.textToSpeechAndPlaySound(chatAudioDTO);
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+        }
+
     }
 }

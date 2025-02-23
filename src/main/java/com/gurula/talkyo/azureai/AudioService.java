@@ -153,6 +153,61 @@ public class AudioService {
 
 
 
+    // 文字轉語音 (直接播放不存檔)
+    public boolean textToSpeechAndPlaySound(ChatAudioDTO chatAudioDTO) throws ExecutionException, InterruptedException {
+
+        final String partnerId = chatAudioDTO.getPartnerId();
+        final String content = chatAudioDTO.getContent();
+
+        if (content == null || content.isEmpty()) {
+            logger.warn("Text is empty, skipping speech synthesis.");
+            return false;
+        }
+
+        Optional<Partner> opt = partnerRepository.findById(partnerId);
+        if (opt.isEmpty()) {
+            logger.warn("Partner not found for ID: " + partnerId);
+            return false;
+        }
+
+        Partner partner = opt.get();
+
+        SpeechConfig speechConfig = SpeechConfig.fromSubscription(
+                azureProperties.getAudio().getKey(),
+                azureProperties.getAudio().getRegion()
+        );
+
+        // 設定語音
+        speechConfig.setSpeechSynthesisVoiceName(partner.getShortName());
+
+        // 直接播放，不存檔
+        AudioConfig audioConfig = AudioConfig.fromDefaultSpeakerOutput();
+
+        try (audioConfig; SpeechSynthesizer speechSynthesizer = new SpeechSynthesizer(speechConfig, audioConfig)) {
+            SpeechSynthesisResult result = speechSynthesizer.SpeakTextAsync(content).get();
+
+            if (result.getReason() == ResultReason.SynthesizingAudioCompleted) {
+                logger.info("Speech successfully played using voice [" + partner.getShortName() + "]");
+                return true;
+            } else if (result.getReason() == ResultReason.Canceled) {
+                SpeechSynthesisCancellationDetails cancellation = SpeechSynthesisCancellationDetails.fromResult(result);
+                logger.error("CANCELED: Reason=" + cancellation.getReason());
+
+                if (cancellation.getReason() == CancellationReason.Error) {
+                    logger.error("CANCELED: ErrorCode=" + cancellation.getErrorCode());
+                    logger.error("CANCELED: ErrorDetails=" + cancellation.getErrorDetails());
+                }
+            }
+        } finally {
+            speechConfig.close();
+        }
+
+        return false;
+    }
+
+
+
+
     public ConversationScore pronunciation(String referenceText, String audioFilePath) {
         try {
             // 創建 SpeechConfig
