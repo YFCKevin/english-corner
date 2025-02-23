@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 
 @Component
 public class FileUtils {
@@ -29,7 +30,7 @@ public class FileUtils {
         Path path = uploadPath.resolve(currentTime + extension);
 
         try (InputStream fileStream = file.getInputStream()) {
-            Files.copy(fileStream, path);
+            Files.copy(fileStream, path, StandardCopyOption.REPLACE_EXISTING);  // 防止 FileAlreadyExistsException
         }
 
         if (messageType == MessageType.AUDIO) {
@@ -39,7 +40,7 @@ public class FileUtils {
             convertWebmToWav(path, wavPath);
 
             // 刪除原始的 webm 檔案
-            Files.delete(path);
+            Files.deleteIfExists(path); // 防止 NoSuchFileException
 
             // 返回轉換後的 wav 檔案
             return wavPath;

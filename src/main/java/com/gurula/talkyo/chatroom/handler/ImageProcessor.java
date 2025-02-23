@@ -29,7 +29,7 @@ public class ImageProcessor extends MessageTypeHandler{
     @Override
     protected void doDeleteHandler(ChatDTO chatDTO, ConfigProperties configProperties) throws IOException {
         final String imageFileName = chatDTO.getImageFileName();
-        Path filePath = Paths.get(configProperties.getAudioSavePath(), chatDTO.getChatroomId(), imageFileName);
+        Path filePath = Paths.get(configProperties.getPicSavePath(), chatDTO.getChatroomId(), imageFileName);
         FileUtils.deleteFile(filePath);
     }
 }

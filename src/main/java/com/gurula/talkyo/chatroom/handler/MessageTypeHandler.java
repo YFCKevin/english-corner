@@ -18,7 +18,7 @@ public abstract class MessageTypeHandler {
         if (match(chatDTO.getMessageType())) {
             fileName = doSaveHandler(chatDTO, configProperties);
         } else if (next != null){
-            fileName = doSaveHandler(chatDTO, configProperties);
+            fileName = next.saveMultipartFile(chatDTO, configProperties);
         }
         return fileName;
     }
@@ -27,7 +27,7 @@ public abstract class MessageTypeHandler {
         if (match(chatDTO.getMessageType())) {
             doDeleteHandler(chatDTO, configProperties);
         } else if (next != null){
-            doDeleteHandler(chatDTO, configProperties);
+            next.deleteFile(chatDTO, configProperties);
         }
     }
 
