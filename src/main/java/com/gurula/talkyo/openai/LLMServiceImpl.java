@@ -32,6 +32,29 @@ public class LLMServiceImpl implements LLMService{
 
     @Override
     public String translate(String text) {
+
+        String url = "https://api.openai.com/v1/chat/completions";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(configProperties.getOpenaiApiKey());
+
+        String payload = translatePayload(text);
+
+        System.out.println("payload = " + payload);
+
+        HttpEntity<String> entity = new HttpEntity<>(payload, headers);
+
+        ResponseEntity<ChatCompletionResponse> response = restTemplate.exchange(url, HttpMethod.POST, entity, ChatCompletionResponse.class);
+
+        if (response.getStatusCode().is2xxSuccessful()) {
+            logger.info("OpenAI回傳的status code: {}", response);
+            ChatCompletionResponse responseBody = response.getBody();
+            final String jsonContent = extractJsonContent(responseBody);
+            System.out.println("GPT回傳資料 ======> " + jsonContent);
+            return jsonContent;
+        }
+
         return null;
     }
 
@@ -466,6 +489,29 @@ public class LLMServiceImpl implements LLMService{
         messages.add(userMessage);
 
         PayloadDTO payload = new PayloadDTO("gpt-4o-mini", messages, 1, 2000);
+
+        try {
+            return objectMapper.writeValueAsString(payload);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private String translatePayload(String text) {
+
+        String systemMessageContent = "You are a professional translator. Your task is to translate the given text into natural and grammatically correct English. Ensure the translation sounds fluent and contextually appropriate. Only return the translated text without any additional formatting, quotation marks, or explanations.";
+
+        String userMessageContent = String.format("Translate the following text into proper English:\n\n%s\n\nDo not add quotation marks or extra symbols. Only return the translation.", text);
+
+        MsgDTO systemMessage = new MsgDTO(Role.system, systemMessageContent);
+        MsgDTO userMessage = new MsgDTO(Role.user, userMessageContent);
+
+        List<MsgDTO> messages = new ArrayList<>();
+        messages.add(systemMessage);
+        messages.add(userMessage);
+
+        PayloadDTO payload = new PayloadDTO("gpt-4o-mini", messages, 0.3F, 5000);
 
         try {
             return objectMapper.writeValueAsString(payload);
