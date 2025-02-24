@@ -2,6 +2,7 @@ package com.gurula.talkyo.chatroom;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.gurula.talkyo.chatroom.dto.*;
+import com.gurula.talkyo.exception.ResultStatus;
 import com.gurula.talkyo.member.Member;
 import com.gurula.talkyo.openai.dto.LLMChatResponseDTO;
 
@@ -21,7 +22,7 @@ public interface ChatroomService {
 
     String speechToText(SpeechToTextDTO speechToTextDTO) throws ExecutionException, InterruptedException, IOException;
 
-    CompletableFuture<Void> advancedCheck(ChatRequestDTO chatRequestDTO) throws IOException, ExecutionException, InterruptedException;
+    CompletableFuture<ResultStatus<Void>> advancedCheck(ChatRequestDTO chatRequestDTO) throws IOException, ExecutionException, InterruptedException;
 
     void grammarCheck(ChatRequestDTO chatRequestDTO) throws JsonProcessingException, ExecutionException, InterruptedException;
 
@@ -54,4 +55,6 @@ public interface ChatroomService {
     List<ScenarioDTO> getScenarios() throws IOException;
 
     List<Chatroom> getScenarioHistoryRecord(String memberId);
+
+    String getCurrentMsgId(String chatroomId);
 }

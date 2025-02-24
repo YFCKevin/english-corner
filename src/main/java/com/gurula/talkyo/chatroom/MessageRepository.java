@@ -36,4 +36,6 @@ public interface MessageRepository extends MongoRepository<Message, String> {
     Optional<Message> findFirstByBranchOrderByCreatedDateTimeDesc(String branch);
 
     List<Message> findBySenderAndAudioNameIsNotNull(String memberId);
+
+    Optional<Message> findByPreviewMessageIdAndVersion(String previewMessageId, int targetVersion);
 }

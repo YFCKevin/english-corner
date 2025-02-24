@@ -18,14 +18,15 @@ public class MessageServiceImpl implements MessageService{
     }
 
     @Override
-    public List<Map<Integer, Message>> getHistoryMessageWhenSwitchBranch(String branch) {
+    public List<Map<Integer, Message>> getHistoryMessageWhenSwitchBranch(String previewMessageId, int targetVersion) {
 
         List<Map<Integer, Message>> historyMsgs = new ArrayList<>();
 
-        final Optional<Message> opt = messageRepository.findFirstByBranchOrderByCreatedDateTimeDesc(branch);
+        final Optional<Message> opt = messageRepository.findByPreviewMessageIdAndVersion(previewMessageId, targetVersion);
         if (opt.isPresent()) {
             final Message message = opt.get();
-             historyMsgs = getHistoryMessages(message.getId());
+            final Message lastMessage = messageRepository.findFirstByBranchOrderByCreatedDateTimeDesc(message.getBranch()).get();
+            historyMsgs = getHistoryMessages(lastMessage.getId());
         }
 
         return historyMsgs;

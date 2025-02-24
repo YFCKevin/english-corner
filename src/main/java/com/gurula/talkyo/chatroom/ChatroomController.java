@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.stereotype.Controller;
@@ -29,6 +30,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 @Controller
@@ -260,23 +262,38 @@ public class ChatroomController {
         final Member member = MemberContext.getMember();
         logger.info("[{} {}] [chatroom advancedCheck]", member.getName(), member.getId());
 
-        ResultStatus resultStatus = new ResultStatus();
+        ResultStatus<Message> resultStatus = new ResultStatus<>();
 
-        final Optional<Message> opt = messageRepository.findById(messageId);
-        if (opt.isPresent()) {
-            final Message message = opt.get();
-            final Chatroom chatroom = chatroomRepository.findById(message.getChatroomId()).get();
+        try {
+            final Optional<Message> opt = messageRepository.findById(messageId);
+            if (opt.isPresent()) {
+                Message message = opt.get();
+                final Chatroom chatroom = chatroomRepository.findById(message.getChatroomId()).get();
 
-            chatroomService.advancedCheck(new ChatRequestDTO(
-                    messageId,
-                    chatroom.getChatroomType(),
-                    message.getBranch(),
-                    message.getPreviewMessageId()
-            ));
+                final CompletableFuture<ResultStatus<Void>> result = chatroomService.advancedCheck(new ChatRequestDTO(
+                        messageId,
+                        chatroom.getChatroomType(),
+                        message.getBranch(),
+                        message.getPreviewMessageId()
+                ));
+
+                if ("C000".equals(result.get().getCode())) {
+                    message = messageRepository.findById(messageId).get();
+                    resultStatus.setCode("C000");
+                    resultStatus.setMessage("成功");
+                    resultStatus.setData(message);
+                };
+
+            } else {
+                resultStatus.setCode("C001");
+                resultStatus.setMessage("查無訊息");
+            }
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            resultStatus.setCode("C999");
+            resultStatus.setMessage("系統錯誤");
         }
 
-        resultStatus.setCode("C000");
-        resultStatus.setMessage("成功");
         return ResponseEntity.ok(resultStatus);
     }
 
@@ -439,14 +456,14 @@ public class ChatroomController {
     }
 
 
-    @GetMapping("/chatroom/switchMsg/{branch}")
-    public ResponseEntity<?> switchMsg (@PathVariable String branch){
+    @GetMapping("/chatroom/switchMsg/{previewMessageId}/{targetVersion}")
+    public ResponseEntity<?> switchMsg (@PathVariable String previewMessageId, @PathVariable int targetVersion){
         final Member member = MemberContext.getMember();
         logger.info("[{} {}] [switch message]", member.getName(), member.getId());
 
         ResultStatus<List<Map<Integer, Message>>> resultStatus = new ResultStatus<>();
 
-        final List<Map<Integer, Message>> historyMsgs = messageService.getHistoryMessageWhenSwitchBranch(branch);
+        final List<Map<Integer, Message>> historyMsgs = messageService.getHistoryMessageWhenSwitchBranch(previewMessageId, targetVersion);
 
         resultStatus.setCode("C000");
         resultStatus.setMessage("成功");
@@ -501,5 +518,20 @@ public class ChatroomController {
             logger.error(e.getMessage());
         }
 
+    }
+
+
+    @GetMapping("/chatroom/getCurrentMsgId/{chatroomId}")
+    public ResponseEntity<?> getCurrentMsgId (@PathVariable String chatroomId){
+        final Member member = MemberContext.getMember();
+        logger.info("[{} {}] [getCurrentMsgId]", member.getName(), member.getId());
+
+        String currentMsgId = chatroomService.getCurrentMsgId(chatroomId);
+
+        ResultStatus<String> resultStatus = new ResultStatus<>();
+        resultStatus.setCode("C000");
+        resultStatus.setMessage("成功");
+        resultStatus.setData(currentMsgId);
+        return ResponseEntity.ok(resultStatus);
     }
 }

@@ -14,6 +14,7 @@ import com.gurula.talkyo.config.RabbitMQConfig;
 import com.gurula.talkyo.course.Lesson;
 import com.gurula.talkyo.course.LessonRepository;
 import com.gurula.talkyo.course.Sentence;
+import com.gurula.talkyo.exception.ResultStatus;
 import com.gurula.talkyo.gemini.ImageAnalysisService;
 import com.gurula.talkyo.member.Member;
 import com.gurula.talkyo.openai.LLMService;
@@ -139,10 +140,10 @@ public class ChatroomServiceImpl implements ChatroomService {
         final String courseId = chatInitDTO.getCourseId();
         final String lessonId = chatInitDTO.getLessonId();
         final String memberId = member.getId();
-        final Scenario scenario = chatInitDTO.getScenario();
         final String partnerId = member.getPartnerId();
         final ChatroomType chatroomType = chatInitDTO.getChatroomType();
         final String currentMessageId = chatInitDTO.getCurrentMessageId();
+        final String unitNumber = chatInitDTO.getUnitNumber();
 
         boolean exists = messageRepository.existsByChatroomId(chatroomId);
         if (exists) {    // 代表聊天室已有聊天記錄
@@ -168,9 +169,38 @@ public class ChatroomServiceImpl implements ChatroomService {
 
             return historyMsgs;
         } else {    // 無聊天記錄，產生一則開場白
+            System.out.println("無聊天記錄，產生一則開場白");
             String openingLineMessage = "";
             switch (chatroomType) {
-                case PROJECT, SITUATION -> {
+                case PROJECT -> {
+                    final Lesson lesson = lessonRepository.findById(lessonId).get();
+
+                    // load scenario
+                    final Scenario scenario = lesson.getScenario();
+                    System.out.println("scenario = " + scenario);
+                    loadScenario(new ChatRequestDTO(chatroomId, chatroomType, scenario));
+
+                    // partner 參與聊天室紀錄
+                    Conversation conversation = new Conversation()
+                            .enterChatroom(partnerId, chatroomId);
+                    conversationRepository.save(conversation);
+
+                    // partner opening line
+                    openingLineMessage = openingLine(new ChatRequestDTO(chatroomId, scenario, memberId, partnerId, lessonId, chatroomType));
+
+                    // learning record
+                    learningRecordService.saveRecord(new RecordDTO(courseId, lessonId, chatroomId), memberId);
+                }
+                case SITUATION -> {
+                    final List<ScenarioDTO> scenarios = getScenarios();
+                    final ScenarioDTO scenarioDTO = scenarios.stream()
+                            .filter(s -> unitNumber.equals(s.getUnitNumber())).findFirst().get();
+                    Scenario scenario = new Scenario(
+                            scenarioDTO.getHumanRole(),
+                            scenarioDTO.getPartnerRole(),
+                            scenarioDTO.getSubject()
+                    );
+
                     // load scenario
                     loadScenario(new ChatRequestDTO(chatroomId, chatroomType, scenario));
 
@@ -186,6 +216,15 @@ public class ChatroomServiceImpl implements ChatroomService {
                     learningRecordService.saveRecord(new RecordDTO(courseId, lessonId, chatroomId), memberId);
                 }
                 case FREE_TALK -> {
+                    final List<ScenarioDTO> scenarios = getScenarios();
+                    final ScenarioDTO scenarioDTO = scenarios.stream()
+                            .filter(s -> unitNumber.equals(s.getUnitNumber())).findFirst().get();
+                    Scenario scenario = new Scenario(
+                            scenarioDTO.getHumanRole(),
+                            scenarioDTO.getPartnerRole(),
+                            scenarioDTO.getSubject()
+                    );
+
                     // load scenario
                     loadScenario(new ChatRequestDTO(chatroomId, chatroomType, scenario));
 
@@ -444,7 +483,7 @@ public class ChatroomServiceImpl implements ChatroomService {
     public String speechToText(SpeechToTextDTO speechToTextDTO) throws ExecutionException, InterruptedException, IOException {
         System.out.println("speechToText");
 
-        if (StringUtils.isBlank(speechToTextDTO.getText())) {
+        if (StringUtils.isNotBlank(speechToTextDTO.getText())) {
             return null;
         }
 
@@ -455,7 +494,7 @@ public class ChatroomServiceImpl implements ChatroomService {
     }
 
     @Override
-    public CompletableFuture<Void> advancedCheck(ChatRequestDTO chatRequestDTO) throws IOException, ExecutionException, InterruptedException {
+    public CompletableFuture<ResultStatus<Void>> advancedCheck(ChatRequestDTO chatRequestDTO) throws IOException, ExecutionException, InterruptedException {
 
         final ChatroomType chatroomType = chatRequestDTO.getChatroomType();
         final String messageId = chatRequestDTO.getMessageId();
@@ -482,7 +521,12 @@ public class ChatroomServiceImpl implements ChatroomService {
                 );
 
                 // 等待所有 Queue 完成
-                return CompletableFuture.allOf(grammarFuture, advancedFuture, pronunciationFuture);
+                return CompletableFuture.allOf(grammarFuture, advancedFuture, pronunciationFuture)
+                        .thenApply(v -> {
+                            ResultStatus<Void> resultStatus = new ResultStatus<>();
+                            resultStatus.setCode("C000");
+                            return resultStatus;
+                        });
             }
             case SITUATION -> {
                 System.out.println("執行 [文法校正、夥伴回應] 攜帶的參數：" + chatRequestDTO);
@@ -498,13 +542,23 @@ public class ChatroomServiceImpl implements ChatroomService {
                 );
 
                 // 等待所有 Queue 完成
-                return CompletableFuture.allOf(grammarFuture);
+                return CompletableFuture.allOf(grammarFuture).thenApply(v -> {
+                    ResultStatus<Void> resultStatus = new ResultStatus<>();
+                    resultStatus.setCode("C000");
+                    return resultStatus;
+                });
             }
-            case FREE_TALK -> {
-                message.setBranch(branch);
-                message.setPreviewMessageId(previewMessageId);
-                messageRepository.save(message);
-            }
+//            case FREE_TALK -> {
+//                message.setBranch(branch);
+//                message.setPreviewMessageId(previewMessageId);
+//                messageRepository.save(message);
+//
+//                return CompletableFuture.completedFuture(null).thenApply(v -> {
+//                    ResultStatus<Void> resultStatus = new ResultStatus<>();
+//                    resultStatus.setCode("C000");
+//                    return resultStatus;
+//                });
+//            }
         }
         return CompletableFuture.completedFuture(null);
     }
@@ -899,7 +953,7 @@ public class ChatroomServiceImpl implements ChatroomService {
                         partnerAskMsg,
                         scenario
                 );
-                return llmService.replyMsg(llmChatRequestDTO);
+                return llmService.genGuidingSentence(llmChatRequestDTO);
             }
         }
         return new LLMChatResponseDTO();
@@ -917,5 +971,14 @@ public class ChatroomServiceImpl implements ChatroomService {
     @Override
     public List<Chatroom> getScenarioHistoryRecord(String memberId) {
         return chatroomRepository.findByOwnerIdAndChatroomTypeAndRoomStatusOrderByCloseDateAsc(memberId, ChatroomType.SITUATION, RoomStatus.CLOSED);
+    }
+
+    @Override
+    public String getCurrentMsgId(String chatroomId) {
+        List<Message> messages = messageRepository.findAllByChatroomIdOrderByCreatedDateTimeAsc(chatroomId);
+        if (messages.isEmpty()) {
+            return null;
+        }
+        return messages.get(messages.size() - 1).getId();
     }
 }
