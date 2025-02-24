@@ -1,5 +1,6 @@
 package com.gurula.talkyo.course;
 
+import com.gurula.talkyo.chatroom.Scenario;
 import com.gurula.talkyo.course.utils.CourseUtil;
 import org.springframework.data.annotation.Id;
 
@@ -15,6 +16,7 @@ public class Lesson {
     private String desc;        // 情境單元描述
     private List<Sentence> sentences = new ArrayList<>();
     private String courseId;
+    private Scenario scenario;
 
     public Lesson(){}
 
@@ -72,5 +74,13 @@ public class Lesson {
 
     public void setDesc(String desc) {
         this.desc = desc;
+    }
+
+    public Scenario getScenario() {
+        return scenario;
+    }
+
+    public void setScenario(Scenario scenario) {
+        this.scenario = scenario;
     }
 }

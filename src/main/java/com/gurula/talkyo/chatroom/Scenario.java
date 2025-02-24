@@ -9,6 +9,12 @@ public class Scenario {
     public Scenario() {
     }
 
+    public Scenario(String humanRole, String partnerRole, String subject) {
+        this.partnerRole = partnerRole;
+        this.humanRole = humanRole;
+        this.subject = subject;
+    }
+
     public String getPartnerRole() {
         return partnerRole;
     }
