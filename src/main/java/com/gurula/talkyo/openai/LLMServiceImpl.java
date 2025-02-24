@@ -274,6 +274,93 @@ public class LLMServiceImpl implements LLMService{
         return null;
     }
 
+    @Override
+    public LLMChatResponseDTO genGuidingSentence(LLMChatRequestDTO llmChatRequestDTO) throws JsonProcessingException {
+        final String partnerAskMsg = llmChatRequestDTO.getHistoryMsgs();
+        final Scenario scenario = llmChatRequestDTO.getScenario();
+
+        String url = "https://api.openai.com/v1/chat/completions";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(configProperties.getOpenaiApiKey());
+
+        String payload = guidingSentencePayload(partnerAskMsg, scenario);
+
+        System.out.println("payload = " + payload);
+
+        HttpEntity<String> entity = new HttpEntity<>(payload, headers);
+
+        ResponseEntity<ChatCompletionResponse> response = restTemplate.exchange(url, HttpMethod.POST, entity, ChatCompletionResponse.class);
+
+        if (response.getStatusCode().is2xxSuccessful()) {
+            logger.info("OpenAI回傳的status code: {}", response);
+            ChatCompletionResponse responseBody = response.getBody();
+            final String jsonContent = extractJsonContent(responseBody);
+            System.out.println("jsonContent = " + jsonContent);
+            final LLMChatResponseDTO responseDTO = objectMapper.readValue(jsonContent, LLMChatResponseDTO.class);
+            System.out.println("GPT回傳資料 ======> " + responseDTO.getContent() + "\n" + responseDTO.getTranslation());
+            return responseDTO;
+        }
+
+        return null;
+    }
+
+    private String guidingSentencePayload(String partnerAskMsg, Scenario scenario) {
+        String systemMessageContent = String.format(
+                "You are an AI assistant, responsible for simulating role-playing conversations to help the user practice conversation skills in a specific scenario.\n\n" +
+                        "### Role Setting\n" +
+                        "- Your role: \"%s\"\n" +
+                        "- User's role: \"%s\"\n" +
+                        "- Scenario: \"%s\"\n\n" +
+                        "### Conversation Guidelines\n" +
+                        "1. Stay strictly in your assigned role.\n" +
+                        "2. Always generate a natural and contextually relevant response.\n" +
+                        "3. Conclude the conversation naturally at an appropriate point.\n" +
+                        "### Response Format\n" +
+                        "Your response must be in the following structured JSON format:\n" +
+                        "{\n" +
+                        "    \"content\": \"[Your response in English]\",\n" +
+                        "    \"translation\": \"[Your response translated into Traditional Chinese]\"\n" +
+                        "}",
+                scenario.getHumanRole(),    // AI role
+                scenario.getPartnerRole(),  // User role
+                scenario.getSubject()       // Scenario subject
+        );
+
+        String userMessageContent = String.format(
+                "### Current Conversation Context\n" +
+                        "- Scenario: \"%s\"\n" +
+                        "- Your Role: \"%s\"\n" +
+                        "- User's Role: \"%s\"\n\n" +
+                        "### Last User Message:\n" +
+                        "\"%s\"\n\n" +
+                        "### Your Task:\n" +
+                        "Based on the previous message from the user, generate a natural and relevant response following the conversation flow and maintaining the scenario's context.\n" +
+                        "**Your response must be concise and within 20 words.**",
+                scenario.getSubject(),
+                scenario.getHumanRole(),
+                scenario.getPartnerRole(),
+                partnerAskMsg
+        );
+
+        MsgDTO systemMessage = new MsgDTO(Role.system, systemMessageContent);
+        MsgDTO userMessage = new MsgDTO(Role.user, userMessageContent);
+
+        List<MsgDTO> messages = new ArrayList<>();
+        messages.add(systemMessage);
+        messages.add(userMessage);
+
+        PayloadDTO payload = new PayloadDTO("gpt-4o-mini", messages, 1, 5000);
+
+        try {
+            return objectMapper.writeValueAsString(payload);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     private String feedbackPayload(String dialogueText) {
 
         String systemMessageContent = "You are a language learning assistant. Your task is to evaluate *only* the user's sentences from the provided dialogue. " +

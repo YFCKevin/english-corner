@@ -23,4 +23,6 @@ public interface LLMService {
     LLMChatResponseDTO replyMsg(LLMChatRequestDTO llmChatRequestDTO) throws JsonProcessingException;
 
     Feedback feedback(String dialogueText) throws JsonProcessingException;
+
+    LLMChatResponseDTO genGuidingSentence(LLMChatRequestDTO llmChatRequestDTO) throws JsonProcessingException;
 }
