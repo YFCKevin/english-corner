@@ -8,13 +8,9 @@ public class ReportRequestDTO {
     public ReportRequestDTO() {
     }
 
-    public ReportRequestDTO(String dialogueText) {
-        this.dialogueText = dialogueText;
-    }
-
-    public ReportRequestDTO(String referenceText, String destinationFilePath) {
+    public ReportRequestDTO(String referenceText, String dialogueText) {
         this.referenceText = referenceText;
-        this.destinationFilePath = destinationFilePath;
+        this.dialogueText = dialogueText;
     }
 
     public ReportRequestDTO(String referenceText, String destinationFilePath, String dialogueText) {
@@ -33,6 +29,10 @@ public class ReportRequestDTO {
 
     public String getDialogueText() {
         return dialogueText;
+    }
+
+    public void setDestinationFilePath(String destinationFilePath) {
+        this.destinationFilePath = destinationFilePath;
     }
 
     @Override

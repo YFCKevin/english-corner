@@ -16,6 +16,7 @@ import com.gurula.talkyo.member.MemberService;
 import com.gurula.talkyo.openai.dto.LLMChatResponseDTO;
 import com.gurula.talkyo.properties.ConfigProperties;
 import com.gurula.talkyo.record.LearningRecordService;
+import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -28,6 +29,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -271,10 +274,11 @@ public class ChatroomController {
                 final Chatroom chatroom = chatroomRepository.findById(message.getChatroomId()).get();
 
                 final CompletableFuture<ResultStatus<Void>> result = chatroomService.advancedCheck(new ChatRequestDTO(
-                        messageId,
                         chatroom.getChatroomType(),
+                        messageId,
                         message.getBranch(),
-                        message.getPreviewMessageId()
+                        message.getPreviewMessageId(),
+                        member.getPartnerId()
                 ));
 
                 if ("C000".equals(result.get().getCode())) {
@@ -300,18 +304,14 @@ public class ChatroomController {
 
     /**
      * 離開聊天室
-     * @param chatDTO
      * @throws IOException
      * @throws ExecutionException
      * @throws InterruptedException
      */
-    @PostMapping("/chatroom/leave")
-    public void leave (@RequestBody ChatDTO chatDTO) throws IOException, ExecutionException, InterruptedException {
+    @GetMapping("/chatroom/leave/{chatroomId}/{chatroomType}/{lessonId}")
+    public void leave (@PathVariable String chatroomId, @PathVariable ChatroomType chatroomType, @PathVariable String lessonId, HttpServletResponse response) throws IOException, ExecutionException, InterruptedException {
         final Member member = MemberContext.getMember();
         logger.info("[{} {}] [chatroom leave]", member.getName(), member.getId());
-
-        final String chatroomId = chatDTO.getChatroomId();
-        final ChatroomType chatroomType = chatDTO.getChatroomType();
 
         switch (chatroomType) {
             case PROJECT -> {
@@ -329,6 +329,10 @@ public class ChatroomController {
 
                 // 導向測驗結束結果頁面
                 System.out.println("導向測驗結束結果頁面");
+                String redirectUrl = configProperties.getGlobalDomain() + "learning-report.html?chatroomId=" + URLEncoder.encode(chatroomId, StandardCharsets.UTF_8) +
+                        "&lessonId=" + URLEncoder.encode(lessonId, StandardCharsets.UTF_8);
+                response.setStatus(HttpServletResponse.SC_FOUND);   // 302
+                response.setHeader("Location", redirectUrl);    // 設定 Location Header
             }
             case SITUATION -> {
                 // generate learning report
@@ -348,6 +352,9 @@ public class ChatroomController {
 
                 // 導向首頁
                 System.out.println("導向首頁");
+                String redirectUrl = configProperties.getGlobalDomain() + "index.html";
+                response.setStatus(HttpServletResponse.SC_FOUND);   // 302
+                response.setHeader("Location", redirectUrl);    // 設定 Location Header
             }
         }
     }
@@ -368,11 +375,15 @@ public class ChatroomController {
 
         LearningReport learningReport = chatroomService.getLearningReport(chatroomId);
 
-        final double prosody = learningReport.getConversationScore().getProsody();
-        final double fluency = learningReport.getConversationScore().getFluency();
-        final double completeness = learningReport.getConversationScore().getCompleteness();
-        final double accuracy = learningReport.getConversationScore().getAccuracy();
-
+        final ConversationScore conversationScore = learningReport.getConversationScore();
+        final double prosody = conversationScore != null
+                ? conversationScore.getProsody() : 0.0;
+        final double fluency = conversationScore != null
+                ? conversationScore.getFluency() : 0.0;
+        final double completeness = conversationScore != null
+                ? conversationScore.getCompleteness() : 0.0;
+        final double accuracy = conversationScore != null
+                ? conversationScore.getAccuracy() : 0.0;
         final double overallRating = (accuracy + completeness + fluency + prosody) / 4;
 
         final Optional<Lesson> opt = lessonRepository.findById(lessonId);
@@ -381,7 +392,7 @@ public class ChatroomController {
             final Lesson lesson = opt.get();
             dto = new LearningReportDTO(
                     lesson.getName(),
-                    learningReport.getConversationScore(),
+                    conversationScore,
                     learningReport.getFeedback(),
                     overallRating
             );

@@ -40,11 +40,12 @@ public class ChatRequestDTO {
         this.partnerId = partnerId;
     }
 
-    public ChatRequestDTO(String messageId, String branch, String previewMessageId, ChatroomType chatroomType) {
-        this.messageId = messageId;
+    public ChatRequestDTO(ChatroomType chatroomType, String messageId, String branch, String previewMessageId, String partnerId) {
         this.chatroomType = chatroomType;
+        this.messageId = messageId;
         this.branch = branch;
         this.previewMessageId = previewMessageId;
+        this.partnerId = partnerId;
     }
 
     public ChatRequestDTO(String chatroomId, ChatroomType chatroomType, String branch, String previewMessageId) {
@@ -173,6 +174,8 @@ public class ChatRequestDTO {
                 ", chatroomType=" + chatroomType +
                 ", referenceText='" + referenceText + '\'' +
                 ", audioFilePath='" + audioFilePath + '\'' +
+                ", branch='" + branch + '\'' +
+                ", previewMessageId='" + previewMessageId + '\'' +
                 '}';
     }
 }

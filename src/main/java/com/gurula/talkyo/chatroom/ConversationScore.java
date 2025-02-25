@@ -3,10 +3,10 @@ package com.gurula.talkyo.chatroom;
 import java.util.List;
 
 public class ConversationScore {
-    private double fluency; // 流暢度
-    private double accuracy;    // 精准度
-    private double completeness;    // 完整性
-    private double prosody; // 韻律
+    private double fluency = 0.0; // 流暢度
+    private double accuracy = 0.0;    // 精准度
+    private double completeness = 0.0;    // 完整性
+    private double prosody = 0.0; // 韻律
     private String displayText;     // 識別文字
     private List<DisplayWord> displayWords;
     private ContentAssessment contentAssessment;    // 內容分析

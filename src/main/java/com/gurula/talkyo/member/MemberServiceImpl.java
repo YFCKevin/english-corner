@@ -132,10 +132,14 @@ public class MemberServiceImpl implements MemberService{
                 if (earliestCloseDateChatroomOpt.isPresent()) { // 已完課
                     final Chatroom earliestCloseDateChatroom = earliestCloseDateChatroomOpt.get();
                     final ConversationScore conversationScore = earliestCloseDateChatroom.getReport().getConversationScore();
-                    final double accuracy = conversationScore.getAccuracy();
-                    final double completeness = conversationScore.getCompleteness();
-                    final double fluency = conversationScore.getFluency();
-                    final double prosody = conversationScore.getProsody();
+                    final double prosody = conversationScore != null
+                            ? conversationScore.getProsody() : 0.0;
+                    final double fluency = conversationScore != null
+                            ? conversationScore.getFluency() : 0.0;
+                    final double completeness = conversationScore != null
+                            ? conversationScore.getCompleteness() : 0.0;
+                    final double accuracy = conversationScore != null
+                            ? conversationScore.getAccuracy() : 0.0;
                     final double overallRating = (accuracy + completeness + fluency + prosody) / 4;
                     LearningPlanDTO learningPlanDTO = new LearningPlanDTO(
                             lesson.getId(),

@@ -137,7 +137,7 @@ public class ChatroomServiceImpl implements ChatroomService {
     public List<Map<Integer, Message>> init(ChatInitDTO chatInitDTO, Member member) throws IOException, ExecutionException, InterruptedException {
 
         final String chatroomId = chatInitDTO.getChatroomId();
-        final String courseId = chatInitDTO.getCourseId();
+        String courseId = chatInitDTO.getCourseId();
         final String lessonId = chatInitDTO.getLessonId();
         final String memberId = member.getId();
         final String partnerId = member.getPartnerId();
@@ -174,6 +174,7 @@ public class ChatroomServiceImpl implements ChatroomService {
             switch (chatroomType) {
                 case PROJECT -> {
                     final Lesson lesson = lessonRepository.findById(lessonId).get();
+                    courseId = lesson.getCourseId();
 
                     // load scenario
                     final Scenario scenario = lesson.getScenario();
@@ -253,6 +254,7 @@ public class ChatroomServiceImpl implements ChatroomService {
 
     /**
      * 將場景 scenario 存入 chatroom
+     *
      * @param chatRequestDTO
      */
     @Override
@@ -269,6 +271,7 @@ public class ChatroomServiceImpl implements ChatroomService {
 
     /**
      * 產生 partner 開場白
+     *
      * @param chatRequestDTO
      * @return
      * @throws IOException
@@ -324,7 +327,7 @@ public class ChatroomServiceImpl implements ChatroomService {
         message.setChatroomId(chatroomId);
         message.setSender(partnerId);
         message.setSenderRole(SenderRole.AI);
-        final String fileName = audioService.textToSpeechInChatting (List.of(new ChatAudioDTO(llmChatResponseDTO.getContent(), memberId, partnerId, chatroomId))).get(0).getFileName().toString();
+        final String fileName = audioService.textToSpeechInChatting(List.of(new ChatAudioDTO(llmChatResponseDTO.getContent(), memberId, partnerId, chatroomId))).get(0).getFileName().toString();
         message.setAudioName(fileName);
         message.setSize(Files.size(Paths.get(configProperties.getAudioSavePath(), chatroomId, fileName)));
         message.setParsedText(llmChatResponseDTO.getContent());
@@ -438,6 +441,7 @@ public class ChatroomServiceImpl implements ChatroomService {
 
     /**
      * 使用者回應訊息，觸發 audio to text
+     *
      * @param chatDTO
      * @param member
      * @return
@@ -475,6 +479,7 @@ public class ChatroomServiceImpl implements ChatroomService {
 
     /**
      * audio to text 完成後，觸發文法校正、取得進階語句、夥伴回應、發音分析
+     *
      * @return
      * @throws ExecutionException
      * @throws InterruptedException
@@ -506,6 +511,10 @@ public class ChatroomServiceImpl implements ChatroomService {
         switch (chatroomType) {
             case PROJECT -> {
                 System.out.println("執行 [文法校正、取得進階語句、夥伴回應、發音分析] 攜帶的參數：" + chatRequestDTO);
+
+                chatRequestDTO.setChatroomId(message.getChatroomId());
+                chatRequestDTO.setReferenceText(message.getParsedText());
+                chatRequestDTO.setAudioFilePath(configProperties.getAudioSavePath() + message.getChatroomId() + "/" + message.getAudioName());
 
                 // 呼叫廣播，執行文法校正、取得進階語句、夥伴回應、發音分析
                 CompletableFuture<Void> grammarFuture = new CompletableFuture<>();
@@ -560,12 +569,14 @@ public class ChatroomServiceImpl implements ChatroomService {
 //                });
 //            }
         }
+
         return CompletableFuture.completedFuture(null);
     }
 
 
     /**
      * 文法校正
+     *
      * @param chatRequestDTO
      * @throws JsonProcessingException
      */
@@ -612,21 +623,27 @@ public class ChatroomServiceImpl implements ChatroomService {
                 grammarResult.setErrorReason(grammarResponseDTO.getErrorReason());
                 grammarResult.setTranslation(grammarResponseDTO.getTranslation());
                 grammarResult.setErrorSentence(currentMsgContent);
+                message.setGrammarResult(grammarResult);
+                messageRepository.updateGrammarResult(messageId, grammarResult);
             } else {    // 文法正確
                 messageRepository.updateAccuracy(messageId, true);
-                grammarResult.setCorrectSentence(grammarResponseDTO.getCorrectSentence());
-                grammarResult.setTranslation(grammarResponseDTO.getTranslation());
             }
 
-            message.setGrammarResult(grammarResult);
-            messageRepository.updateGrammarResult(messageId, grammarResult);
             System.out.println("GrammarCheck成功");
+        }
+
+        if (chattingFutures.containsKey(messageId)) {
+            List<CompletableFuture<Void>> futures = chattingFutures.get(messageId);
+            if (futures.size() >= 3) {
+                futures.get(0).complete(null);
+            }
         }
     }
 
 
     /**
      * 進階語句
+     *
      * @param chatRequestDTO
      * @throws ExecutionException
      * @throws InterruptedException
@@ -673,11 +690,19 @@ public class ChatroomServiceImpl implements ChatroomService {
             messageRepository.updateAdvancedSentences(messageId, sentences);
             System.out.println("advancedSentence成功");
         }
+
+        if (chattingFutures.containsKey(chatRequestDTO.getMessageId())) {
+            List<CompletableFuture<Void>> futures = chattingFutures.get(chatRequestDTO.getMessageId());
+            if (futures.size() >= 3) {
+                futures.get(1).complete(null);
+            }
+        }
     }
 
 
     /**
      * partner 回應
+     *
      * @param chatRequestDTO
      * @throws ExecutionException
      * @throws InterruptedException
@@ -754,6 +779,7 @@ public class ChatroomServiceImpl implements ChatroomService {
 
     /**
      * 發音分析
+     *
      * @param chatRequestDTO
      * @throws InterruptedException
      * @throws JsonProcessingException
@@ -768,6 +794,17 @@ public class ChatroomServiceImpl implements ChatroomService {
         final String referenceText = chatRequestDTO.getReferenceText();
         final String audioFilePath = chatRequestDTO.getAudioFilePath();
 
+        // 不是音檔則會進入
+        if (StringUtils.isBlank(audioFilePath)) {
+            if (chattingFutures.containsKey(messageId)) {
+                List<CompletableFuture<Void>> futures = chattingFutures.get(messageId);
+                if (futures.size() >= 3) {
+                    futures.get(2).complete(null);
+                }
+            }
+            return;
+        }
+
         final Optional<Message> opt = messageRepository.findById(messageId);
         if (opt.isPresent()) {
             final ConversationScore conversationScore = audioService.pronunciation(referenceText, audioFilePath);
@@ -776,11 +813,19 @@ public class ChatroomServiceImpl implements ChatroomService {
             messageRepository.updateConversationScore(messageId, conversationScore);
             System.out.println("pronunciation儲存成功");
         }
+
+        if (chattingFutures.containsKey(chatRequestDTO.getMessageId())) {
+            List<CompletableFuture<Void>> futures = chattingFutures.get(chatRequestDTO.getMessageId());
+            if (futures.size() >= 3) {
+                futures.get(2).complete(null);
+            }
+        }
     }
 
 
     /**
      * 產生學習報告
+     *
      * @throws IOException
      */
     @Override
@@ -806,12 +851,6 @@ public class ChatroomServiceImpl implements ChatroomService {
                 .map(message -> Paths.get(configProperties.getAudioSavePath(), chatroomId, message.getAudioName()).toString())
                 .toList();
 
-        final String mergeFilePath = Paths.get(
-                configProperties.getAudioSavePath(),
-                chatroomId, "merge", System.currentTimeMillis() + ".wav"
-        ).toString();
-        AudioUtil.mergeAudioFiles(mergeFilePath, audioFilePaths);
-
         final String dialogueText = messages.stream()
                 .map(message -> {
                     String prefix = "";
@@ -826,15 +865,19 @@ public class ChatroomServiceImpl implements ChatroomService {
                 .collect(Collectors.joining("\n"));
 
         final ReportRequestDTO reportRequestDTO =
-                new ReportRequestDTO(referenceText, mergeFilePath, dialogueText);
+                new ReportRequestDTO(referenceText, dialogueText);
 
-        CompletableFuture<ConversationScore> conversationFuture = CompletableFuture.supplyAsync(() ->
-                pronunciationResult(reportRequestDTO)
-        );
+        CompletableFuture<ConversationScore> conversationFuture = CompletableFuture.completedFuture(null);
+        CompletableFuture<ContentAssessment> contentFuture = CompletableFuture.completedFuture(null);
 
-        CompletableFuture<ContentAssessment> contentFuture = CompletableFuture.supplyAsync(() ->
-                topicResult(reportRequestDTO)
-        );
+        if (!audioFilePaths.isEmpty()) {
+            final String mergeFilePath = Paths.get(configProperties.getAudioSavePath(), chatroomId, "merge", System.currentTimeMillis() + ".wav").toString();
+            AudioUtil.mergeAudioFiles(mergeFilePath, audioFilePaths);
+            reportRequestDTO.setDestinationFilePath(mergeFilePath);
+
+            conversationFuture = CompletableFuture.supplyAsync(() -> pronunciationResult(reportRequestDTO));
+            contentFuture = CompletableFuture.supplyAsync(() -> topicResult(reportRequestDTO));
+        }
 
         CompletableFuture<Feedback> feedbackFuture = CompletableFuture.supplyAsync(() ->
                 {
@@ -846,13 +889,22 @@ public class ChatroomServiceImpl implements ChatroomService {
                 }
         );
 
-        CompletableFuture.allOf(conversationFuture, contentFuture, feedbackFuture).join();
+        List<CompletableFuture<?>> futures = new ArrayList<>();
+        if (!audioFilePaths.isEmpty()) {
+            futures.add(conversationFuture);
+            futures.add(contentFuture);
+        }
+        futures.add(feedbackFuture);
+
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
 
         ConversationScore conversationScore = conversationFuture.join();
         ContentAssessment contentAssessment = contentFuture.join();
         Feedback feedback = feedbackFuture.join();
 
-        conversationScore.setContentAssessment(contentAssessment);
+        if (conversationScore != null) {
+            conversationScore.setContentAssessment(contentAssessment);
+        }
 
         final Optional<Chatroom> chatroomOpt = chatroomRepository.findById(chatroomId);
         if (chatroomOpt.isPresent()) {
@@ -868,6 +920,7 @@ public class ChatroomServiceImpl implements ChatroomService {
 
     /**
      * 學習報告 -- 全文發音分析
+     *
      * @param reportRequestDTO
      * @return
      */
@@ -884,6 +937,7 @@ public class ChatroomServiceImpl implements ChatroomService {
 
     /**
      * 主題分析
+     *
      * @param reportRequestDTO
      * @return
      */
@@ -912,6 +966,7 @@ public class ChatroomServiceImpl implements ChatroomService {
 
     /**
      * AI 回饋
+     *
      * @param reportRequestDTO
      * @return
      * @throws JsonProcessingException

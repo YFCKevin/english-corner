@@ -1,9 +1,12 @@
 package com.gurula.talkyo.chatroom;
 
 public class ContentAssessment {
-    private double vocabularyScore; // 詞彙分數
-    private double grammarScore;    // 文法分數
-    private double topicScore;  // 主題分數
+    private double vocabularyScore = 0.0; // 詞彙分數
+    private double grammarScore = 0.0;    // 文法分數
+    private double topicScore = 0.0;  // 主題分數
+
+    public ContentAssessment() {
+    }
 
     public ContentAssessment(double vocabularyScore, double grammarScore, double topicScore) {
         this.vocabularyScore = vocabularyScore;
