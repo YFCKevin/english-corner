@@ -17,6 +17,7 @@ import com.gurula.talkyo.openai.dto.LLMChatResponseDTO;
 import com.gurula.talkyo.properties.ConfigProperties;
 import com.gurula.talkyo.record.LearningRecordService;
 import jakarta.servlet.http.HttpServletResponse;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -308,8 +309,14 @@ public class ChatroomController {
      * @throws ExecutionException
      * @throws InterruptedException
      */
-    @GetMapping("/chatroom/leave/{chatroomId}/{chatroomType}/{lessonId}")
-    public void leave (@PathVariable String chatroomId, @PathVariable ChatroomType chatroomType, @PathVariable String lessonId, HttpServletResponse response) throws IOException, ExecutionException, InterruptedException {
+    @GetMapping("/chatroom/leave")
+    public void leave(
+            @RequestParam String chatroomId,
+            @RequestParam ChatroomType chatroomType,
+            @RequestParam(required = false) String lessonId,
+            @RequestParam(required = false) String unitNumber,
+            HttpServletResponse response
+    ) throws IOException, ExecutionException, InterruptedException {
         final Member member = MemberContext.getMember();
         logger.info("[{} {}] [chatroom leave]", member.getName(), member.getId());
 
@@ -350,9 +357,10 @@ public class ChatroomController {
                 // mark the chatroom as closed
                 chatroomService.close(chatroomId);
 
-                // 導向首頁
-                System.out.println("導向首頁");
-                String redirectUrl = configProperties.getGlobalDomain() + "index.html";
+                // 導向測驗結束結果頁面
+                System.out.println("導向測驗結束結果頁面");
+                String redirectUrl = configProperties.getGlobalDomain() + "learning-report.html?chatroomId=" + URLEncoder.encode(chatroomId, StandardCharsets.UTF_8) +
+                        "&unitNumber=" + URLEncoder.encode(unitNumber, StandardCharsets.UTF_8);
                 response.setStatus(HttpServletResponse.SC_FOUND);   // 302
                 response.setHeader("Location", redirectUrl);    // 設定 Location Header
             }
@@ -366,8 +374,11 @@ public class ChatroomController {
      * @param lessonId
      * @return
      */
-    @GetMapping("/chatroom/learningReport/{chatroomId}/{lessonId}")
-    public ResponseEntity<?> learningReport (@PathVariable String chatroomId, @PathVariable String lessonId) {
+    @GetMapping("/chatroom/learningReport")
+    public ResponseEntity<?> learningReport(
+            @RequestParam String chatroomId,
+            @RequestParam(required = false) String lessonId,
+            @RequestParam(required = false) String unitNumber) throws IOException {
         final Member member = MemberContext.getMember();
         logger.info("[{} {}] [learningReport]", member.getName(), member.getId());
 
@@ -386,17 +397,29 @@ public class ChatroomController {
                 ? conversationScore.getAccuracy() : 0.0;
         final double overallRating = (accuracy + completeness + fluency + prosody) / 4;
 
-        final Optional<Lesson> opt = lessonRepository.findById(lessonId);
-        LearningReportDTO dto = null;
-        if (opt.isPresent()) {
-            final Lesson lesson = opt.get();
-            dto = new LearningReportDTO(
-                    lesson.getName(),
-                    conversationScore,
-                    learningReport.getFeedback(),
-                    overallRating
-            );
+        String title = null;
+        if (StringUtils.isNotBlank(lessonId)) {
+            final Lesson lesson = lessonRepository.findById(lessonId).orElse(null);
+            if (lesson != null) {
+                title = lesson.getName();
+            }
         }
+
+        if (StringUtils.isNotBlank(unitNumber) && StringUtils.isBlank(title)) {
+            final Optional<ScenarioDTO> scenarioDTO = chatroomService.getScenarios().stream()
+                    .filter(s -> unitNumber.equals(s.getUnitNumber()))
+                    .findFirst();
+            if (scenarioDTO.isPresent()) {
+                title = scenarioDTO.get().getZhTitle();
+            }
+        }
+
+        LearningReportDTO dto = new LearningReportDTO(
+                title,
+                conversationScore,
+                learningReport.getFeedback(),
+                overallRating
+        );
 
         resultStatus.setCode("C000");
         resultStatus.setMessage("成功");
@@ -495,10 +518,14 @@ public class ChatroomController {
         List<ScenarioHistoryRecordDTO> recordList = new ArrayList<>();
         chatrooms.forEach(chatroom -> {
             final ConversationScore conversationScore = chatroom.getReport().getConversationScore();
-            final double accuracy = conversationScore.getAccuracy();
-            final double completeness = conversationScore.getCompleteness();
-            final double fluency = conversationScore.getFluency();
-            final double prosody = conversationScore.getProsody();
+            final double prosody = conversationScore != null
+                    ? conversationScore.getProsody() : 0.0;
+            final double fluency = conversationScore != null
+                    ? conversationScore.getFluency() : 0.0;
+            final double completeness = conversationScore != null
+                    ? conversationScore.getCompleteness() : 0.0;
+            final double accuracy = conversationScore != null
+                    ? conversationScore.getAccuracy() : 0.0;
             final double overallRating = (accuracy + completeness + fluency + prosody) / 4;
             ScenarioHistoryRecordDTO recordDTO = new ScenarioHistoryRecordDTO(
                     chatroom.getId(),

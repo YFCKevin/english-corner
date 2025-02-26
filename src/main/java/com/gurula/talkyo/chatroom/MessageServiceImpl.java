@@ -1,5 +1,6 @@
 package com.gurula.talkyo.chatroom;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -37,7 +38,7 @@ public class MessageServiceImpl implements MessageService{
         List<Map<Integer, Message>> historyMsgs = new ArrayList<>();
         String currentId = currentMessageId;
 
-        while (currentId != null) {
+        while (StringUtils.isNotBlank(currentId)) {
             Query query = new Query();
             query.addCriteria(Criteria.where("_id").is(currentId));
             final Message currentMessage = mongoTemplate.findOne(query, Message.class);

@@ -209,10 +209,11 @@ public class Message {
     public String toString() {
         return "Message{" +
                 "id='" + id + '\'' +
+                ", chatroomId='" + chatroomId + '\'' +
                 ", createdDateTime='" + createdDateTime + '\'' +
                 ", senderRole=" + senderRole +
                 ", previewMessageId='" + previewMessageId + '\'' +
-                ", branch=" + branch +
+                ", branch='" + branch + '\'' +
                 ", version=" + version +
                 '}';
     }
