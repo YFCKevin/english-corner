@@ -99,8 +99,8 @@ public class MemberServiceImpl implements MemberService{
         final List<String> courseIds = courses.stream().map(Course::getId).toList();
         List<Lesson> lessons = lessonRepository.findByCourseIdIn(courseIds);
 
-        // 取出所有進行中、完課的 chatroom
-        final List<Chatroom> chatrooms = chatroomRepository.findByOwnerIdOrderByCreationDateAsc(member.getId());
+        // 取出所有進行中、完課的 chatroom (PROJECT)
+        final List<Chatroom> chatrooms = chatroomRepository.findByOwnerIdAndChatroomTypeOrderByCloseDateAsc(member.getId(), ChatroomType.PROJECT);
         final Set<String> chatroomIds = chatrooms.stream().map(Chatroom::getId).collect(Collectors.toSet());
         Set<LearningRecord> learningRecords = learningRecordRepository.findByChatroomIdIn(chatroomIds);
         // 根據 chatroomId 和 lessonId 設定一個 Map
@@ -268,20 +268,21 @@ public class MemberServiceImpl implements MemberService{
         }
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        List<LocalDate> dates = new ArrayList<>();
+        Set<LocalDate> uniqueDates = new HashSet<>();
         for (String dateString : dateStrings) {
             try {
                 LocalDate date = LocalDate.parse(dateString, formatter);
-                dates.add(date);
+                uniqueDates.add(date);
             } catch (Exception e) {
                 System.err.println("Invalid date format: " + dateString);
             }
         }
 
-        if (dates.isEmpty()) {
+        if (uniqueDates.isEmpty()) {
             return Map.of("bestStreak", 0, "currentStreak", 0);
         }
 
+        List<LocalDate> dates = new ArrayList<>(uniqueDates);
         Collections.sort(dates);
 
         int bestStreak = 1;

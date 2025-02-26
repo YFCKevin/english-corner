@@ -11,6 +11,7 @@ public class ScenarioDTO {
     private String partnerRole; // AI的角色
     private String humanRole;   // 我的角色
     private String subject;   // 話題or情境
+    private String level;
 
     public ScenarioDTO() {
     }
@@ -45,5 +46,9 @@ public class ScenarioDTO {
 
     public String getSubject() {
         return subject;
+    }
+
+    public String getLevel() {
+        return level;
     }
 }

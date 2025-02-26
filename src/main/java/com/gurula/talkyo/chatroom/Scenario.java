@@ -9,6 +9,15 @@ public class Scenario {
     public Scenario() {
     }
 
+    // for SITUATION
+    public Scenario(String unitNumber, String humanRole, String partnerRole, String subject) {
+        this.unitNumber = unitNumber;
+        this.partnerRole = partnerRole;
+        this.humanRole = humanRole;
+        this.subject = subject;
+    }
+
+    // for PROJECT
     public Scenario(String humanRole, String partnerRole, String subject) {
         this.partnerRole = partnerRole;
         this.humanRole = humanRole;

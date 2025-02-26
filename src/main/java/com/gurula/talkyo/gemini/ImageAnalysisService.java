@@ -25,9 +25,9 @@ public class ImageAnalysisService {
         this.configProperties = configProperties;
     }
 
-    public String imageAnalysis (String imageName, String text){
+    public String imageAnalysis (String imagePath, String text){
 
-        String base64Image = GeminiUtil.encodeImageToBase64(configProperties.getPicSavePath() + imageName);
+        String base64Image = GeminiUtil.encodeImageToBase64(imagePath);
         if (base64Image == null) {
             System.out.println("無法讀取圖片");
             return "解析失敗";
@@ -67,7 +67,7 @@ public class ImageAnalysisService {
                 ImageCompletionResponseDTO.class
         );
 
-        final String responseText = response.getBody().getCandidates().get(0).getContent().getParts().get(0).getText();
+        final String responseText = "This is an image.\n" + response.getBody().getCandidates().get(0).getContent().getParts().get(0).getText();
         System.out.println(responseText);
 
         return responseText;

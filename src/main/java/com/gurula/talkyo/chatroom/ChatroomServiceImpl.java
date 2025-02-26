@@ -100,7 +100,7 @@ public class ChatroomServiceImpl implements ChatroomService {
                     case LEGACY -> {
                         if (chatrooms.size() > 0) {
                             // 已有聊天室，則回傳最新的chatroomId
-                            return chatrooms.get(chatrooms.size() - 1).getId();
+                            return chatrooms.get(0).getId();
                         } else {
                             // 創建新的聊天室
                             return createChatroom(member, chatroomType);
@@ -178,7 +178,6 @@ public class ChatroomServiceImpl implements ChatroomService {
 
                     // load scenario
                     final Scenario scenario = lesson.getScenario();
-                    System.out.println("scenario = " + scenario);
                     loadScenario(new ChatRequestDTO(chatroomId, chatroomType, scenario));
 
                     // partner 參與聊天室紀錄
@@ -197,6 +196,7 @@ public class ChatroomServiceImpl implements ChatroomService {
                     final ScenarioDTO scenarioDTO = scenarios.stream()
                             .filter(s -> unitNumber.equals(s.getUnitNumber())).findFirst().get();
                     Scenario scenario = new Scenario(
+                            unitNumber,
                             scenarioDTO.getHumanRole(),
                             scenarioDTO.getPartnerRole(),
                             scenarioDTO.getSubject()
@@ -221,6 +221,7 @@ public class ChatroomServiceImpl implements ChatroomService {
                     final ScenarioDTO scenarioDTO = scenarios.stream()
                             .filter(s -> unitNumber.equals(s.getUnitNumber())).findFirst().get();
                     Scenario scenario = new Scenario(
+                            unitNumber,
                             scenarioDTO.getHumanRole(),
                             scenarioDTO.getPartnerRole(),
                             scenarioDTO.getSubject()
@@ -235,7 +236,7 @@ public class ChatroomServiceImpl implements ChatroomService {
                     conversationRepository.save(conversation);
 
                     // partner opening line
-                    openingLineMessage = openingLine(new ChatRequestDTO(chatroomId, partnerId, chatroomType));
+                    openingLineMessage = openingLine(new ChatRequestDTO(chatroomId, scenario, memberId, partnerId, lessonId, chatroomType));
                 }
             }
 
@@ -309,7 +310,11 @@ public class ChatroomServiceImpl implements ChatroomService {
                 message.setChatroomId(chatroomId);
                 message.setSender(partnerId);
                 message.setSenderRole(SenderRole.AI);
-                message.setText("你好，我是你在 Talkyo 的私人老師！你在練習過程中遇到的任何問題，都可以隨時問我，我會為你解答，你有什麼想練習的內容嗎？獲續我可以幫助你！");
+                llmChatResponseDTO = llmService.genWelcomeMessage(new LLMChatRequestDTO(scenario));
+                final String fileName = audioService.textToSpeechInChatting(List.of(new ChatAudioDTO(llmChatResponseDTO.getContent(), memberId, partnerId, chatroomId))).get(0).getFileName().toString();
+                message.setAudioName(fileName);
+                message.setSize(Files.size(Paths.get(configProperties.getAudioSavePath(), chatroomId, fileName)));
+                message.setParsedText(llmChatResponseDTO.getContent());
                 message.setBranch(UUID.randomUUID().toString());
                 message.setVersion(1);
                 final Message savedMessage = messageRepository.save(message);
@@ -374,11 +379,12 @@ public class ChatroomServiceImpl implements ChatroomService {
 
         if (StringUtils.isNotBlank(imageFileName)) {
             message.setImageName(imageFileName);
-            message.setSize(Files.size(Paths.get(configProperties.getPicSavePath(), chatroomId, imageFileName)));
+            final Path imagePath = Paths.get(configProperties.getPicSavePath(), chatroomId, imageFileName);
+            message.setSize(Files.size(imagePath));
 
             imageAnalysisFuture = CompletableFuture.supplyAsync(() -> {
                 try {
-                    return imageAnalysisService.imageAnalysis(imageFileName, chatDTO.getContent());
+                    return imageAnalysisService.imageAnalysis(imagePath.toString(), chatDTO.getContent());
                 } catch (Exception e) {
                     e.printStackTrace();
                     throw new RuntimeException(e);
@@ -430,8 +436,9 @@ public class ChatroomServiceImpl implements ChatroomService {
                         message.setVersion(1);
                     }
                 }
-
                 message = messageRepository.save(message);
+
+                return new ConversationChainDTO(true, List.of(Map.of(message.getVersion(), message)));
             }
         }
 
@@ -751,7 +758,16 @@ public class ChatroomServiceImpl implements ChatroomService {
                         .toList();
 
                 final String historyMessages = historyMsgs.stream()
-                        .map(message -> Optional.ofNullable(message.getParsedText()).orElse(message.getText()))
+                        .map(message -> {
+                            final String parsedText = message.getParsedText();
+                            final String text = message.getText();
+                            final String imageName = message.getImageName();
+                            final String imageDesc = message.getImageDesc();
+                            if (StringUtils.isNotBlank(parsedText)) return parsedText;
+                            if (StringUtils.isNotBlank(text) && StringUtils.isNotBlank(imageName)) return text + "\n" + imageDesc;
+                            return Optional.ofNullable(text).orElse(imageDesc);
+                        })
+                        .filter(Objects::nonNull)
                         .collect(Collectors.joining("\n"));
 
                 llmChatResponseDTO = llmService.replyMsg(new LLMChatRequestDTO(historyMessages, scenario));
