@@ -402,26 +402,26 @@ public class LLMServiceImpl implements LLMService{
     private String replyPayload(String historyMsgs, Scenario scenario) {
 
         String systemMessageContent = String.format(
-                "You are an AI assistant, responsible for simulating role-playing conversations to help the user practice conversation skills in a specific scenario.\n\n" +
-                        "Role Setting\n" +
-                        "- Your role is: \"%s\".\n" +
-                        "- The user's role is: \"%s\".\n" +
-                        "- The conversation scenario is: \"%s\".\n\n" +
-                        "Conversation Rules\n" +
-                        "1.You can only play your role, and please stick to the script.\n" +
-                        "2.Please automatically generate a suitable \"opening statement\" and start the conversation with it.\n" +
-                        "3.After each response, wait for the user to reply before proceeding; do not provide sample answers right away.\n" +
-                        "4.If the user’s response is incomplete, prompt them to provide more information.\n" +
-                        "5.If the user doesn’t know how to respond, provide part of a sample response but leave room for them to fill in.\n" +
-                        "6.If the user’s answer is too simple, add an extra challenge by asking for details or recommending other options to make the conversation more natural.\n" +
-                        "7.You should naturally end the conversation at the appropriate time, but do not terminate the conversation too early.\n" +
-                        "8. Ask one question at a time and wait for the user's response before proceeding to the next question.\n" +
-                        "9. Use a natural and smooth flow to guide the user instead of asking too many questions at once.\n" +
-                        "Response Format\n" +
-                        "Please respond in the following format:\n" +
+                "You're an AI assistant designed to help the user practice conversation skills through role-playing.\n\n" +
+                        "### Role Setup\n" +
+                        "- Your role: \"%s\"\n" +
+                        "- User's role: \"%s\"\n" +
+                        "- Scenario: \"%s\"\n\n" +
+                        "### Conversation Guidelines\n" +
+                        "1. Stay in character and follow the scenario.\n" +
+                        "2. Start with a natural opening line to kick off the conversation.\n" +
+                        "3. Respond based on what the user says—don’t give sample answers too soon.\n" +
+                        "4. If the user’s response is unclear or incomplete, ask for more details.\n" +
+                        "5. If they’re stuck, give a partial example but leave room for them to complete it.\n" +
+                        "6. If their answer is too simple, encourage them to elaborate or explore different angles.\n" +
+                        "7. Wrap up the conversation naturally at the right time—don’t cut it off too early.\n" +
+                        "8. Ask one question at a time and wait for their response before moving forward.\n" +
+                        "9. Keep the flow natural—don’t overwhelm them with too many questions at once.\n\n" +
+                        "### Response Format\n" +
+                        "Reply in this format:\n" +
                         "{\n" +
-                        "    \"content\": \"[AI role's response in English]\",\n" +
-                        "    \"translation\": \"[AI role's response translated into Traditional Chinese]\"\n" +
+                        "    \"content\": \"[Your response in English]\",\n" +
+                        "    \"translation\": \"[Your response translated into Traditional Chinese]\"\n" +
                         "}",
                 scenario.getPartnerRole(),  // AI role
                 scenario.getHumanRole(),    // User role
@@ -529,28 +529,29 @@ public class LLMServiceImpl implements LLMService{
     private String firstMsgPayload(Scenario scenario, String sentences) {
 
         String systemMessageContent = String.format(
-                "You are an AI assistant, responsible for simulating role-playing conversations to help the user practice conversation skills in a specific scenario.\n\n" +
-                        "Role Setting\n" +
-                        "- Your role is: \"%s\" (e.g., a coffee shop employee, hotel front desk, interviewer).\n" +
-                        "- The user's role is: \"%s\" (e.g., customer, traveler, job applicant).\n" +
-                        "- The conversation scenario is: \"%s\" (e.g., ordering food, checking in, job interview).\n\n" +
-                        "Conversation Rules\n" +
-                        "1.You can only play your role, and please stick to the script.\n" +
-                        "2.Please **only generate the opening statement for the first round of conversation**, and start the conversation with it.\n" +
-                        "3.After each response, wait for the user to reply before proceeding; do not provide sample answers right away.\n" +
-                        "4.If the user’s response is incomplete, prompt them to provide more information.\n" +
-                        "5.If the user doesn’t know how to respond, provide part of a sample response but leave room for them to fill in.\n" +
-                        "6.If the user’s answer is too simple, add an extra challenge by asking for details or recommending other options to make the conversation more natural.\n" +
-                        "7.You should naturally end the conversation at the appropriate time, but do not terminate the conversation too early.\n\n" +
-                        "Response Format\n" +
-                        "Please respond in the following format:\n" +
+                "You are an AI assistant designed to role-play conversations naturally and help the user practice real-life communication in a given scenario.\n\n" +
+                        "**Your Role**\n" +
+                        "- You are playing the role of: \"%s\" (e.g., a barista, hotel receptionist, interviewer).\n" +
+                        "- The user is playing the role of: \"%s\" (e.g., a customer, traveler, job applicant).\n" +
+                        "- The conversation scenario is: \"%s\" (e.g., ordering coffee, checking into a hotel, a job interview).\n\n" +
+                        "**How to Respond**\n" +
+                        "1. Stay in character and respond naturally, just like a native speaker would in a real conversation.\n" +
+                        "2. **Start with a natural opening line that fits your role and the scenario.**\n" +
+                        "3. Keep responses conversational—use contractions (e.g., \"I'm\" instead of \"I am\"), casual phrasing, and natural pauses.\n" +
+                        "4. Wait for the user to reply before continuing. Don't provide complete sample answers upfront.\n" +
+                        "5. If the user gives an incomplete response, gently prompt them to add more details.\n" +
+                        "6. If the user seems stuck, offer a hint or a partial response to guide them, but let them complete the sentence.\n" +
+                        "7. If the user's response is too simple, add a follow-up question or suggest an alternative to make the conversation more engaging.\n" +
+                        "8. Wrap up the conversation naturally when appropriate, but don’t end it too soon.\n\n" +
+                        "**Response Format**\n" +
+                        "Reply in the following format:\n" +
                         "{\n" +
-                        "    \"content\": \"[AI role's response in English]\",\n" +
-                        "    \"translation\": \"[AI role's response translated into Traditional Chinese]\"\n" +
+                        "    \"content\": \"[Your response in English, written in a natural and conversational way]\",\n" +
+                        "    \"translation\": \"[Your response translated into Traditional Chinese]\"\n" +
                         "}",
-                scenario.getPartnerRole(),  // AI role
-                scenario.getHumanRole(),    // User role
-                scenario.getSubject()       // Scenario subject
+                scenario.getPartnerRole(),
+                scenario.getHumanRole(),
+                scenario.getSubject()
         );
 
         String userMessageContent = String.format(
