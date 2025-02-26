@@ -47,9 +47,10 @@ public class MemberController {
                     partner.getDisplayName(),
                     partner.getGender(),
                     partner.getLocale().getLabel(),
-                    partner.getVoiceTag().getVoicePersonalities().stream().map(VoicePersonality::getLabel).toList(),
-                    partner.getVoiceTag().getTailoredScenarios().stream().map(TailoredScenario::getLabel).toList(),
-                    configProperties.getPicShowPath() + "partner/" + partner.getCoverName()
+                    partner.getVoiceTag() != null ? partner.getVoiceTag().getVoicePersonalities().stream().map(VoicePersonality::getLabel).toList() : null,
+                    partner.getVoiceTag() != null ? partner.getVoiceTag().getTailoredScenarios().stream().map(TailoredScenario::getLabel).toList() : null,
+                    configProperties.getPicShowPath() + "partner/" + partner.getCoverName(),
+                    partner.getShortName()
             );
             MemberDTO memberDTO = new MemberDTO(
                     member.getId(),

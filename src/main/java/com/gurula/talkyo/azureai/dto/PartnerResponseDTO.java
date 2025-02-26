@@ -12,11 +12,12 @@ public class PartnerResponseDTO {
     private List<String> voicePersonality;
     private List<String> tailoredScenario;
     private String coverPath;
+    private String shortName;
 
     public PartnerResponseDTO() {
     }
 
-    public PartnerResponseDTO(String id, String displayName, String gender, String locale, List<String> voicePersonality, List<String> tailoredScenario, String coverPath) {
+    public PartnerResponseDTO(String id, String displayName, String gender, String locale, List<String> voicePersonality, List<String> tailoredScenario, String coverPath, String shortName) {
         this.id = id;
         this.displayName = displayName;
         if ("Male".equals(gender)) {
@@ -28,6 +29,11 @@ public class PartnerResponseDTO {
         this.voicePersonality = voicePersonality;
         this.tailoredScenario = tailoredScenario;
         this.coverPath = coverPath;
+        this.shortName = shortName;
+    }
+
+    public String getShortName() {
+        return shortName;
     }
 
     public String getId() {

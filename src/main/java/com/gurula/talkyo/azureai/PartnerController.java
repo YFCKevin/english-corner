@@ -109,7 +109,8 @@ public class PartnerController {
                     partner.getLocale().getLabel(),
                     partner.getVoiceTag() != null ? partner.getVoiceTag().getVoicePersonalities().stream().map(VoicePersonality::getLabel).toList() : Collections.singletonList(""),
                     partner.getVoiceTag() != null ? partner.getVoiceTag().getTailoredScenarios().stream().map(TailoredScenario::getLabel).toList() : Collections.singletonList(""),
-                    configProperties.getPicShowPath() + "partner/" + partner.getCoverName()
+                    configProperties.getPicShowPath() + "partner/" + partner.getCoverName(),
+                    partner.getShortName()
             );
             partnerResponseDTOList.add(partnerResponseDTO);
         });
