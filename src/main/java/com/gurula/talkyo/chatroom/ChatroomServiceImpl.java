@@ -23,6 +23,8 @@ import com.gurula.talkyo.openai.dto.GrammarResponseDTO;
 import com.gurula.talkyo.openai.dto.LLMChatRequestDTO;
 import com.gurula.talkyo.openai.dto.LLMChatResponseDTO;
 import com.gurula.talkyo.properties.ConfigProperties;
+import com.gurula.talkyo.record.LearningRecord;
+import com.gurula.talkyo.record.LearningRecordRepository;
 import com.gurula.talkyo.record.LearningRecordService;
 import com.gurula.talkyo.record.dto.RecordDTO;
 import com.jayway.jsonpath.JsonPath;
@@ -59,9 +61,11 @@ public class ChatroomServiceImpl implements ChatroomService {
     private final LearningRecordService learningRecordService;
     private final MessageService messageService;
     private final Map<String, List<CompletableFuture<Void>>> chattingFutures = new ConcurrentHashMap<>();
+    private final LearningRecordRepository learningRecordRepository;
 
     public ChatroomServiceImpl(ChatroomRepository chatroomRepository, @Qualifier("sdf") SimpleDateFormat sdf,
-                               ConversationRepository conversationRepository, MessageRepository messageRepository, AudioService audioService, ConfigProperties configProperties, LLMService llmService, RabbitTemplate rabbitTemplate, LessonRepository lessonRepository, ImageAnalysisService imageAnalysisService, LearningRecordService learningRecordService, MessageService messageService) {
+                               ConversationRepository conversationRepository, MessageRepository messageRepository, AudioService audioService, ConfigProperties configProperties, LLMService llmService, RabbitTemplate rabbitTemplate, LessonRepository lessonRepository, ImageAnalysisService imageAnalysisService, LearningRecordService learningRecordService, MessageService messageService,
+                               LearningRecordRepository learningRecordRepository) {
         this.chatroomRepository = chatroomRepository;
         this.sdf = sdf;
         this.conversationRepository = conversationRepository;
@@ -74,6 +78,7 @@ public class ChatroomServiceImpl implements ChatroomService {
         this.imageAnalysisService = imageAnalysisService;
         this.learningRecordService = learningRecordService;
         this.messageService = messageService;
+        this.learningRecordRepository = learningRecordRepository;
     }
 
     @Transactional
@@ -82,18 +87,29 @@ public class ChatroomServiceImpl implements ChatroomService {
 
         final ChatroomType chatroomType = chatroomDTO.getChatroomType();
         final ActionType action = chatroomDTO.getAction();
+        final String lessonId = chatroomDTO.getLessonId();
 
         List<Chatroom> chatrooms = chatroomRepository.findByOwnerIdAndChatroomTypeAndRoomStatusOrderByCreationDateDesc(member.getId(), chatroomType, RoomStatus.ACTIVE);
+        final Set<String> lessonIds = learningRecordRepository.findByChatroomIdIn(chatrooms.stream().map(Chatroom::getId).collect(Collectors.toSet()))
+                .stream()
+                .map(LearningRecord::getLessonId)
+                .collect(Collectors.toSet());
+        final boolean targetLessonExisted = lessonIds.contains(lessonId);
+
 
         switch (chatroomType) {
-            case PROJECT, SITUATION, IMAGE -> {
-                if (chatrooms.size() > 0) {
+            case PROJECT -> {
+                if (chatrooms.size() > 0 && targetLessonExisted) {
                     // 已有聊天室，則回傳chatroomId
                     return chatrooms.get(0).getId();
                 } else {
                     // 創建新的聊天室
                     return createChatroom(member, chatroomType);
                 }
+            }
+            case SITUATION -> {
+                // 創建新的聊天室
+                return createChatroom(member, chatroomType);
             }
             case FREE_TALK -> {
                 switch (action) {
