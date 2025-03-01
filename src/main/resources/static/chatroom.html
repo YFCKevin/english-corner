@@ -1,0 +1,1782 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:x-bind="http://www.w3.org/1999/xhtml">
+
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="apple-touch-icon" sizes="76x76" href="img/favicon.png">
+    <link rel="icon" type="image/png" href="img/favicon.png">
+    <title>
+        Talkyo
+    </title>
+    <!-- CSS Files -->
+    <link rel="stylesheet" href="css/style.css">
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet"/>
+</head>
+<body x-data="loadData()" x-init="init()" @click.outside="clickOutsideEditIcon">
+<div class="container-fluid h-100">
+    <div class="row h-100 d-flex justify-content-center align-items-center">
+        <div class="col-md-8 col-lg-9 chat-area p-0">
+
+            <div class="chat-header">
+                <div class="d-flex align-items-center justify-content-between p-2">
+                    <a
+                            href="index.html"
+                            class="text-dark ps-3"
+                            style="border: 0"
+                            data-bs-dismiss="modal">
+                    <span aria-hidden="true">
+                      <i class="fas fa-chevron-left"></i>
+                    </span>
+                    </a>
+                    <template x-if="['PROJECT', 'SITUATION'].includes(chatroomType)">
+                        <div class="d-flex align-items-center">
+                            <template x-if="messages && messages.length < 10">
+                                <img x-bind:src="partner.coverPath" class="avatar small" alt="partner img">
+                            </template>
+                            <template x-if="messages && messages.length >= 10">
+                                <button @click.stop="endLesson" class="end-lesson-button btn rounded-pill text-white btn-sm" style="background-color: #20c997;">End this lesson</button>
+                            </template>
+                        </div>
+                    </template>
+                    <template x-if="['FREE_TALK'].includes(chatroomType)">
+                        <div class="d-flex align-items-center">
+                            <img x-bind:src="partner.coverPath" class="avatar small" alt="partner img">
+                        </div>
+                    </template>
+                    <div class="dropdown">
+                        <button class="btn btn-link text-dark ps-3" id="dropdownMenuBtn" data-bs-toggle="dropdown">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <template x-if="chatroomType == 'FREE_TALK'">
+                                <li class="list-group-item border-0 px-0" @click.stop="startNewTalk">
+                                    <div class="form-check form-switch ps-0 d-flex align-items-center">
+                                        <label class="form-check-label text-body ms-3 mx-5 py-2 text-truncate w-80 mb-0 small">
+                                            <i class="fas fa-comments-dollar me-2"></i>
+                                            開始新對話
+                                        </label>
+                                    </div>
+                                </li>
+                                <li class="list-group-item border-0 px-0" @click.stop="openTalkRecord">
+                                    <div class="form-check form-switch ps-0 d-flex align-items-center">
+                                        <label class="form-check-label text-body ms-3 mx-5 py-2 text-truncate w-80 mb-0 small">
+                                            <i class="fas fa-redo-alt me-2"></i>
+                                            歷史紀錄
+                                        </label>
+                                    </div>
+                                </li>
+                            </template>
+                            <li class="list-group-item border-0 px-0">
+                                <div class="form-check form-switch ps-0 d-flex align-items-center justify-content-between">
+                                    <label class="form-check-label text-body ms-3 mx-5 py-2 text-truncate w-80 mb-0 small" for="hideTextLabel">隱藏文字 (練習聽力)</label>
+                                    <input class="form-check-input ms-auto mx-3 dropdown-checkbox" type="checkbox" id="hideTextLabel" x-model="blurText" @change="saveAndChangeDropdownSettings">
+                                </div>
+                            </li>
+                            <li class="list-group-item border-0 px-0">
+                                <div class="form-check form-switch ps-0 d-flex align-items-center justify-content-between">
+                                    <label class="form-check-label text-body ms-3 mx-5 py-2 text-truncate w-80 mb-0 small" for="showTranslation">顯示翻譯</label>
+                                    <input class="form-check-input ms-auto mx-3 dropdown-checkbox" type="checkbox" id="showTranslation" x-model="showTranslation" @change="saveAndChangeDropdownSettings">
+                                </div>
+                            </li>
+                            <li class="list-group-item border-0 px-0">
+                                <div class="form-check form-switch ps-0 d-flex align-items-center justify-content-between">
+                                    <label class="form-check-label text-body ms-3 mx-5 py-2 text-truncate w-80 mb-0 small" for="showTipBtn">顯示提示</label>
+                                    <input class="form-check-input ms-auto mx-3 dropdown-checkbox" type="checkbox" id="showTipBtn" x-model="showTipBtn" @change="saveAndChangeDropdownSettings">
+                                </div>
+                            </li>
+                            <li class="list-group-item border-0 px-0">
+                                <div class="form-check form-switch ps-0 d-flex align-items-center justify-content-between">
+                                    <label class="form-check-label text-body ms-3 mx-5 py-2 text-truncate w-80 mb-0 small" for="autoAudio">自動錄音</label>
+                                    <input class="form-check-input ms-auto mx-3 dropdown-checkbox" type="checkbox" id="autoAudio" x-model="autoRecording" @change="saveAndChangeDropdownSettings">
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <template x-if="messages.length > 0 && (chatroomType == 'PROJECT' || chatroomType == 'SITUATION')">
+                    <div class="progress progress-md px-3" style="height: 5px; background-color: white;">
+                        <div class="progress-bar"
+                             role="progressbar"
+                             :aria-valuenow="messages.length * 10"
+                             :style="'width: ' + messages.length * 10 + '%; background-color: var(--bs-teal); border-radius: 1rem;'"
+                             aria-valuemin="0"
+                             aria-valuemax="100">
+                        </div>
+                    </div>
+                </template>
+            </div>
+
+            <div class="message-body mb-2">
+                <div class="chat-messages p-3">
+                    <template x-if="openingLineLoading">
+                        <div class="message received">
+                            <div class="d-flex align-items-start">
+                                <div class="w-100">
+                                    <div class="message-content d-flex flex-column align-items-center">
+                                        <div class="received-typing-dots py-2 px-2">
+                                            <i class="fas fa-circle"></i>
+                                            <i class="fas fa-circle"></i>
+                                            <i class="fas fa-circle"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                    <template x-for="(message, index) in messages" :key="index">
+                        <div>
+<!--                            <template x-if="index % 2 === 0">-->
+                            <template x-if="message.value.senderRole  === 'AI'">
+                                <div class="message-body d-flex flex-column align-items-start" style="float: left;">
+                                    <div class="message received">
+                                        <div class="d-flex align-items-start">
+                                            <div class="w-100">
+                                                <div class="message-content d-flex flex-column align-items-center" :id="'message-' + index" :class="{ 'blurred': message.value.isBlurred }">
+                                                    <span x-text="message.value.parsedText"></span>
+                                                </div>
+                                                <div class="message-translation mt-2" style="font-size: 0.8rem;" x-show="message.value.showTranslation" x-text="message.value.translation">哈囉！你好嗎？</div>
+                                            </div>
+                                            <i @click.stop="playMsgSound(index)" class="fas fa-rss ms-3" style="font-size: 0.8rem; margin-top: 0.4rem"></i>
+                                        </div>
+                                        <hr>
+                                        <div class="d-flex align-items-center">
+                                            <div class="rounded-circle icon-button me-3" @click="toggleBlur(index)">
+                                                <i style="font-size: 0.8rem" class="fas fa-braille text-white" ></i>
+                                            </div>
+                                            <div class="rounded-circle icon-button me-3" @click="toggleTranslation(index)">
+                                                <i style="font-size: 0.8rem" class="fas fa-language text-white"></i>
+                                            </div>
+                                            <div class="rounded-circle icon-button me-3" @click.stop="copy(index)">
+                                                <i style="font-size: 0.8rem" class="fas fa-clone text-white"></i>
+                                            </div>
+                                            <div class="rounded-circle icon-button me-3">
+                                                <i style="font-size: 0.8rem" class="fas fa-file-alt text-white"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+
+<!--                            <template x-if="index % 2 !== 0">-->
+                            <template x-if="message.value.senderRole  === 'HUMAN'">
+                                <div class="message-body d-flex flex-column align-items-end" style="float: right; margin-bottom: 20px">
+                                    <div class="message sent">
+                                        <div class="d-flex align-items-center">
+                                            <template x-if="message.value.audioName != null">
+                                                <i @click.stop="playMsgSound(index)" class="fas fa-rss me-3 text-primary" style="font-size: 0.8rem; margin-top: 0.4rem; line-height: 1; align-self: start;"></i>
+                                                <span x-text="message.value.parsedText"></span>
+                                            </template>
+                                        </div>
+
+                                        <div class="d-flex flex-column align-items-start">
+                                            <template x-if="message.value.imageName != null">
+                                                <img :src="message.value.imagePath" alt="Image" class="message-image mb-2"
+                                                     style="align-self: center; max-width: 100px; max-height: 100px; border-radius: 15px">
+                                            </template>
+                                            <template x-if="message.value.text != null && message.value.text !== ''">
+                                                <span x-text="message.value.text"></span>
+                                            </template>
+                                        </div>
+
+                                        <hr>
+                                        <div class="d-flex align-items-center">
+                                            <div class="rounded-circle icon-button me-3">
+                                                <i
+                                                        style="font-size: 0.8rem"
+                                                        class="fas fa-eraser"
+                                                        :class="{
+                                                              'text-primary': editActiveIndex !== index,
+                                                              'text-danger': editActiveIndex === index,
+                                                              active: editActiveIndex === index,
+                                                        }"
+                                                        @click.stop="edit(index, $event)"
+                                                ></i>
+                                            </div>
+                                            <template x-if="['PROJECT', 'SITUATION'].includes(chatroomType)">
+                                                <div class="rounded-circle icon-button advanced-check" @click="advancedCheck(index)">
+                                                    <i style="font-size: 0.8rem" class="fas fa-spell-check text-primary"></i>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </div>
+                                    <template x-if="message.key > 1">
+                                        <div class="message-controls d-flex justify-content-center align-items-center mt-1">
+                                            <i class="fas fa-caret-left arrow me-1"
+                                               :class="{'opacity-50 pe-none': message.value.version === 1}"
+                                               @click="message.value.version === 1 ? null : prevBranch(index)"></i>
+                                            <span class="page-indicator" x-text="message.value.version + ' / ' + message.key" style="font-size: 0.8rem"></span>
+                                            <i class="fas fa-caret-right arrow mx-1"
+                                               :class="{'opacity-50 pe-none': message.key === message.value.version}"
+                                               @click="message.key === message.value.version ? null : nextBranch(index)"></i>
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
+                        </div>
+
+                    </template>
+                    <template x-if="receivedMsgLoading">
+                        <div class="message received">
+                            <div class="d-flex align-items-start">
+                                <div class="w-100">
+                                    <div class="message-content d-flex flex-column align-items-center">
+                                        <div class="received-typing-dots py-2 px-2">
+                                            <i class="fas fa-circle"></i>
+                                            <i class="fas fa-circle"></i>
+                                            <i class="fas fa-circle"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                    <template x-if="sentMsgLoading">
+                        <div class="message sent">
+                            <div class="d-flex align-items-start">
+                                <div class="w-100">
+                                    <div class="message-content d-flex flex-column align-items-center">
+                                        <div class="sent-typing-dots py-2 px-2">
+                                            <i class="fas fa-circle"></i>
+                                            <i class="fas fa-circle"></i>
+                                            <i class="fas fa-circle"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <div class="message-footer">
+                <template x-if="!isTipActive">
+                    <div id="tagBar" class="tag-bar">
+                        <div class="tags-wrapper">
+                            <template x-if="chatroomType == 'PROJECT'">
+                                <span class="badge tag text-dark py-2 sample-lesson" @click.stop="getDemoSentence">
+                                    <i class="fas fa-file-alt me-1" style="color: orange;"></i>
+                                    範例
+                                </span>
+                            </template>
+                            <span class="badge tag text-dark py-2" @click.stop="showTranslationModal">
+                            <i class="fas fa-language me-1 text-info"></i>
+                            翻譯
+                        </span>
+                            <template x-if="chatroomType == 'FREE_TALK'">
+                                <span class="badge tag text-dark py-2" @click.stop="uploadImg()">
+                                    <i class="fas fa-images me-1" style="color: var(--bs-teal);"></i>
+                                    照片
+                                </span>
+                            </template>
+<!--                            <span class="badge tag text-dark py-2">-->
+<!--                            <i class="fas fa-hashtag" style="color: var(&#45;&#45;bs-purple);"></i>-->
+<!--                            聊點什麼...-->
+<!--                        </span>-->
+<!--                            <span class="badge tag text-dark py-2" @click.stop="genNewTopic">-->
+<!--                            <i class="fas fa-redo-alt" style="color: var(&#45;&#45;bs-pink);"></i>-->
+<!--                            話題-->
+<!--                        </span>-->
+                        <input type="file" id="imageInput" multiple accept="image/*" hidden="hidden"/>
+                        </div>
+                    </div>
+                </template>
+                <div class="chat-input" id="keyboardInput">
+                    <template x-if="isTipActive">
+                        <div class="flex-column align-items-center d-flex justify-content-between w-100 px-3">
+                            <span class="small" style="color: var(--bs-purple);">試著說</span>
+                            <div class="sentence w-100 mt-2 mb-4" style="color: black; background-color: rgba(173, 216, 230, 0.1);">
+                                <div class="d-flex align-items-start">
+                                    <div class="w-100 mb-2">
+                                        <div class="message-content tip-content">
+                                            <div class="loading-spinner" style="display: none"></div>
+                                            <div class="small gen-audio-content" style="line-height: 1.2;" x-text="tipContent"></div>
+                                        </div>
+                                        <div class="message-translation mt-2" style="font-size: 0.8rem; line-height: 1.2;" x-show="showTipTranslation" x-text="tipTranslation"></div>
+                                    </div>
+                                    <i @click.stop="genAudioForTip()" class="fas fa-rss ms-3 text-primary" style="font-size: 0.8rem; margin-top: 0.4rem"></i>
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <div class="rounded-circle icon-button me-3" @click="showTipTranslation = !showTipTranslation">
+                                        <i style="font-size: 0.8rem" class="fas fa-language text-black"></i>
+                                    </div>
+                                    <div class="rounded-circle icon-button me-3" @click="renewTip()">
+                                        <i style="font-size: 0.8rem" class="fas fa-redo-alt text-black"></i>
+                                    </div>
+                                    <div class="rounded-circle icon-button me-3" @click="sendTip()">
+                                        <i style="font-size: 0.8rem" class="fas fa-paper-plane text-black"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="align-items-center d-flex justify-content-between w-100 px-3">
+                                <template x-if="isRecording">
+                                    <button
+                                            @click.stop="cancelRecord()"
+                                            class="btn btn-link rounded-circle border p-0 d-flex align-items-center justify-content-center"
+                                            style="width: 45px; height: 45px;">
+                                        <i style="font-weight: 100;" class="far fa-stop-circle fs-5 text-black">
+                                        </i>
+                                    </button>
+                                </template>
+                                <button @click.stop="isRecording? stopRecord() : startRecord()" :class="{ 'recording': isRecording }" class="btn rounded-circle bg-primary text-white p-0 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px; border: none;">
+                                    <i :class="isRecording ? 'fas fa-paper-plane' : 'fas fa-microphone-alt'" class="fs-2"></i>
+                                </button>
+                                <button @click="cancelTip" class="btn btn-link rounded-circle border p-0 d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
+                                    <i class="far fa-times-circle text-black fs-5" style="font-weight: 100;"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+                    <template x-if="!isTipActive">
+                        <div class="input-group align-items-center d-flex justify-content-between px-3">
+                            <button
+                                    @click.stop="isRecording ? cancelRecord() : showKeyboard()"
+                                    class="btn btn-link rounded-circle border p-0 d-flex align-items-center justify-content-center"
+                                    style="width: 45px; height: 45px;">
+                                <i :class="isRecording ? 'far fa-stop-circle' : 'fas fa-keyboard'"
+                                   style="font-weight: 100;"
+                                   class="fs-5 text-black">
+                                </i>
+                            </button>
+                            <button @click.stop="isRecording? stopRecord() : startRecord()" :class="{ 'recording': isRecording }" class="btn rounded-circle bg-primary record-btn text-white p-0 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px; border: none;">
+                                <i :class="isRecording ? 'fas fa-paper-plane' : 'fas fa-microphone-alt'" class="fs-2"></i>
+                            </button>
+                            <button @click="genTip()" :class="!showTipBtn ? 'invisible' : ''" class="btn btn-link rounded-circle border p-0 d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
+                                <i class="fas fa-lightbulb text-warning fs-5" style="font-weight: 100;"></i>
+                            </button>
+                        </div>
+                    </template>
+                </div>
+                <div class="chat-input d-flex flex-column d-none" id="textInput">
+                    <div class="input-group image-display mb-2 d-none">
+                        <div class="position-relative d-inline-block me-2 image-wrapper">
+                            <img src="" class="img-thumbnail uploaded-img" style="max-width: 100px; max-height: 100px;">
+                            <button @click.stop="removeImg" class="btn btn-sm btn-secondary position-absolute top-0 end-0 rounded-circle d-flex align-items-center justify-content-center p-0 opacity-50" style="width: 20px; height: 20px;">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" id="text" class="form-control">
+                        <button class="btn btn-primary send-btn" @click.stop="sendTextMsg"><i class="fas fa-paper-plane"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="advanced-check-modal" id="advancedCheckModal">
+        <div class="d-flex align-items-center justify-content-center">
+            <div class="loading-spinner-area loading-spinner mt-5 mb-5" style="display: none"></div>
+        </div>
+        <div class="advanced-check-area">
+            <div class="nav-wrapper position-relative end-0">
+                <ul class="nav nav-pills nav-fill p-1" role="tablist" style="width: 50%; margin: 0 auto; border-radius: 50%">
+                    <li class="nav-item">
+                        <a class="nav-link mb-0 px-0 py-1 active pill-link" data-bs-toggle="tab" href="#grammar-tabs-simple" role="tab" aria-controls="grammar" aria-selected="true">
+                            文法
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link mb-0 px-0 py-1 pill-link" data-bs-toggle="tab" href="#sentence-tabs-simple" role="tab" aria-controls="sentence" aria-selected="false">
+                            精進
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link mb-0 px-0 py-1 pill-link" data-bs-toggle="tab" href="#pronunciation-tabs-simple" role="tab" aria-controls="pronunciation" aria-selected="false">
+                            發音
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <hr>
+
+            <div class="tab-content mt-3">
+                <div class="tab-pane fade show active" id="grammar-tabs-simple" role="tabpanel" aria-labelledby="grammar-tab">
+                    <template x-if="!grammarAccuracy">
+                        <div>
+                            <!-- 文法 Tab 的內容 -->
+                            <div class="grammar w-100" style="color: black; background-color: rgba(255, 192, 203, 0.1);">
+                                <i class="fas fa-times-circle me-2 small text-danger"></i>
+                                <span x-text="errorSentence"></span>
+                            </div>
+                            <div class="grammar w-100" style="color: black; background-color: rgba(144, 238, 144, 0.1);">
+                                <i class="fas fa-check-circle me-2 small" style="color: var(--bs-teal);"></i>
+                                <span x-text="correctSentence"></span>
+                            </div>
+                            <div class="grammar-text w-100 d-flex flex-column" style="color: black;">
+                                <span class="fw-bold small">錯誤原因</span>
+                                <span x-text="errorReason" class="small"></span>
+                                <span x-text="grammarReasonTranslation" class="small"></span>
+                            </div>
+                        </div>
+                    </template>
+                    <template x-if="grammarAccuracy">
+                        <div class="d-flex flex-column align-items-center justify-content-center">
+                            <i class="fas fa-check fs-1 fw-bold" style="color: var(--bs-teal);"></i>
+                            <span class="fs-2 mt-2 fw-bold" style="color: var(--bs-teal);">做得好！</span>
+                        </div>
+                    </template>
+                </div>
+
+                <div class="tab-pane fade" id="sentence-tabs-simple" role="tabpanel" aria-labelledby="sentence-tab">
+                    <!-- 精進 Tab 的內容 -->
+                    <span class="text-center small" style="color: var(--bs-purple);">非正式</span>
+                    <div class="sentence w-100 mt-2" style="color: black; background-color: rgba(173, 216, 230, 0.1);">
+                        <div class="d-flex align-items-start">
+                            <div class="w-100">
+                                <div class="message-content">
+                                    <span x-text="informalContent"></span>
+                                </div>
+                            </div>
+                            <i :data-url="informalAudioPath" @click="playAdvancedSound($event.target)" class="fas fa-rss ms-3 text-primary" style="font-size: 0.8rem; margin-top: 0.4rem"></i>
+                        </div>
+                    </div>
+                    <div class="sentence-text w-100 d-flex flex-column mb-3" style="color: black;">
+                        <span x-text="informalExplanation" class="small"></span>
+                    </div>
+                    <hr>
+
+                    <span class="text-center small" style="color: var(--bs-purple);">正式</span>
+                    <div class="sentence w-100 mt-2" style="color: black; background-color: rgba(173, 216, 230, 0.1);">
+                        <div class="d-flex align-items-start">
+                            <div class="w-100">
+                                <div class="message-content">
+                                    <span x-text="formalContent"></span>
+                                </div>
+                            </div>
+                            <i :data-url="formalAudioPath" @click="playAdvancedSound($event.target)" class="fas fa-rss ms-3 text-primary" style="font-size: 0.8rem; margin-top: 0.4rem"></i>
+                        </div>
+                    </div>
+                    <div class="sentence-text w-100 d-flex flex-column" style="color: black;">
+                        <span x-text="formalExplanation" class="small"></span>
+                    </div>
+
+                </div>
+                <div class="tab-pane fade" id="pronunciation-tabs-simple" role="tabpanel" aria-labelledby="pronunciation-tab">
+                    <!-- 發音 Tab 的內容 -->
+                    <template x-if="grammarOverallScore > 0">
+                        <div>
+                            <div class="sentence w-100" style="color: black; background-color: rgba(173, 216, 230, 0.1);">
+                                <div class="d-flex align-items-start">
+                                    <div class="w-100">
+                                        <div class="message-content d-flex align-items-center justify-content-between w-100">
+                                            <div class="d-flex align-items-center">
+                                                <img src="img/favicon.png" class="me-2" style="width: 40px; height: 40px;" alt="">
+                                                <template x-if="grammarOverallScore >= 80">
+                                                    <span class="fs-5 fw-bold" style="color: var(--bs-teal);">做得好！</span>
+                                                </template>
+                                                <template x-if="grammarOverallScore < 80 && grammarOverallScore >= 60">
+                                                    <span class="fs-5 mt-2 fw-bold text-warning">不錯喔！</span>
+                                                </template>
+                                                <template x-if="grammarOverallScore < 60">
+                                                    <span class="fs-5 mt-2 fw-bold text-danger">繼續加油！</span>
+                                                </template>
+                                            </div>
+
+                                            <div>
+                                                <template x-if="grammarOverallScore >= 80">
+                                                    <span class="fw-bold" style="color: var(--bs-teal);" x-text="grammarOverallScore"></span>
+                                                </template>
+                                                <template x-if="grammarOverallScore < 80 && grammarOverallScore >= 60">
+                                                    <span class="fw-bold text-warning" x-text="grammarOverallScore"></span>
+                                                </template>
+                                                <template x-if="grammarOverallScore < 60">
+                                                    <span class="fw-bold text-danger" x-text="grammarOverallScore"></span>
+                                                </template>
+                                                <span class="small" x-bind:class="{'text-warning': grammarOverallScore < 80 && grammarOverallScore >= 60, 'text-danger': grammarOverallScore < 60, 'text-success': grammarOverallScore >= 80}">%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="sentence w-100 mt-2" style="color: black; background-color: rgba(173, 216, 230, 0.1);">
+                            <div class="d-flex align-items-start">
+                                <div class="w-100">
+                                    <div class="message-content">
+                                        <span x-html="pronunciationText"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                    <template x-if="grammarOverallScore < 0">
+                        <div class="sentence w-100" style="color: black; background-color: rgba(173, 216, 230, 0.1);">
+                            <div class="d-flex align-items-start">
+                                <div class="w-100">
+                                    <div class="d-flex flex-column align-items-center justify-content-center">
+                                        <i class="far fa-hand-paper fs-1 fw-bold text-warning"></i>
+                                        <span class="fs-2 mt-2 fw-bold text-warning">無發音分析</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="sample-lesson-modal" id="sampleLessonModal">
+        <div class="nav-wrapper position-relative end-0">
+            <ul class="nav nav-pills nav-fill p-1" role="tablist" style="width: 50%; margin: 0 auto; border-radius: 50%">
+                <li class="nav-item">
+                    <a @click="showSentences('basic-tabs-simple')" class="nav-link mb-0 px-0 py-1 active pill-link" data-bs-toggle="tab" href="#basic-tabs-simple" role="tab" aria-controls="basic" aria-selected="true">
+                        基礎
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a @click="showSentences('advanced-tabs-simple')" class="nav-link mb-0 px-0 py-1 pill-link" data-bs-toggle="tab" href="#advanced-tabs-simple" role="tab" aria-controls="advanced" aria-selected="false">
+                        進階
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <hr>
+
+        <div class="tab-content">
+            <div
+                    class="tab-pane fade show active"
+                    id="basic-tabs-simple"
+                    role="tabpanel"
+                    aria-labelledby="basic-tab"
+            >
+                <ul class="list-group px-1">
+                    <template x-for="(item,index) in basicSentences" :key="index">
+                        <li class="list-group-item border-0 d-flex align-items-start px-0 mb-1">
+                            <div class="d-flex align-items-start flex-column justify-content-center me-4">
+                                <p class="mb-1 small font-weight-bold text-dark english" x-text="item.content"></p>
+                                <p class="mb-0 small translate text-secondary" x-text="item.translation"></p>
+                            </div>
+                            <i
+                                    class="mt-2 fas fa-rss text-primary small ms-auto"
+                                    @click="playSound(item.lessonNumber, item.audioName[0])"
+                                    style="cursor: pointer;"
+                            ></i>
+                        </li>
+                    </template>
+                </ul>
+            </div>
+
+            <div
+                    class="tab-pane fade"
+                    id="advanced-tabs-simple"
+                    role="tabpanel"
+                    aria-labelledby="advanced-tab"
+            >
+                <ul class="list-group px-1">
+                    <template x-for="(item,index) in advancedSentences" :key="index">
+                        <li class="list-group-item border-0 d-flex align-items-start px-0 mb-1">
+                            <div class="d-flex align-items-start flex-column justify-content-center me-2">
+                                <p class="mb-1 small font-weight-bold text-dark english" x-text="item.content"></p>
+                                <p class="mb-0 small translate text-secondary" x-text="item.translation"></p>
+                            </div>
+                            <i
+                                    class="mt-2 fas fa-rss text-primary small ms-auto"
+                                    @click="playSound(item.lessonNumber, item.audioName[0])"
+                                    style="cursor: pointer;"
+                            ></i>
+                        </li>
+                    </template>
+                </ul>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mt-2 w-100">
+                <template x-if="isRecording">
+                    <button
+                            @click.stop="cancelRecord()"
+                            class="btn btn-link rounded-circle border p-0 d-flex align-items-center justify-content-center"
+                            style="width: 45px; height: 45px;">
+                        <i class="far fa-stop-circle fs-5 text-black" style="font-weight: 100;"></i>
+                    </button>
+                </template>
+                <button @click.stop="isRecording? stopRecord() : startRecord()" :class="{ 'recording': isRecording }" class="btn rounded-circle bg-primary text-white p-0 mx-auto" style="width: 60px; height: 60px; border: none;">
+                    <i :class="isRecording ? 'fas fa-paper-plane' : 'fas fa-microphone-alt'" class="fs-2"></i>
+                </button>
+<!--                無用-->
+                <template x-if="isRecording">
+                    <button
+                            class="btn btn-link rounded-circle border p-0 d-flex align-items-center justify-content-center"
+                            style="width: 45px; height: 45px; visibility: hidden;">
+                        <i class="far fa-times-circle fs-5 text-black" style="font-weight: 100;"></i>
+                    </button>
+                </template>
+<!--            無用-->
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="translation-modal " id="translationModal">
+        <div class="position-relative d-flex justify-content-center align-items-center py-2">
+            <span class="text-center small" style="color: var(--bs-purple);">翻譯</span>
+            <button @click.stop="translation" class="small px-3 py-1 translation-button position-absolute end-0">翻譯</button>
+        </div>
+        <hr>
+        <div class="translation-div px-4">
+            <textarea class="small translation-input" placeholder=" " id="inputField"></textarea>
+            <label for="inputField" class="translation-label">輸入您的母語</label>
+        </div>
+        <div class="translation-div px-4 pb-4 mt-2 position-relative d-none" id="translation-response-div">
+            <span class="small text-break me-3 translate-response"></span>
+            <i @click.stop="genAudioForTranslation()" class="fas fa-rss text-primary position-absolute top-0 end-0 px-3" style="font-size: 0.8rem; margin-top: 1.5rem"></i>
+        </div>
+        <div class="d-flex align-items-center justify-content-between w-100 mt-4">
+            <template x-if="isRecording">
+                <button
+                        @click.stop="cancelRecord()"
+                        class="btn btn-link rounded-circle border p-0 d-flex align-items-center justify-content-center"
+                        style="width: 45px; height: 45px;">
+                    <i class="far fa-stop-circle fs-5 text-black" style="font-weight: 100;"></i>
+                </button>
+            </template>
+            <button @click.stop="isRecording? stopRecord() : startRecord()" :class="{ 'recording': isRecording }" class="btn rounded-circle bg-primary text-white p-0 mx-auto" style="width: 60px; height: 60px; border: none;">
+                <i :class="isRecording ? 'fas fa-paper-plane' : 'fas fa-microphone-alt'" class="fs-2"></i>
+            </button>
+<!--            無用-->
+            <template x-if="isRecording">
+                <button
+                        class="btn btn-link rounded-circle border p-0 d-flex align-items-center justify-content-center"
+                        style="width: 45px; height: 45px; visibility: hidden;">
+                    <i class="far fa-times-circle fs-5 text-black" style="font-weight: 100;"></i>
+                </button>
+            </template>
+<!--            無用-->
+        </div>
+
+    </div>
+
+</div>
+
+<div class="overlay" id="overlay"></div> <!-- 遮罩 -->
+
+<div class="notification d-none">
+    <p id="copiedText">Copied</p>
+</div>
+
+<div class="partner-block-area d-none">
+    <p class="block-text">
+        <span x-text="partner.displayName"></span> 在說話
+    </p>
+</div>
+
+<div class="human-block-area d-none">
+    <p class="block-text">
+        <span>你在說話</span>
+    </p>
+</div>
+
+<div id="waiting-screen">
+    <div class="waiting-content">
+        <img id="waiting-image" src="img/peanut.png" alt="Loading">
+        <p id="waiting-text">您順利完成了這堂課，獲得 5 EXP！</p>
+    </div>
+</div>
+
+<script src="js/sockjs.min.js"></script>
+<script src="js/stomp.min.js"></script>
+<script src="js/bootstrap.bundle.min.js"></script>
+<script src="js/jquery.min.js"></script>
+<script src="js/alpine.2.8.2.min.js"></script>
+
+<script>
+    $(document).ready(function() {
+        // 右上角下拉選單
+        $('#dropdownMenuButton').on('show.bs.dropdown', function(event) {
+            const dropdownMenu = $(this).next('.dropdown-menu');
+            dropdownMenu.css('transform', 'translate3d(-212px, 40px, 0px)');
+        });
+    });
+
+    $(document).ready(function() {
+      const $advancedCheckModal = $('#advancedCheckModal');
+      const $overlay = $('#overlay');
+
+      function showModal() {
+        $advancedCheckModal.addClass('active').show();
+        $overlay.addClass('active').show();
+      }
+
+      function hideModal() {
+        $advancedCheckModal.removeClass('active').hide();
+        $overlay.removeClass('active').hide();
+      }
+
+      $(document).on('click', '.advanced-check', function(event) {
+        event.stopPropagation();
+        showModal();
+      });
+
+      $(document).on('click', function(event) {
+        if ($advancedCheckModal.hasClass('active') && !$advancedCheckModal.has(event.target).length && !$(event.target).is('#overlay')) {
+          hideModal();
+        }
+      });
+
+      $overlay.on('click', function() {
+        hideModal();
+      });
+    });
+
+    $(document).ready(function() {
+      const $sampleLessonModal = $('#sampleLessonModal');
+      const $overlay = $('#overlay');
+
+      function showModal() {
+        $sampleLessonModal.addClass('active').show();
+        $overlay.addClass('active').show();
+        console.log('showModal')
+      }
+
+      function hideModal() {
+        $sampleLessonModal.removeClass('active').hide();
+        $overlay.removeClass('active').hide();
+      }
+
+      $(document).on('click', '.sample-lesson', function(event) {
+      console.log('.sample-lesson')
+        event.stopPropagation();
+        showModal();
+      });
+
+      $(document).on('click', function(event) {
+        if ($sampleLessonModal.hasClass('active') && !$sampleLessonModal.has(event.target).length && !$(event.target).is('#overlay')) {
+          hideModal();
+        }
+      });
+
+      $overlay.on('click', function() {
+        hideModal();
+      });
+    });
+
+    $(document).ready(function() {
+      const $translationModal = $('#translationModal');
+      const $overlay = $('#overlay');
+
+      function showModal() {
+        $translationModal.addClass('active').show();
+        $overlay.addClass('active').show();
+      }
+
+      function hideModal() {
+        $translationModal.removeClass('active').hide();
+        $overlay.removeClass('active').hide();
+      }
+
+      $(document).on('click', '.translation-icon', function(event) {
+        event.stopPropagation();
+        showModal();
+      });
+
+      $(document).on('click', function(event) {
+        if ($translationModal.hasClass('active') && !$translationModal.has(event.target).length && !$(event.target).is('#overlay')) {
+          hideModal();
+        }
+      });
+
+      $overlay.on('click', function() {
+        hideModal();
+      });
+    });
+</script>
+
+<script>
+    function loadData() {
+        return {
+            member: {},
+            partner: {},
+            messages: [],
+            editActiveIndex: null,  // 編輯訊息時，用來放置 message 的 index
+            isTextInputActive: false,   // 控制 textInput 的顯示與隱藏
+            isTipActive: false,
+            globalChatroomId: "",
+            action: null,
+            channel: "talkyo",
+            unitNumber: "",         // scenario 的編號，用來查找情境
+            currentMessageId: "",   // FREE_TALK 用來查找歷史聊天記錄
+            chatroomType: "",
+            stompClient: null,
+            isRecording: false,
+            isRecordCanceled: false,    // 用來判斷 cancelRecord and stopRecord
+            previewMessageId: "",
+            actionForEdit: "CREATE",
+            indexToDeleteForEdit: null,
+
+            // ===== Tip ===== //
+            tipContent: "",
+            tipTranslation: "",
+            showTipTranslation: false,
+
+            // ===== Sample Lesson ===== //
+            basicSentences: [],
+            advancedSentences: [],
+            lesson: {},
+            lessonId: "",
+            courseId: "",
+
+            // ===== Dropdown Control ===== //
+            blurText: true,
+            showTranslation: false,
+            showTipBtn: true,
+            autoRecording: false,
+
+            // ===== AdvancedCheck ===== //
+            pronunciationText: "",
+            grammarOverallScore: -1,
+            grammarAccuracy: false,     // 判斷文法校正內容出現隱藏
+            errorSentence: "",
+            correctSentence: "",
+            errorReason: "",
+            grammarReasonTranslation: "",
+            informalContent: "",
+            formalContent: "",
+            informalExplanation: "",
+            formalExplanation: "",
+            informalAudioPath: "",
+            formalAudioPath: "",
+
+            // ===== message loading ===== //
+            openingLineLoading: false,
+            receivedMsgLoading: false,
+            sentMsgLoading: false,
+            receivedMsgCount: 0,
+
+            async init() {
+                let _this = this;
+
+                const urlParams = new URLSearchParams(window.location.search);
+                this.chatroomType = urlParams.get("chatroomType");
+                this.action = urlParams.get("action");
+                this.unitNumber = urlParams.get("unitNumber");
+                this.lessonId = urlParams.get("lessonId");
+
+                this.openingLineLoading = true;
+
+                $.ajax({
+                    url: "member/info",
+                    type: "get",
+                    dataType: "json",
+                    contentType: "application/json; charset=utf-8",
+                    success: function (response) {
+                        _this.member = response;
+                        _this.partner = response.partner;
+                    },
+                });
+
+                $.ajax({
+                    url: "chatroom/create",
+                    type: "post",
+                    dataType: "json",
+                    data: JSON.stringify({ chatroomType: this.chatroomType, action: this.action, lessonId: this.lessonId }),
+                    contentType: "application/json; charset=utf-8",
+                    success: function (response) {
+                        if (response.code == "C000") {
+                            _this.globalChatroomId = response.data;
+
+                            $.ajax({
+                                url: "chatroom/getCurrentMsgId/" + _this.globalChatroomId,
+                                type: "get",
+                                dataType: "json",
+                                success: function (msgResponse) {
+                                    if (msgResponse.code === "C000") {
+                                        _this.currentMessageId = msgResponse.data;
+<!--                                        _this.previewMessageId = _this.currentMessageId;-->
+                                    }
+                                    _this.connect();
+                                }
+                            });
+                        }
+                    },
+                });
+
+                const dropdownSetting = JSON.parse(localStorage.getItem("dropdownSettings")) || {
+                    blurText: false,
+                    showTranslation: false,
+                    showTipBtn: true,
+                    autoRecording: false
+                };
+                if (dropdownSetting) {
+                    this.blurText = dropdownSetting.blurText;
+                    this.showTranslation = dropdownSetting.showTranslation;
+                    this.showTipBtn = dropdownSetting.showTipBtn;
+                    this.autoRecording = dropdownSetting.autoRecording;
+                }
+            },
+
+            updateMessages() {
+                console.log(this.messages)
+                this.messages = this.messages.map(msg => ({
+                    ...msg,
+                    value: {
+                        ...msg.value,
+                        showTranslation: this.showTranslation,
+                        isBlurred: this.blurText,
+                        ...(msg.value.imageName ? { imagePath: "image/" + msg.value.chatroomId + "/" + msg.value.imageName } : {})
+                    }
+                }));
+                this.previewMessageId = this.messages[this.messages.length - 1].value.id;
+                this.scrollToMsgBottom();
+            },
+
+            prevBranch(index) {
+                if (this.isPartnerTalking() || this.isHumanTalking()) return;
+                if (!this.isFirstPage) {
+                    console.log("Previous Branch");
+                    this.previewMessageId = this.messages[index - 1].value.id;
+                    let targetVersion = this.messages[index].value.version - 1;
+                    this.switchBranch(this.previewMessageId, targetVersion);
+                }
+            },
+            nextBranch(index) {
+                if (this.isPartnerTalking() || this.isHumanTalking()) return;
+                if (!this.isLastPage) {
+                    console.log("Next Branch");
+                    this.previewMessageId = this.messages[index - 1].value.id;
+                    let targetVersion = this.messages[index].value.version + 1;
+                    this.switchBranch(this.previewMessageId, targetVersion);
+                }
+            },
+
+            switchBranch(previewMessageId, targetVersion) {
+                let _this = this;
+                $.ajax({
+                    url: "chatroom/switchMsg/" + previewMessageId + "/" + targetVersion,
+                    type: "get",
+                    dataType: "json",
+                    contentType: "application/json; charset=utf-8",
+                    success: function (response) {
+                        if (response.code == "C000") {
+                            _this.messages = response.data.map(obj => {
+                                const key = Number(Object.keys(obj)[0]);
+                                return { key, value: obj[key] };
+                            });
+                            _this.updateMessages();
+                            _this.currentMessageId = _this.messages[_this.messages.length - 1].value.id;
+                            _this.previewMessageId = _this.messages[_this.messages.length - 1].value.id;
+                        }
+                    },
+                });
+            },
+
+            toggleBlur(index) {
+                this.showText = !this.showText;
+                this.messages[index].value.isBlurred = !this.messages[index].value.isBlurred;
+            },
+
+            toggleTranslation(index) {
+                this.showTranslation = !this.showTranslation;
+                this.messages[index].value.showTranslation = !this.messages[index].value.showTranslation;
+            },
+
+            edit(index, event) {
+                if (this.isPartnerTalking() || this.isHumanTalking()) return;
+                const el = event.target;
+                const isCurrentlyActive = this.editActiveIndex === index;   // 檢查是否點擊了同一個 icon
+                if (isCurrentlyActive) {
+                    // 如果點擊了同一個 active 的 icon, 則重置
+                    this.resetEdit();
+                } else {
+                    console.log('啟動編輯')
+                    // 否則，設為 active，並執行相應的操作
+                    this.editActiveIndex = index;
+
+                    let message = this.messages[index].value;
+                    $("#text").val(message.parsedText ? message.parsedText : message.text); //TODO: 只傳圖片情況
+                    $("#textInput").removeClass('d-none');
+                    $("#tagBar").hide();
+                    $('#keyboardInput').hide();
+                    this.isTextInputActive = true;
+
+                    el.classList.add('active');
+
+                    this.previewMessageId = this.messages[index - 1].value.id;
+                    this.indexToDeleteForEdit = index;
+                    this.actionForEdit = "EDIT";
+                }
+            },
+
+            resetEdit() {
+                console.log('resetEdit')
+                const activeElement = document.querySelector('.fa-eraser.active');
+                if (activeElement) {
+                    activeElement.classList.remove('active');
+                }
+                this.activeIndex = null;
+
+                $("#textInput").addClass('d-none');
+                $("#tagBar").show();
+                $('#keyboardInput').show();
+                $("#text").val('');
+                this.editActiveIndex = null;
+                this.isTextInputActive = false;
+
+                this.previewMessageId = this.messages[this.messages.length - 1].value.id;
+                this.actionForEdit = "CREATE";
+            },
+
+            clickOutsideEditIcon(event) {
+                const textInput = document.getElementById('textInput');
+                if (this.isTextInputActive && !textInput.contains(event.target)) {
+                    this.resetEdit();
+                }
+            },
+
+            advancedCheck(index) {
+                if (this.isPartnerTalking() || this.isHumanTalking()) return;
+                let _this = this;
+                let message = this.messages[index].value;
+
+                if (message.advancedSentences?.length > 0) {
+                    this.constructAdvancedCheckContent(message);
+                    return;
+                }
+
+                $.ajax({
+                    url: "chatroom/advancedCheck/" + message.id,
+                    type: "get",
+                    dataType: "json",
+                    contentType: "application/json; charset=utf-8",
+                    beforeSend: function () {
+                        $(".advanced-check-area").hide();
+                        $(".loading-spinner-area").show();
+                    },
+                    success: function (response) {
+                        if (response.code == "C000"){
+                            console.log('完成');
+                            let message = response.data;
+                            _this.messages[index].value.grammarResult = message.grammarResult;
+                            _this.messages[index].value.advancedSentences = message.advancedSentences;
+                            _this.messages[index].value.conversationScore = message.conversationScore;
+                            _this.constructAdvancedCheckContent(message);
+                        } else {
+                            alert('系統錯誤')
+                        }
+                    },
+                    complete: function () {
+                        console.log("請求完成");
+                        $(".loading-spinner-area").hide();
+                        $(".advanced-check-area").show();
+                    }
+                });
+            },
+
+            constructAdvancedCheckContent(message) {
+                this.errorSentence = "";
+                this.correctSentence = "";
+                this.errorReason = "";
+                this.grammarReasonTranslation = "";
+                this.informalContent = "";
+                this.formalContent = "";
+                this.informalExplanation = "";
+                this.formalExplanation = "";
+                this.informalAudioPath = "";
+                this.formalAudioPath = "";
+                this.grammarOverallScore = -1;
+                this.pronunciationText = "";
+
+                // 文法
+                let grammar = message.grammarResult;
+                if (grammar != null) {
+                    this.errorSentence = grammar.errorSentence || "";
+                    this.correctSentence = grammar.correctSentence || "";
+                    this.errorReason = grammar.errorReason || "";
+                    this.grammarReasonTranslation = grammar.translation || "";
+                }
+                this.grammarAccuracy = message.accuracy;
+
+                // 精進
+                let advancedSentences = message.advancedSentences;
+                this.informalContent = advancedSentences[0].content || "";
+                this.formalContent = advancedSentences[1].content || "";
+                this.informalExplanation = advancedSentences[0].explanation || "";
+                this.formalExplanation = advancedSentences[1].explanation || "";
+                this.informalAudioPath = advancedSentences[0].audioName ? `audio/${this.globalChatroomId}/${advancedSentences[0].audioName[0]}` : "";
+                this.formalAudioPath = advancedSentences[1].audioName ? `audio/${this.globalChatroomId}/${advancedSentences[1].audioName[0]}` : "";
+
+                // 發音分析
+                if (message.conversationScore != null) {
+                    let displayText = message.conversationScore.displayText;
+                    let displayWords = message.conversationScore.displayWords;
+                    this.grammarOverallScore = Math.floor((message.conversationScore.fluency +
+                                message.conversationScore.accuracy +
+                                message.conversationScore.completeness +
+                                message.conversationScore.prosody) / 4);
+                    this.highlightText(displayText, displayWords);
+                }
+
+                console.log(this.grammarOverallScore)
+            },
+
+            highlightText(displayText, displayWords) {
+                let words = displayText.split(/(\s+|[\.,!?])/);
+
+                words.forEach(word => {
+                    if (word.trim() === "") {
+                        this.pronunciationText += word;
+                        return;
+                    }
+
+                    let match = displayWords.find(w => w.word === word);
+
+                    if (match) {
+                        let tag = getTag(match.accuracyScore);
+                        this.pronunciationText += `<${tag}>${match.word}</${tag}>`;
+                    } else {
+                        this.pronunciationText += word;
+                    }
+
+                    function getTag(score) {
+                        if (score >= 80) return "high";
+                        if (score >= 60) return "medium";
+                        return "low";
+                    }
+
+                });
+            },
+
+            playMsgSound(index) {
+                if (this.isPartnerTalking() || this.isHumanTalking()) return;
+                let audioName = this.messages[index].value.audioName;
+                if (audioName) {
+                    const audioUrl = "audio/" + this.globalChatroomId + "/" + audioName;
+                    const audio = new Audio(audioUrl);
+                    audio.play();
+                }
+            },
+
+            playAdvancedSound(el) {
+                const audioUrl = $(el).attr("data-url");
+
+                if (audioUrl) {
+                    const audio = new Audio(audioUrl);
+                    audio.play();
+
+                    // (可選) 添加播放結束事件監聽器
+                    audio.addEventListener('ended', function() {
+                        console.log('Audio playback finished.');
+                        // 在播放結束後執行一些操作，例如更改 icon 或顯示訊息
+                    });
+
+                }
+            },
+
+            playPartnerSound(audioName) {
+                if (audioName) {
+                    const audioUrl = "audio/" + this.globalChatroomId + "/" + audioName;
+                    const audio = new Audio(audioUrl);
+                    audio.play();
+                }
+            },
+
+            showKeyboard () {
+                if (this.isPartnerTalking() || this.isHumanTalking()) return;
+                $('#textInput').toggleClass('d-none');
+                $('#tagBar').toggle();
+                $('#keyboardInput').toggle();
+
+                if ($('#textInput').hasClass('d-none')) {
+                    $(document).off('click.textInput');
+                } else {
+                    $(document).on('click.textInput', function(event) {
+                        if (!$(event.target).closest('#textInput').length) {
+                            $('#textInput').addClass('d-none');
+                            $('#keyboardInput').show();
+                            $('#tagBar').show();
+
+                            $(document).off('click.textInput');
+                        }
+                    });
+                }
+            },
+
+            // ======== Tips 相關 ======== //
+            genTip() {
+                if (this.isPartnerTalking() || this.isHumanTalking()) return;
+                // 顯示視窗和loading圖示
+                this.isTipActive = true;
+                $(".message-footer").addClass("move-up");
+                $(".loading-spinner").removeClass("hidden").css("display", "block");
+
+                let _this = this;
+                let messageId = this.messages[this.messages.length - 1].value.id;
+                $.ajax({
+                    url: "chatroom/guidingSentence/" + messageId,
+                    type: "get",
+                    dataType: "json",
+                    contentType: "application/json; charset=utf-8",
+                    success: function (response) {
+                        if (response.code == "C000") {
+                            $(".loading-spinner").addClass("hidden");
+                            let tip = response.data;
+                            _this.tipContent = tip.content;
+                            _this.tipTranslation = tip.translation;
+                        }
+                    },
+                });
+            },
+            renewTip () {
+                this.genTip();
+            },
+            genAudioForTip () {
+                let _this = this;
+                let data = { content: this.tipContent };
+                $.ajax({
+                    url: "chatroom/genAudio",
+                    type: "post",
+                    dataType: "json",
+                    data: JSON.stringify(data),
+                    contentType: "application/json; charset=utf-8",
+                    success: function (response) {},
+                });
+            },
+            sendTip () {
+                this.isTipActive  = false;
+                $(".message-footer").removeClass("move-up");
+                $(".loading-spinner").addClass("hidden");
+                if (this.stompClient) {
+
+                    if (this.tipContent === '') {
+                        alert("請輸入文字！");
+                        return;
+                    }
+
+                    let chatMessage = {
+                        chatroomId: this.globalChatroomId,
+                        chatroomType: this.chatroomType,
+                        previewMessageId: this.previewMessageId,
+                        action: "CREATE",
+                        content: this.tipContent,
+                        lessonId: this.lessonId
+                    };
+
+                    this.stompClient.send("/chatroom/chat", {}, JSON.stringify(chatMessage));
+                    this.tipContent = '';
+                }
+                event.preventDefault();
+            },
+            cancelTip () {
+                $(".message-footer").removeClass("move-up");
+                $(".loading-spinner").addClass("hidden");
+                this.isTipActive  = false;
+            },
+
+            // ======== Sample Lesson 相關 ======== //
+            showSentences(tabId) {
+                const tabElement = document.querySelector(`.nav-link[href="#${tabId}"]`);
+                if (tabElement) {
+                    if (tabId === 'basic-tabs-simple') {    // 基礎
+                        this.basicSentences = [];
+                        this.basicSentences = this.lesson.sentences.slice(0, 5);
+                    } else if (tabId === 'advanced-tabs-simple') {   // 進階
+                        this.advancedSentences = [];
+                        this.advancedSentences = this.lesson.sentences.slice(-5);
+                    }
+                } else {
+                    console.log('Tab is already active, doing nothing.');
+                }
+            },
+            playSound(lessonNumber, audioName) {
+                let audioFile = "audio/" + this.lesson.courseTopic + "/" + this.lesson.lessonNumber + "/" + audioName;
+                if (audioName) {
+                    const audio = new Audio(audioFile);
+                    audio.play();
+                } else {
+                    console.warn("No audio file specified.");
+                }
+            },
+            getDemoSentence() {
+                if (this.isPartnerTalking() || this.isHumanTalking()) return;
+                let _this = this;
+                $.ajax({
+                    url: "course/lesson/info/" + this.lessonId,
+                    type: "get",
+                    dataType: "json",
+                    contentType: "application/json; charset=utf-8",
+                    success: function (response) {
+                        if (response.code == "C000"){
+                            _this.lesson = response.data;
+                            _this.courseId = _this.lesson.courseId;
+                            _this.basicSentences = _this.lesson.sentences.slice(0, 5);    // 先裝填
+
+                            _this.showSampleLessonModal();
+                        }
+                    },
+                });
+            },
+
+            showSampleLessonModal() {
+                const $sampleLessonModal = $('#sampleLessonModal');
+                const $overlay = $('#overlay');
+
+                $sampleLessonModal.addClass('active').show();
+                $overlay.addClass('active').show();
+                console.log('showSampleLessonModal');
+            },
+
+            showTranslationModal() {
+                if (this.isPartnerTalking() || this.isHumanTalking()) return;
+                const $translationModal = $('#translationModal');
+                const $overlay = $('#overlay');
+
+                $translationModal.addClass('active').show();
+                $overlay.addClass('active').show();
+                console.log('showTranslationModal');
+            },
+
+            // ===== 複製 ===== //
+            copy(index) {
+                let text = this.messages[index].value.parsedText;
+                navigator.clipboard.writeText(text).then(() => {
+                    $(".notification").removeClass('d-none');
+
+                    setTimeout(function () {
+                        $(".notification").addClass('d-none');
+                    }, 1500);
+
+                }).catch(err => {
+                    console.error('複製失敗:', err);
+                });
+            },
+
+            // ===== translation ===== //
+            translation() {
+                let text = $(".translation-input").val();
+                if (text == '') {
+                    alert('請輸入文字！');
+                    return;
+                }
+                let _this = this;
+                let data = { text: text };
+                $.ajax({
+                    url: "openai/translate",
+                    type: "post",
+                    dataType: "json",
+                    data: JSON.stringify(data),
+                    contentType: "application/json; charset=utf-8",
+                    success: function (response) {
+                        if (response.code == "C000") {
+                            $(".translate-response").text(response.data);
+                            $("#translation-response-div").removeClass('d-none');
+                        }
+                    },
+                });
+            },
+            genAudioForTranslation () {
+                let _this = this;
+                let data = { content: $(".translate-response").text() };
+                $.ajax({
+                    url: "chatroom/genAudio",
+                    type: "post",
+                    dataType: "json",
+                    data: JSON.stringify(data),
+                    contentType: "application/json; charset=utf-8",
+                    success: function (response) {},
+                });
+            },
+
+            // ===== 上傳圖片 ===== //
+            uploadImg() {
+                if (this.isPartnerTalking() || this.isHumanTalking()) return;
+                let _this = this;
+                const imageInput = document.getElementById("imageInput");
+                imageInput.click();
+                imageInput.addEventListener(
+                    "change",
+                    function () {
+                        const file = imageInput.files[0]; // 取得選擇的檔案
+                        if (!file) return; // 若未選擇檔案則返回
+
+                        let formData = new FormData();
+                        formData.append("multipartFile", file);
+                        formData.append("messageType", "IMAGE");
+                        formData.append("chatroomId", _this.globalChatroomId);
+
+                        $.ajax({
+                            url: "chatroom/upload",
+                            type: "POST",
+                            data: formData,
+                            processData: false,
+                            contentType: false,
+                            success: function (response) {
+                                if (response.code === "C000") {
+                                    console.log("上傳成功，文件 URL:", response.data);
+                                    $(".uploaded-img").attr('src', response.data);
+                                    $(".image-display").removeClass("d-none");
+                                    $("#textInput").css("transform", "translateY(-100.5px)");
+                                    _this.showKeyboard ();
+                                } else {
+                                    alert("上傳失敗：" + response.message);
+                                }
+                            },
+                            error: function (xhr, status, error) {
+                                console.error("上傳錯誤:", error);
+                                alert("上傳過程中發生錯誤！");
+                            },
+                        });
+                    },
+                    { once: true }
+                );
+            },
+            removeImg() {
+                let _this = this;
+                let data = {
+                    fileName: $(".uploaded-img").attr("src").split('/').pop(),
+                    messageType: "IMAGE",
+                    chatroomId: this.globalChatroomId
+                }
+
+                $.ajax({
+                    url: "chatroom/file/delete",
+                    type: "DELETE",
+                    dataType: "json",
+                    data: JSON.stringify(data),
+                    contentType: "application/json; charset=utf-8",
+                    success: function (response) {
+                        if (response.code === "C000") {
+                            console.log("刪除成功");
+                            $(".image-display").addClass("d-none");
+                            $("#textInput").css("transform", "translateY(0)");
+                            $(".uploaded-img").attr('src', "");
+                        } else {
+                            console.log("刪除失敗");
+                        }
+                    },
+                });
+            },
+
+            // ===== 變更與儲存 dropdown setting ===== //
+            saveAndChangeDropdownSettings() {
+                this.updateMessages();
+                let settings = {
+                    blurText: this.blurText,
+                    showTranslation: this.showTranslation,
+                    showTipBtn: this.showTipBtn,
+                    autoRecording: this.autoRecording
+                };
+                localStorage.setItem("dropdownSettings", JSON.stringify(settings));
+            },
+
+            // ===== Websocket ===== //
+            connect() {
+                console.log('connect')
+                this.initializeWebSocketConnection(event);
+            },
+            initializeWebSocketConnection(event) {
+                console.log('initializeWebSocketConnection')
+                // 如果已有連接，先關閉舊的連線
+                if (this.stompClient !== null) {
+                    this.stompClient.disconnect(() => {
+                        console.log('舊的連線已斷開');
+                    });
+                }
+
+                var socket = new SockJS('ws');
+                this.stompClient = Stomp.over(socket);
+
+                this.stompClient.heartbeat.outgoing = 10000; // 每 10 秒發送一次心跳
+                this.stompClient.heartbeat.incoming = 10000; // 每 10 秒接收心跳
+
+                this.stompClient.connect({}, (frame) => {
+                    console.log('連接成功: ' + frame);
+                    this.messages = [];         //TODO: _this.messages.length = 0;
+                    this.openingLineLoading = true;
+                    this.receivedMsgCount = 0;
+                    this.onConnected();
+                    reconnectAttempts = 0;
+                }, (error) => {
+                    console.error('連接失敗: ' + error);
+                    if (reconnectAttempts < 3) {
+                        reconnectAttempts++;
+                        this.connect(event);
+                    } else {
+                        console.error('達到最大重連次數，停止重連');
+                    }
+                });
+            },
+            onConnected (){
+                let _this = this;
+                // 訂閱
+                this.stompClient.subscribe("/chatroom/" + this.globalChatroomId, function (message) {
+                    if (message.body) {
+                        let data = JSON.parse(message.body);
+                        if (data.messages.length > 0) {
+                            data.messages.forEach(obj => {
+                                const key = Number(Object.keys(obj)[0]);
+                                const value = obj[key];
+
+                                _this.messages.push({ key, value: obj[key] });
+
+                                // 產生partner訊息後馬上播放音檔
+                                if (data.messages.length === 1 &&   // 避掉取歷史紀錄和重新連線
+                                    value.senderRole === 'AI' &&
+                                    value.audioName
+                                ) {
+                                    _this.playPartnerSound(value.audioName);
+                                }
+
+                            });
+                            _this.updateMessages();
+                        }
+                    }
+
+                    if (!_this.openingLineLoading) {
+                        _this.receivedMsgCount++;
+
+                        // 設定 sentMsgLoading，奇數為 false，偶數略過
+                        if (_this.receivedMsgCount % 2 !== 0) _this.sentMsgLoading = false;
+                        // 設定 receivedMsgLoading，奇數為 true，偶數為 false
+                        _this.receivedMsgLoading = _this.receivedMsgCount % 2 !== 0;
+                    }
+
+                    _this.openingLineLoading = false;
+                });
+
+                const dto = {
+                    chatroomType: this.chatroomType,
+                    chatroomId: this.globalChatroomId,
+                    currentMessageId: this.currentMessageId,
+                    lessonId: this.lessonId,
+                    courseId: this.courseId,
+                    scenario: this.scenario,
+                    unitNumber: this.unitNumber,
+                };
+
+                this.stompClient.send("/chatroom/init", {}, JSON.stringify(dto));
+            },
+            sendTextMsg() {
+                if (this.stompClient) {
+                    let text = $("#text").val().trim();
+                    let imgPath = $(".uploaded-img").attr("src");
+
+                    if (text === '' && imgPath === '') {
+                        alert("請輸入文字！");
+                        return;
+                    }
+
+                    this.sentMsgLoading = true;
+                    this.scrollToBottom();      // 滾到最底端
+
+                    // 如果在「修改模式」下，將修改的這筆與他的後續對話紀錄從 this.messages 中刪除
+                    if (this.actionForEdit == "EDIT") {
+                        this.messages.splice(this.indexToDeleteForEdit, this.messages.length - this.indexToDeleteForEdit);
+                    }
+
+                    let chatMessage = {
+                        chatroomId: this.globalChatroomId,
+                        chatroomType: this.chatroomType,
+                        previewMessageId: this.previewMessageId,
+                        action: this.actionForEdit,
+                        content: text,
+                        lessonId: this.lessonId,
+                        imageFileName: $(".uploaded-img").attr("src") ? $(".uploaded-img").attr("src").split("/").pop() : null
+                    };
+
+                    this.stompClient.send("/chatroom/chat", {}, JSON.stringify(chatMessage));
+
+                    // 處理文字邏輯部分
+                    text = '';
+                    $("#text").val('');
+
+                    // 處理圖片邏輯部分
+                    if ($(".uploaded-img").attr("src")) {
+                        $(".image-display").addClass("d-none");
+                        $("#textInput").css("transform", "translateY(0)");
+                        $(".uploaded-img").attr('src', "");
+                    }
+
+                    this.resetEdit();   // 回覆成語音介面
+                }
+                event.preventDefault();
+            },
+            disconnect() {
+                let _this = this;
+                if (this.stompClient) {
+                    this.stompClient.disconnect(function() {
+                        console.log('斷開連接成功');
+                    });
+                }
+            },
+
+            async startRecord() {
+                if (this.isPartnerTalking() || this.isHumanTalking()) return;
+                this.isRecording = !this.isRecording;
+                this.isRecordCanceled = false;
+                $("#translationModal").removeClass("active");   // 關閉翻譯視窗
+                $("#sampleLessonModal").removeClass("active");   // 關閉範例視窗
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+
+                    mediaRecorder.ondataavailable = event => {
+                        if (!this.isRecordCanceled) {
+                            audioChunks.push(event.data);
+                        }
+                    };
+
+                     mediaRecorder.onstop = async () => {
+                         if (this.isRecordCanceled || audioChunks.length === 0) {
+                             console.log("錄音已取消");
+                             return;
+                         }
+
+                         const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+
+                         await this.uploadAudio(audioBlob);
+                    };
+
+                    mediaRecorder.start();
+                } catch (error) {
+                    console.error("錄音初始化失敗：", error);
+                    this.isRecording = false;
+                }
+            },
+            stopRecord() {
+                this.isRecording = !this.isRecording;
+                this.isRecordCanceled = false;
+                if (mediaRecorder && mediaRecorder.state !== "inactive") {
+                    mediaRecorder.stop();
+                }
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+            },
+            cancelRecord() {
+                if (this.isPartnerTalking() || this.isHumanTalking()) return;
+                this.isRecording = !this.isRecording;
+                this.isRecordCanceled = true;
+                if (mediaRecorder && mediaRecorder.state !== "inactive") {
+                    mediaRecorder.stop();
+                }
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+            },
+            async uploadAudio(audioBlob) {
+                let _this = this;
+
+                this.sentMsgLoading = true;
+                this.scrollToBottom();      // 滾到最底端
+
+                const formData = new FormData();
+                formData.append("multipartFile", audioBlob, "recording.webm");
+                formData.append("messageType", "AUDIO");
+                formData.append("chatroomId", this.globalChatroomId);
+
+                $.ajax({
+                    url: "chatroom/upload",
+                    type: "POST",
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function (response) {
+                        if (response.code === "C000") {
+                            const fileName = response.data.split('/').pop();
+
+                            let chatMessage = {
+                                chatroomId: _this.globalChatroomId,
+                                chatroomType: _this.chatroomType,
+                                audioFileName: fileName,
+                                previewMessageId: _this.previewMessageId,
+                                action: _this.actionForEdit,
+                            };
+                            _this.stompClient.send("/chatroom/chat", {}, JSON.stringify(chatMessage));
+                        } else {
+                            console.error("上傳失敗");
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("發生錯誤：", error);
+                    }
+                });
+            },
+
+            endLesson() {
+                if (this.isPartnerTalking() || this.isHumanTalking()) return;
+                let _this = this;
+                _this.showWaitingAnimation();
+
+                setTimeout(() => {
+                    let url = `chatroom/leave?chatroomId=${_this.globalChatroomId}&chatroomType=${_this.chatroomType}`;
+
+                    if (_this.lessonId) url += `&lessonId=${_this.lessonId}`;
+                    if (_this.unitNumber) url += `&unitNumber=${_this.unitNumber}`;
+
+                    window.location.href = url;
+                }, 500);
+            },
+
+            showWaitingAnimation() {
+                let loadingScreen = document.getElementById("waiting-screen");
+                let loadingText = document.getElementById("waiting-text");
+
+                // 讓畫面從右滑入
+                loadingScreen.style.right = "0";
+
+                // 2 秒後切換內容
+                setTimeout(() => {
+                    loadingText.textContent = "正在製作你的學習報告...";
+                    loadingText.style.fontWeight = "bold";
+                }, 2000);
+            },
+
+            scrollToMsgBottom() {
+                this.$nextTick(() => {
+                    let messages = $(".message");
+                    if (messages.length > 0) {
+                        messages.last().get(0).scrollIntoView({ behavior: "smooth" });
+                    }
+                })
+            },
+
+            scrollToBottom() {
+                this.$nextTick(() => {
+                    let chatContainer = $(".chat-messages");
+                    if (chatContainer.length > 0) {
+                        chatContainer.scrollTop(chatContainer[0].scrollHeight);
+                    }
+                });
+            },
+
+            // Partner 講話時不能有其他動作的判斷方法
+            isPartnerTalking() {
+                if (this.openingLineLoading == true || this.receivedMsgLoading == true) {
+                    $(".partner-block-area").removeClass('d-none');
+
+                    setTimeout(function () {
+                        $(".partner-block-area").addClass('d-none');
+                    }, 1500);
+
+                    return true;
+                }
+                return false;
+            },
+            // 自己講話時不能有其他動作的判斷方法
+            isHumanTalking() {
+                if (this.openingLineLoading == true || this.sentMsgLoading == true) {
+                    $(".human-block-area").removeClass('d-none');
+
+                    setTimeout(function () {
+                        $(".human-block-area").addClass('d-none');
+                    }, 1500);
+
+                    return true;
+                }
+                return false;
+            },
+
+            // ===== FREE_TALK ===== //
+            startNewTalk() {
+                location.href = "chatroom.html?chatroomType=FREE_TALK&action=CREATE&unitNumber=" + this.unitNumber;
+            },
+
+            openTalkRecord() {
+
+            },
+        }
+    }
+</script>
+</body>
+</html>
