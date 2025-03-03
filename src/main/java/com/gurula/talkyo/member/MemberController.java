@@ -11,8 +11,10 @@ import com.gurula.talkyo.member.dto.ProfileDTO;
 import com.gurula.talkyo.member.enums.Role;
 import com.gurula.talkyo.properties.ConfigProperties;
 import com.gurula.talkyo.exception.ResultStatus;
+import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -145,8 +147,18 @@ public class MemberController {
 
 
     @GetMapping("/logout")
-    public String logout() {
+    public String logout(HttpServletResponse response) {
         MemberContext.removeMember();
+
+        ResponseCookie cookie = ResponseCookie.from("JWT_TOKEN", "")
+                .secure(true)
+                .path("/")
+                .maxAge(0)   // 365天
+                .sameSite("Strict")
+                .build();
+
+        response.setHeader("Set-Cookie", cookie.toString());
+
         return "redirect:" + configProperties.getGlobalDomain() + "sign-in.html";
     }
 }
