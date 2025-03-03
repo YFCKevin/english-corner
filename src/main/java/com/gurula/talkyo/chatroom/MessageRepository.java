@@ -38,4 +38,6 @@ public interface MessageRepository extends MongoRepository<Message, String> {
     List<Message> findBySenderAndAudioNameIsNotNull(String memberId);
 
     Optional<Message> findByPreviewMessageIdAndVersion(String previewMessageId, int targetVersion);
+
+    Optional<Message> findByChatroomIdAndCurrentLastMsg(String chatroomId, boolean currentLastMsg);
 }

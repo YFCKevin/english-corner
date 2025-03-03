@@ -1069,11 +1069,13 @@ public class ChatroomServiceImpl implements ChatroomService {
 
     @Override
     public String getCurrentMsgId(String chatroomId) {
-        List<Message> messages = messageRepository.findAllByChatroomIdOrderByCreatedDateTimeAsc(chatroomId);
-        if (messages.isEmpty()) {
-            return null;
+        Optional<Message> messageOpt = messageRepository.findByChatroomIdAndCurrentLastMsg(chatroomId, true);
+        if (messageOpt.isPresent()) {
+            return messageOpt.get().getId();
+        } else {
+            List<Message> messages = messageRepository.findAllByChatroomIdOrderByCreatedDateTimeAsc(chatroomId);
+            return messages.get(messages.size() - 1).getId();
         }
-        return messages.get(messages.size() - 1).getId();
     }
 
     @Override

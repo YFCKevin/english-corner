@@ -24,6 +24,7 @@ public class Message {
     private String previewMessageId;    // 指向回覆的訊息編號
     private String branch; // 分支號碼 (UUID)
     private int version;    // 訊息編輯次數 (從 1 開始)
+    private boolean currentLastMsg;     // 用來重抓在哪個branch的最後一則訊息
 
     // human
     private GrammarResult grammarResult;
@@ -203,6 +204,14 @@ public class Message {
 
     public void setImageDesc(String imageDesc) {
         this.imageDesc = imageDesc;
+    }
+
+    public boolean isCurrentLastMsg() {
+        return currentLastMsg;
+    }
+
+    public void setCurrentLastMsg(boolean currentLastMsg) {
+        this.currentLastMsg = currentLastMsg;
     }
 
     @Override

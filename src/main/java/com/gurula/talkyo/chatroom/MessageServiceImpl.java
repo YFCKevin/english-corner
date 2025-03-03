@@ -27,6 +27,16 @@ public class MessageServiceImpl implements MessageService{
         if (opt.isPresent()) {
             final Message message = opt.get();
             final Message lastMessage = messageRepository.findFirstByBranchOrderByCreatedDateTimeDesc(message.getBranch()).get();
+            final List<Message> messages = messageRepository.findAllByChatroomIdOrderByCreatedDateTimeAsc(lastMessage.getChatroomId())
+                    .stream()
+                    .peek(msg -> msg.setCurrentLastMsg(false))
+                    .toList();
+            messages.stream()
+                    .filter(msg -> msg.getId().equals(lastMessage.getId()))
+                    .findFirst()
+                    .ifPresent(msg -> msg.setCurrentLastMsg(true));
+            messageRepository.saveAll(messages);
+
             historyMsgs = getHistoryMessages(lastMessage.getId());
         }
 
