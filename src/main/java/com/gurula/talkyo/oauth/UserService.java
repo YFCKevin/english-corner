@@ -1,5 +1,6 @@
 package com.gurula.talkyo.oauth;
 
+import com.gurula.talkyo.course.enums.Level;
 import com.gurula.talkyo.member.Member;
 import com.gurula.talkyo.member.MemberService;
 import com.gurula.talkyo.member.enums.Provider;
@@ -38,6 +39,8 @@ public class UserService {
             member.setCreationDate(sdf.format(new Date()));
             member.setProvider(authType);
             member.setRole(Role.STUDENT);
+            member.setPartnerId("6795b2cd007e72369f0db8a2");    // 預設為 Cora AI
+            member.setChosenLevel(Level.EASY);                  // 預設為 EASY
             memberService.save(member);
             System.out.println("尚未註冊");
         } else {
