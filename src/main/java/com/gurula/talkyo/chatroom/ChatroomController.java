@@ -614,7 +614,14 @@ public class ChatroomController {
     }
 
 
-
+    /**
+     * FREE_TALK 更換對話集
+     * @param chatInitDTO
+     * @return
+     * @throws IOException
+     * @throws ExecutionException
+     * @throws InterruptedException
+     */
     @PostMapping("/chatroom/enter")
     public ResponseEntity<?> enterChatroom (@RequestBody ChatInitDTO chatInitDTO) throws IOException, ExecutionException, InterruptedException {
         ResultStatus<List<Map<Integer, Message>>> resultStatus = new ResultStatus<>();
@@ -624,6 +631,22 @@ public class ChatroomController {
 
         final List<Map<Integer, Message>> messages = chatroomService.init(chatInitDTO, member);
 
+        resultStatus.setCode("C000");
+        resultStatus.setMessage("成功");
+        resultStatus.setData(messages);
+        return ResponseEntity.ok(resultStatus);
+    }
+
+
+
+    @PostMapping("/chatroom/history/message/all")
+    public ResponseEntity<?> historyMessages (@RequestBody ChatInitDTO chatInitDTO) throws IOException, ExecutionException, InterruptedException {
+        final Member member = MemberContext.getMember();
+        logger.info("[{} {}] [enter chatroom]", member.getName(), member.getId());
+
+        final List<Map<Integer, Message>> messages = chatroomService.init(chatInitDTO, member);
+
+        ResultStatus<List<Map<Integer, Message>>> resultStatus = new ResultStatus<>();
         resultStatus.setCode("C000");
         resultStatus.setMessage("成功");
         resultStatus.setData(messages);

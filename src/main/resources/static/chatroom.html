@@ -35,8 +35,11 @@
                             <template x-if="messages && messages.length < 10">
                                 <img x-bind:src="partner.coverPath" class="avatar small" alt="partner img">
                             </template>
+                            <template x-if="closed">
+                                <span>聊天記錄</span>
+                            </template>
                             <template x-if="messages && messages.length >= 10">
-                                <button @click.stop="endLesson" class="end-lesson-button btn rounded-pill text-white btn-sm" style="background-color: #20c997;">End this lesson</button>
+                                <button x-show="!closed" @click.stop="endLesson" class="end-lesson-button btn rounded-pill text-white btn-sm" style="background-color: #20c997;">End this lesson</button>
                             </template>
                         </div>
                     </template>
@@ -182,7 +185,7 @@
 
                                         <hr>
                                         <div class="d-flex align-items-center">
-                                            <div class="rounded-circle icon-button me-3">
+                                            <div x-show="!closed" class="rounded-circle icon-button me-3">
                                                 <i
                                                         style="font-size: 0.8rem"
                                                         class="fas fa-eraser"
@@ -195,7 +198,7 @@
                                                 ></i>
                                             </div>
                                             <template x-if="['PROJECT', 'SITUATION'].includes(chatroomType)">
-                                                <div class="rounded-circle icon-button advanced-check" @click="advancedCheck(index)">
+                                                <div x-show="!closed" class="rounded-circle icon-button advanced-check" @click="advancedCheck(index)">
                                                     <i style="font-size: 0.8rem" class="fas fa-spell-check text-primary"></i>
                                                 </div>
                                             </template>
@@ -250,7 +253,7 @@
                 </div>
             </div>
 
-            <div class="message-footer">
+            <div x-show="!closed" class="message-footer">
                 <template x-if="!isTipActive">
                     <div id="tagBar" class="tag-bar">
                         <div class="tags-wrapper">
@@ -834,7 +837,7 @@
             indexToDeleteForEdit: null,
             chatroomIdTitles: [],                 // FREE_TALK的歷史對話標題集 (key: chatroomId, value: title)
             chatroomTitle: "",
-            closed: false;              // 用來判斷是否為查看聊天記錄
+            closed: false,              // 用來判斷是否為查看聊天記錄
 
             // ===== Tip ===== //
             tipContent: "",
@@ -884,6 +887,7 @@
                 this.unitNumber = urlParams.get("unitNumber");
                 this.lessonId = urlParams.get("lessonId");
                 this.closed = urlParams.get("closed");
+                this.globalChatroomId = urlParams.get("chatroomId");
 
                 $.ajax({
                     url: "member/info",
@@ -926,7 +930,23 @@
 
                 } else {
                     // 僅供查看
-
+                    $.ajax({
+                        url: "chatroom/history/message/all",
+                        type: "post",
+                        dataType: "json",
+                        data: JSON.stringify({ chatroomId: this.globalChatroomId, chatroomType: this.chatroomType }),
+                        contentType: "application/json; charset=utf-8",
+                        success: function (response) {
+                            if (response.code == "C000") {
+                                _this.messages = response.data.map(obj => {
+                                    const key = Number(Object.keys(obj)[0]);
+                                    return { key, value: obj[key] };
+                                });
+                                _this.updateMessages();
+                                $(".chat-messages").css("height", "90vh");
+                            }
+                        },
+                    });
                 }
 
                 $.ajax({
@@ -971,8 +991,11 @@
                     }
                 }));
                 this.previewMessageId = this.messages[this.messages.length - 1].value.id;
-                this.scrollToMsgBottom();
-                this.genChatroomTitle();
+                if (!this.closed) { // 僅限可對話時
+                    this.scrollToMsgBottom();
+                    this.genChatroomTitle();
+                }
+
             },
 
             prevBranch(index) {
