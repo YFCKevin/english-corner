@@ -1074,7 +1074,11 @@ public class ChatroomServiceImpl implements ChatroomService {
             return messageOpt.get().getId();
         } else {
             List<Message> messages = messageRepository.findAllByChatroomIdOrderByCreatedDateTimeAsc(chatroomId);
-            return messages.get(messages.size() - 1).getId();
+            if (messages.size() > 0) {
+                return messages.get(messages.size() - 1).getId();
+            } else {
+                return null;
+            }
         }
     }
 
