@@ -1,6 +1,7 @@
 package com.gurula.talkyo.interceptor;
 
 import com.gurula.talkyo.jwt.JwtTool;
+import com.gurula.talkyo.member.Member;
 import com.gurula.talkyo.member.MemberContext;
 import com.gurula.talkyo.member.MemberService;
 import com.gurula.talkyo.member.enums.Role;
@@ -19,7 +20,7 @@ import java.util.Optional;
 
 @Configuration
 public class LoginInterceptor implements HandlerInterceptor{
-    Logger logger = LoggerFactory.getLogger(LoginInterceptor.class);
+    private final Logger logger = LoggerFactory.getLogger(LoginInterceptor.class);
     private final ConfigProperties configProperties;
     private final JwtTool jwtTool;
     private final MemberService memberService;
@@ -50,6 +51,10 @@ public class LoginInterceptor implements HandlerInterceptor{
                 .orElse(null);
         System.out.println("token = " + token);
 
+        // TODO
+//        final Member member = memberService.findById("67960c00007e72369f0dba1d").get();
+//        MemberContext.setMember(member);
+
         // 取出 token 內的 memberId
         final String memberId = jwtTool.parseToken(token);
 
@@ -68,12 +73,13 @@ public class LoginInterceptor implements HandlerInterceptor{
                 .orElseGet(() -> {
                     logger.warn("未登入索取的資源是：{}", request.getRequestURI());
                     try {
-                        response.sendRedirect(configProperties.getGlobalDomain() + "login.html");
+                        response.sendRedirect(configProperties.getGlobalDomain() + "sign-in.html");
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
                     return false;
                 });
+//        return true;
     }
 
 

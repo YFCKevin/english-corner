@@ -1,16 +1,20 @@
 package com.gurula.talkyo.exception;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import com.gurula.talkyo.properties.ConfigProperties;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.servlet.view.RedirectView;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
+    private final ConfigProperties configProperties;
+
+    public GlobalExceptionHandler(ConfigProperties configProperties) {
+        this.configProperties = configProperties;
+    }
 
     @ExceptionHandler(InvalidTokenException.class)
-    public ResponseEntity<ErrorResponse> handleInvalidTokenException(InvalidTokenException ex) {
-        ErrorResponse errorResponse = new ErrorResponse("INVALID_TOKEN", ex.getMessage());
-        return new ResponseEntity<>(errorResponse, HttpStatus.UNAUTHORIZED);
+    public RedirectView handleInvalidTokenException(InvalidTokenException ex) {
+        return new RedirectView(configProperties.getGlobalDomain() + "sign-in.html");
     }
 }

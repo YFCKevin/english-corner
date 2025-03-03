@@ -2,7 +2,7 @@ Spring:
   profiles:
     active: dev
 jwt:
-  location: ${jwt-location}
+  location: gurula.jks
   alias: gurula
-  password: ${jwt-password}
+  password: gurula
   tokenTTL: 30m
