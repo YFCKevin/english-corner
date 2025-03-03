@@ -370,7 +370,7 @@
                                         </a>
                                     </template>
                                     <template x-if="item.closeDate == null && item.chatroomId == null">
-                                        <button type="button" x-show="!item.showBtn && showChallenge" data-bs-toggle="modal" data-bs-target="#lessonModal"
+                                        <button type="button" x-show="!item.showBtn" data-bs-toggle="modal" data-bs-target="#lessonModal"
                                                 class="btn btn-primary btn-outline-primary btn-sm mb-0" @click="challenge(item.lessonId)">前往挑戰
                                         </button>
                                     </template>
@@ -648,9 +648,9 @@
                         item.starCount = 0;
                     }
 
-                    if (item.lessonType === 'COMPLETED' || item.lessonType === 'IN_PROGRESS') {
+                    if (item.lessonType === 'COMPLETED') {
                         item.showBtn = false;
-                    } else if (item.lessonType === 'NOT_STARTED') {
+                    } else if (item.lessonType === 'NOT_STARTED' || item.lessonType === 'IN_PROGRESS') {
                         if (!firstNotStartedFound) {
                             item.showBtn = false;
                             item.anchor = true;
@@ -662,9 +662,9 @@
                         item.showBtn = true;
                     }
 
-                    this.showChallenge = this.learningPlan.some(item => item.chatroomId && item.closeDate)
-                        ? false
-                        : this.learningPlan.some(item => item.chatroomId) ? true : this.showChallenge;
+<!--                    this.showChallenge = this.learningPlan.some(item => item.chatroomId && item.closeDate)-->
+<!--                        ? false-->
+<!--                        : this.learningPlan.some(item => item.chatroomId) ? true : this.showChallenge;-->
 
                     return item;
                 });

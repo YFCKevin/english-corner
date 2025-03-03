@@ -90,18 +90,24 @@ public class ChatroomServiceImpl implements ChatroomService {
         final String lessonId = chatroomDTO.getLessonId();
 
         List<Chatroom> chatrooms = chatroomRepository.findByOwnerIdAndChatroomTypeAndRoomStatusOrderByCreationDateDesc(member.getId(), chatroomType, RoomStatus.ACTIVE);
-        final Set<String> lessonIds = learningRecordRepository.findByChatroomIdIn(chatrooms.stream().map(Chatroom::getId).collect(Collectors.toSet()))
-                .stream()
+        final Set<LearningRecord> learningRecords = learningRecordRepository.findByChatroomIdIn(chatrooms.stream().map(Chatroom::getId).collect(Collectors.toSet()));
+        final Set<String> lessonIds = learningRecords.stream()
                 .map(LearningRecord::getLessonId)
                 .collect(Collectors.toSet());
         final boolean targetLessonExisted = lessonIds.contains(lessonId);
+        Map<String, String> lessonChatroomMap = learningRecords.stream()
+                .collect(Collectors.toMap(
+                        LearningRecord::getLessonId,
+                        LearningRecord::getChatroomId,
+                        (existingValue, newValue) -> newValue
+                ));
 
 
         switch (chatroomType) {
             case PROJECT -> {
                 if (chatrooms.size() > 0 && targetLessonExisted) {
                     // 已有聊天室，則回傳chatroomId
-                    return chatrooms.get(0).getId();
+                    return lessonChatroomMap.get(lessonId);
                 } else {
                     // 創建新的聊天室
                     return createChatroom(member, chatroomType);
@@ -331,6 +337,7 @@ public class ChatroomServiceImpl implements ChatroomService {
                 message.setAudioName(fileName);
                 message.setSize(Files.size(Paths.get(configProperties.getAudioSavePath(), chatroomId, fileName)));
                 message.setParsedText(llmChatResponseDTO.getContent());
+                message.setTranslation(llmChatResponseDTO.getTranslation());
                 message.setBranch(UUID.randomUUID().toString());
                 message.setVersion(1);
                 final Message savedMessage = messageRepository.save(message);
@@ -1067,5 +1074,36 @@ public class ChatroomServiceImpl implements ChatroomService {
             return null;
         }
         return messages.get(messages.size() - 1).getId();
+    }
+
+    @Override
+    public Map<String, String> genTitle(String chatroomId) throws JsonProcessingException {
+        final List<Message> messages = messageRepository.findAllByChatroomIdOrderByCreatedDateTimeAsc(chatroomId);
+        final String dialogueText = messages.stream()
+                .map(message -> StringUtils.isNotBlank(message.getParsedText()) ? message.getParsedText() : message.getText())
+                .collect(Collectors.joining("\n"));
+        final String title = llmService.genChatroomTitle(dialogueText);
+        final Chatroom chatroom = chatroomRepository.findById(chatroomId).get();
+        chatroom.setTitle(title);
+        chatroomRepository.save(chatroom);
+        Map<String, String> map = new HashMap<>();
+        map.put(chatroom.getId() + "_" + chatroom.getScenario().getUnitNumber(), title);
+        return map;
+    }
+
+    @Override
+    public Map<String, String> getChatroomHistory(String memberId) {
+        final List<Chatroom> chatrooms = chatroomRepository.findByOwnerIdAndChatroomType(memberId, ChatroomType.FREE_TALK);
+
+        return chatrooms.stream()
+                .sorted(Comparator.comparing(Chatroom::getCreationDate).reversed())
+                .collect(Collectors.toMap(
+                        chatroom -> chatroom.getId() + "_" + chatroom.getScenario().getUnitNumber(),
+                        chatroom -> StringUtils.isNotBlank(chatroom.getTitle())
+                                ? chatroom.getTitle()
+                                : chatroom.getCreationDate().toString(),
+                        (existing, replacement) -> existing,
+                        LinkedHashMap::new
+                ));
     }
 }
