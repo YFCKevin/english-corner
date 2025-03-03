@@ -16,6 +16,7 @@ public class Chatroom {
     private String ownerId; // memberId
     private Scenario scenario;
     private LearningReport report;
+    private String title;
 
     public String getId() {
         return id;
@@ -79,5 +80,28 @@ public class Chatroom {
 
     public void setOwnerId(String ownerId) {
         this.ownerId = ownerId;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    @Override
+    public String toString() {
+        return "Chatroom{" +
+                "id='" + id + '\'' +
+                ", roomStatus=" + roomStatus +
+                ", chatroomType=" + chatroomType +
+                ", creationDate='" + creationDate + '\'' +
+                ", closeDate='" + closeDate + '\'' +
+                ", ownerId='" + ownerId + '\'' +
+                ", scenario=" + scenario +
+                ", report=" + report +
+                ", title='" + title + '\'' +
+                '}';
     }
 }

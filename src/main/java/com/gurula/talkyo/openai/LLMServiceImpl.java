@@ -306,38 +306,96 @@ public class LLMServiceImpl implements LLMService{
         return null;
     }
 
+    @Override
+    public String genChatroomTitle(String dialogueText) throws JsonProcessingException {
+
+        String url = "https://api.openai.com/v1/chat/completions";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(configProperties.getOpenaiApiKey());
+
+        String payload = chatroomTitlePayload(dialogueText);
+
+        System.out.println("payload = " + payload);
+
+        HttpEntity<String> entity = new HttpEntity<>(payload, headers);
+
+        ResponseEntity<ChatCompletionResponse> response = restTemplate.exchange(url, HttpMethod.POST, entity, ChatCompletionResponse.class);
+
+        if (response.getStatusCode().is2xxSuccessful()) {
+            logger.info("OpenAI回傳的status code: {}", response);
+            ChatCompletionResponse responseBody = response.getBody();
+            final String title = extractJsonContent(responseBody);
+            System.out.println("title = " + title);
+            return title;
+        }
+
+        return null;
+    }
+
+    private String chatroomTitlePayload(String dialogueText) {
+        String systemMessageContent = "你是一位專業的摘要撰寫助手，擅長從對話中提取關鍵資訊並撰寫簡潔且自然的繁體中文摘要。" +
+                "請確保摘要內容**極度簡潔**，用最少的詞語表達對話的核心。" +
+                "摘要必須限於**最長15字**，且**只能用一句話**，請勿拆分成多個句子。" +
+                "請僅返回摘要，不要添加額外的格式、標點符號或解釋。";
+
+        String userMessageContent = String.format(
+                "請根據以下對話，撰寫**最長15字**的繁體中文摘要：\n\n%s\n\n" +
+                        "摘要必須**極度簡潔**，但仍清楚傳達對話核心內容。" +
+                        "請勿添加引號、額外符號或解釋，只需返回摘要內容。",
+                dialogueText
+        );
+
+        MsgDTO systemMessage = new MsgDTO(Role.system, systemMessageContent);
+        MsgDTO userMessage = new MsgDTO(Role.user, userMessageContent);
+
+        List<MsgDTO> messages = new ArrayList<>();
+        messages.add(systemMessage);
+        messages.add(userMessage);
+
+        PayloadDTO payload = new PayloadDTO("gpt-4o-mini", messages, 0.3F, 5000);
+
+        try {
+            return objectMapper.writeValueAsString(payload);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     private String guidingSentencePayload(String partnerAskMsg, Scenario scenario) {
         String systemMessageContent = String.format(
-                "You are an AI assistant, responsible for simulating role-playing conversations to help the user practice conversation skills in a specific scenario.\n\n" +
-                        "### Role Setting\n" +
+                "You're an AI assistant designed to simulate role-playing conversations, helping users practice real-life dialogues in different scenarios.\n\n" +
+                        "### Role Setup\n" +
                         "- Your role: \"%s\"\n" +
                         "- User's role: \"%s\"\n" +
                         "- Scenario: \"%s\"\n\n" +
-                        "### Conversation Guidelines\n" +
-                        "1. Stay strictly in your assigned role.\n" +
-                        "2. Always generate a natural and contextually relevant response.\n" +
-                        "3. Conclude the conversation naturally at an appropriate point.\n" +
+                        "### How to Respond\n" +
+                        "1. Stay fully in character at all times.\n" +
+                        "2. Respond naturally and keep the conversation engaging.\n" +
+                        "3. Let the conversation flow smoothly and end it naturally when it feels right.\n\n" +
                         "### Response Format\n" +
-                        "Your response must be in the following structured JSON format:\n" +
+                        "Reply in the following JSON format:\n" +
                         "{\n" +
-                        "    \"content\": \"[Your response in English]\",\n" +
-                        "    \"translation\": \"[Your response translated into Traditional Chinese]\"\n" +
+                        "    \"content\": \"[Your reply in casual, fluent English]\",\n" +
+                        "    \"translation\": \"[Your reply translated into Traditional Chinese]\"\n" +
                         "}",
-                scenario.getHumanRole(),    // AI role
-                scenario.getPartnerRole(),  // User role
-                scenario.getSubject()       // Scenario subject
+                scenario.getHumanRole(),
+                scenario.getPartnerRole(),
+                scenario.getSubject()
         );
 
         String userMessageContent = String.format(
-                "### Current Conversation Context\n" +
+                "### Conversation Context\n" +
                         "- Scenario: \"%s\"\n" +
                         "- Your Role: \"%s\"\n" +
                         "- User's Role: \"%s\"\n\n" +
                         "### Last User Message:\n" +
                         "\"%s\"\n\n" +
-                        "### Your Task:\n" +
-                        "Based on the previous message from the user, generate a natural and relevant response following the conversation flow and maintaining the scenario's context.\n" +
-                        "**Your response must be concise and within 20 words.**",
+                        "### Your Task\n" +
+                        "Reply in a natural, conversational way that fits the flow and tone of the chat. Keep it engaging and realistic.\n" +
+                        "Keep your response **brief (under 20 words), casual, and native-like.**",
                 scenario.getSubject(),
                 scenario.getHumanRole(),
                 scenario.getPartnerRole(),

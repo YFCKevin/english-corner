@@ -57,4 +57,8 @@ public interface ChatroomService {
     List<Chatroom> getScenarioHistoryRecord(String memberId);
 
     String getCurrentMsgId(String chatroomId);
+
+    Map<String, String> genTitle(String chatroomId) throws JsonProcessingException;
+
+    Map<String, String> getChatroomHistory(String memberId);
 }

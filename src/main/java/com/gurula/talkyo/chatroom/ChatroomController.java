@@ -572,4 +572,61 @@ public class ChatroomController {
         resultStatus.setData(currentMsgId);
         return ResponseEntity.ok(resultStatus);
     }
+
+
+    /**
+     * 產生聊天室標題
+     */
+    @PostMapping("/chatroom/title/generate")
+    public ResponseEntity<?> genTitle (@RequestBody ChatDTO chatDTO) throws JsonProcessingException {
+        final Member member = MemberContext.getMember();
+        logger.info("[{} {}] [genTitle]", member.getName(), member.getId());
+
+        final String chatroomId = chatDTO.getChatroomId();
+        final Map<String, String> map = chatroomService.genTitle(chatroomId);
+
+        ResultStatus<Map<String, String>> resultStatus = new ResultStatus<>();
+
+        resultStatus.setCode("C000");
+        resultStatus.setMessage("成功");
+        resultStatus.setData(map);
+
+        return ResponseEntity.ok(resultStatus);
+    }
+
+
+    /**
+     * 取得歷史紀錄
+     * @return
+     */
+    @GetMapping("/chatroom/history")
+    public ResponseEntity<?> getHistories (){
+        final Member member = MemberContext.getMember();
+        logger.info("[{} {}] [get history]", member.getName(), member.getId());
+
+        Map<String, String> chatroomIdAndTitleMap = chatroomService.getChatroomHistory(member.getId());
+
+        ResultStatus<Map<String, String>> resultStatus = new ResultStatus<>();
+        resultStatus.setCode("C000");
+        resultStatus.setMessage("成功");
+        resultStatus.setData(chatroomIdAndTitleMap);
+        return ResponseEntity.ok(resultStatus);
+    }
+
+
+
+    @PostMapping("/chatroom/enter")
+    public ResponseEntity<?> enterChatroom (@RequestBody ChatInitDTO chatInitDTO) throws IOException, ExecutionException, InterruptedException {
+        ResultStatus<List<Map<Integer, Message>>> resultStatus = new ResultStatus<>();
+
+        final Member member = MemberContext.getMember();
+        logger.info("[{} {}] [enter chatroom]", member.getName(), member.getId());
+
+        final List<Map<Integer, Message>> messages = chatroomService.init(chatInitDTO, member);
+
+        resultStatus.setCode("C000");
+        resultStatus.setMessage("成功");
+        resultStatus.setData(messages);
+        return ResponseEntity.ok(resultStatus);
+    }
 }
