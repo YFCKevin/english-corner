@@ -834,6 +834,7 @@
             indexToDeleteForEdit: null,
             chatroomIdTitles: [],                 // FREE_TALK的歷史對話標題集 (key: chatroomId, value: title)
             chatroomTitle: "",
+            closed: false;              // 用來判斷是否為查看聊天記錄
 
             // ===== Tip ===== //
             tipContent: "",
@@ -882,8 +883,7 @@
                 this.action = urlParams.get("action");
                 this.unitNumber = urlParams.get("unitNumber");
                 this.lessonId = urlParams.get("lessonId");
-
-                this.openingLineLoading = true;
+                this.closed = urlParams.get("closed");
 
                 $.ajax({
                     url: "member/info",
@@ -896,31 +896,38 @@
                     },
                 });
 
-                $.ajax({
-                    url: "chatroom/create",
-                    type: "post",
-                    dataType: "json",
-                    data: JSON.stringify({ chatroomType: this.chatroomType, action: this.action, lessonId: this.lessonId }),
-                    contentType: "application/json; charset=utf-8",
-                    success: function (response) {
-                        if (response.code == "C000") {
-                            _this.globalChatroomId = response.data;
+                if (!this.closed){
+                    // 可以對話
+                    this.openingLineLoading = true;
+                    $.ajax({
+                        url: "chatroom/create",
+                        type: "post",
+                        dataType: "json",
+                        data: JSON.stringify({ chatroomType: this.chatroomType, action: this.action, lessonId: this.lessonId }),
+                        contentType: "application/json; charset=utf-8",
+                        success: function (response) {
+                            if (response.code == "C000") {
+                                _this.globalChatroomId = response.data;
 
-                            $.ajax({
-                                url: "chatroom/getCurrentMsgId/" + _this.globalChatroomId,
-                                type: "get",
-                                dataType: "json",
-                                success: function (msgResponse) {
-                                    if (msgResponse.code === "C000") {
-                                        _this.currentMessageId = msgResponse.data;
-<!--                                        _this.previewMessageId = _this.currentMessageId;-->
+                                $.ajax({
+                                    url: "chatroom/getCurrentMsgId/" + _this.globalChatroomId,
+                                    type: "get",
+                                    dataType: "json",
+                                    success: function (msgResponse) {
+                                        if (msgResponse.code === "C000") {
+                                            _this.currentMessageId = msgResponse.data;
+                                        }
+                                        _this.connect();
                                     }
-                                    _this.connect();
-                                }
-                            });
-                        }
-                    },
-                });
+                                });
+                            }
+                        },
+                    });
+
+                } else {
+                    // 僅供查看
+
+                }
 
                 $.ajax({
                     url: "chatroom/history",

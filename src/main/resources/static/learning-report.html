@@ -22,6 +22,7 @@
     <meta property="og:description" content="TalkYo - 英文口說智慧學習，讓你更有自信開口說英文！">
     <meta property="og:url" content="https://gurula.cc/talkyo/index.html">
     <meta property="og:type" content="website">
+    <meta property="og:image" content="img/favicon.png">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link rel="apple-touch-icon" sizes="76x76" href="img/favicon.png">
     <link rel="icon" type="image/png" href="img/favicon.png">
@@ -380,9 +381,9 @@
         <div class="fixed-bottom" style="background-color: #f5f5f5;">
             <div class="container mt-2">
                 <div class="d-flex flex-column w-100">
-                    <button class="btn btn-outline-primary w-100 mb-2 text-primary" style="background-color: white;">聊天記錄</button>
+                    <button @Click="showChatRecord()" class="btn btn-outline-primary w-100 mb-2 text-primary" style="background-color: white;">聊天記錄</button>
                     <template x-if="lessonId">
-                        <button class="btn btn-primary w-100" onclick="reTryLesson()">再試一次</button>
+                        <button class="btn btn-primary w-100" @Click="reTryLesson()">再試一次</button>
                     </template>
                 </div>
             </div>
@@ -477,7 +478,6 @@
 <script src="js/soft-ui-dashboard.min.js?v=1.0.3"></script>
 
 <script>
-    var lessonId;
     function loadData() {
         return {
             member: {},
@@ -549,11 +549,13 @@
                     }
                 });
             },
+            reTryLesson() {
+                location.href = "chatroom.html?chatroomType=PROJECT&action=CREATE&lessonId=" + this.lessonId;
+            },
+            showChatRecord() {
+                location.href = "chatroom.html?chatroomType=PROJECT&action=CREATE&lessonId=" + this.lessonId;
+            },
         }
-    }
-
-    function reTryLesson() {
-        location.href = "chatroom.html?chatroomType=PROJECT&action=CREATE&lessonId=" + lessonId;
     }
 </script>
 </body>
