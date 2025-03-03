@@ -1,5 +1,6 @@
 package com.gurula.talkyo.oauth;
 
+import com.gurula.talkyo.course.enums.Level;
 import com.gurula.talkyo.jwt.JwtTool;
 import com.gurula.talkyo.member.enums.Role;
 import com.gurula.talkyo.properties.ConfigProperties;
@@ -83,6 +84,8 @@ public class Oauth2Controller {
             member.setPictureUrl(pictureUrl);
             member.setUserId(userId);
             member.setRole(Role.STUDENT);
+            member.setPartnerId("6795b2cd007e72369f0db8a2");    // 預設為 Cora AI
+            member.setChosenLevel(Level.EASY);                  // 預設為 EASY
             memberService.save(member);
         } else {
             member = memberOpt.get();
