@@ -60,9 +60,9 @@
                                     </div>
                                 </li>
                                 <li class="list-group-item border-0 px-0" @click.stop="openTalkRecord">
-                                    <div class="form-check form-switch ps-0 d-flex align-items-center">
+                                    <div class="form-check form-switch ps-0 d-flex align-items-center ">
                                         <label class="form-check-label text-body ms-3 mx-5 py-2 text-truncate w-80 mb-0 small">
-                                            <i class="fas fa-redo-alt me-2"></i>
+                                            <i  class="fas fa-redo-alt me-2"></i>
                                             歷史紀錄
                                         </label>
                                     </div>
@@ -357,9 +357,11 @@
                             </button>
                         </div>
                     </div>
-                    <div class="input-group">
-                        <input type="text" id="text" class="form-control">
-                        <button class="btn btn-primary send-btn" @click.stop="sendTextMsg"><i class="fas fa-paper-plane"></i></button>
+                    <div class="input-group d-flex align-items-center">
+                        <textarea id="text" class="form-control me-2"></textarea>
+                        <button class="btn btn-primary send-btn" style="border-radius: 50%" @click.stop="sendTextMsg">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -678,6 +680,29 @@
     </div>
 </div>
 
+<div id="chatroom-history">
+    <div class="chatroom-history-header py-3 d-flex align-items-center justify-content-between">
+        <button @click.stop="hideTalkRecord" class="text-dark ps-3" style="border: 0; background-color: white" data-bs-dismiss="modal">
+            <span aria-hidden="true">
+                <i class="fas fa-chevron-left"></i>
+            </span>
+        </button>
+        <span>歷史紀錄</span>
+        <span aria-hidden="true">
+            <i class="fas fa-chevron-left invisible ps-3"></i>
+        </span>
+    </div>
+    <div class="chatroom-history-body">
+        <template x-for="(item, index) in chatroomIdTitles" :key="index">
+            <button @click.stop="enterChatroom(item.key)" class="history-btn mb-2 py-2 px-4">
+                <span x-text="item.value" class="small"></span>
+                <i class="fas fa-chevron-right text-secondary ms-3 small"></i>
+            </button>
+        </template>
+    </div>
+
+</div>
+
 <script src="js/sockjs.min.js"></script>
 <script src="js/stomp.min.js"></script>
 <script src="js/bootstrap.bundle.min.js"></script>
@@ -807,6 +832,8 @@
             previewMessageId: "",
             actionForEdit: "CREATE",
             indexToDeleteForEdit: null,
+            chatroomIdTitles: [],                 // FREE_TALK的歷史對話標題集 (key: chatroomId, value: title)
+            chatroomTitle: "",
 
             // ===== Tip ===== //
             tipContent: "",
@@ -895,6 +922,22 @@
                     },
                 });
 
+                $.ajax({
+                    url: "chatroom/history",
+                    type: "get",
+                    dataType: "json",
+                    contentType: "application/json; charset=utf-8",
+                    success: function (response) {
+                        if (response.code == "C000") {
+                            _this.chatroomIdTitles = Object.entries(response.data).map(([key, value]) => ({
+                                key: key,
+                                value: value
+                            }));
+                        }
+                    },
+                });
+
+
                 const dropdownSetting = JSON.parse(localStorage.getItem("dropdownSettings")) || {
                     blurText: false,
                     showTranslation: false,
@@ -922,6 +965,7 @@
                 }));
                 this.previewMessageId = this.messages[this.messages.length - 1].value.id;
                 this.scrollToMsgBottom();
+                this.genChatroomTitle();
             },
 
             prevBranch(index) {
@@ -1773,7 +1817,86 @@
             },
 
             openTalkRecord() {
+                $("#chatroom-history").css({ top: "0", right: "0" });
+            },
 
+            hideTalkRecord() {
+                $("#chatroom-history").css({ top: "-100%", right: "-100%" });
+            },
+
+            enterChatroom(key) {
+                let _this = this;
+                const parts = key.split("_");
+                const chatroomId = parts[0];
+                const unitNumber = parts[1];
+                this.globalChatroomId = chatroomId;
+                this.unitNumber = unitNumber;
+                $.ajax({
+                    url: "chatroom/getCurrentMsgId/" + this.globalChatroomId,
+                    type: "get",
+                    dataType: "json",
+                    success: function (msgResponse) {
+                        if (msgResponse.code === "C000") {
+                            _this.currentMessageId = msgResponse.data;
+
+                            const dto = {
+                                chatroomType: _this.chatroomType,
+                                chatroomId: _this.globalChatroomId,
+                                currentMessageId: _this.currentMessageId,
+                                unitNumber: _this.unitNumber,
+                            };
+
+                            $.ajax({
+                                url: "chatroom/enter",
+                                type: "POST",
+                                dataType: "json",
+                                data: JSON.stringify(dto),
+                                contentType: "application/json; charset=utf-8",
+                                success: function (response) {
+                                    if (response.code === "C000") {
+                                        if (response.data.length > 0) {
+                                            _this.messages = response.data.map(obj => {
+                                                const key = Number(Object.keys(obj)[0]);
+                                                const value = obj[key];
+                                                return { key, value };
+                                            });
+                                            _this.updateMessages();
+                                            _this.hideTalkRecord();
+                                        }
+                                    }
+                                },
+                            });
+                        }
+                    }
+                });
+
+            },
+
+            genChatroomTitle() {
+                let _this = this;
+                let key = this.globalChatroomId + "_" + this.unitNumber;
+                if (this.chatroomType === "FREE_TALK" &&
+                    this.messages.length == 2 &&
+                    !this.chatroomIdTitles.some(item => item.key === key)
+                ) {
+                    $.ajax({
+                        url: "chatroom/title/generate",
+                        type: "POST",
+                        dataType: "json",
+                        data: JSON.stringify({ chatroomId: this.globalChatroomId }),
+                        contentType: "application/json; charset=utf-8",
+                        success: function (response) {
+                            if (response.code === "C000") {
+                                _this.chatroomTitle = response.data;
+                                console.log("產生聊天室標題成功");
+                                _this.chatroomIdTitles.unshift({
+                                    key: Object.keys(_this.chatroomTitle)[0],
+                                    value: _this.chatroomTitle[Object.keys(_this.chatroomTitle)[0]]
+                                });
+                            }
+                        },
+                    });
+                }
             },
         }
     }
