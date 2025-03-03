@@ -598,7 +598,7 @@
                         <i class="far fa-stop-circle fs-5 text-black" style="font-weight: 100;"></i>
                     </button>
                 </template>
-                <button @click.stop="isRecording? stopRecord() : startRecord()" :class="{ 'recording': isRecording }" class="btn rounded-circle bg-primary text-white p-0 mx-auto" style="width: 60px; height: 60px; border: none;">
+                <button @click.stop="isRecording? stopRecord() : startRecord()" :class="{ 'recording': isRecording }" class="btn rounded-circle bg-primary text-white p-0 mx-auto record-btn" style="width: 60px; height: 60px; border: none;">
                     <i :class="isRecording ? 'fas fa-paper-plane' : 'fas fa-microphone-alt'" class="fs-2"></i>
                 </button>
 <!--                無用-->
@@ -640,7 +640,7 @@
                     <i class="far fa-stop-circle fs-5 text-black" style="font-weight: 100;"></i>
                 </button>
             </template>
-            <button @click.stop="isRecording? stopRecord() : startRecord()" :class="{ 'recording': isRecording }" class="btn rounded-circle bg-primary text-white p-0 mx-auto" style="width: 60px; height: 60px; border: none;">
+            <button @click.stop="isRecording? stopRecord() : startRecord()" :class="{ 'recording': isRecording }" class="btn rounded-circle bg-primary text-white p-0 mx-auto record-btn" style="width: 60px; height: 60px; border: none;">
                 <i :class="isRecording ? 'fas fa-paper-plane' : 'fas fa-microphone-alt'" class="fs-2"></i>
             </button>
 <!--            無用-->
@@ -734,17 +734,6 @@
         $advancedCheckModal.removeClass('active').hide();
         $overlay.removeClass('active').hide();
       }
-
-      $(document).on('click', '.advanced-check', function(event) {
-        event.stopPropagation();
-        showModal();
-      });
-
-      $(document).on('click', function(event) {
-        if ($advancedCheckModal.hasClass('active') && !$advancedCheckModal.has(event.target).length && !$(event.target).is('#overlay')) {
-          hideModal();
-        }
-      });
 
       $overlay.on('click', function() {
         hideModal();
@@ -1106,6 +1095,9 @@
                 let _this = this;
                 let message = this.messages[index].value;
 
+                // 出現進階文法語句視窗
+                this.showAdvancedCheckModal();
+
                 if (message.advancedSentences?.length > 0) {
                     this.constructAdvancedCheckContent(message);
                     return;
@@ -1138,6 +1130,15 @@
                         $(".advanced-check-area").show();
                     }
                 });
+            },
+
+            showAdvancedCheckModal() {
+                const $advancedCheckModal = $('#advancedCheckModal');
+                const $overlay = $('#overlay');
+
+                $advancedCheckModal.addClass('active').show();
+                $overlay.addClass('active').show();
+                console.log('showAdvancedCheckModal');
             },
 
             constructAdvancedCheckContent(message) {
@@ -1244,7 +1245,12 @@
                 if (audioName) {
                     const audioUrl = "audio/" + this.globalChatroomId + "/" + audioName;
                     const audio = new Audio(audioUrl);
-                    audio.play();
+                    audio.muted = true;
+                    audio.play().then(() => {
+                        setTimeout(() => {
+                            audio.muted = false;
+                        }, 10);
+                    }).catch(error => console.log("播放音訊失敗"));
                 }
             },
 
@@ -1297,7 +1303,7 @@
             renewTip () {
                 this.genTip();
             },
-            genAudioForTip () {
+            genAudioForTip() {
                 let _this = this;
                 let data = { content: this.tipContent };
                 $.ajax({
@@ -1681,8 +1687,6 @@
                 if (this.isPartnerTalking() || this.isHumanTalking()) return;
                 this.isRecording = !this.isRecording;
                 this.isRecordCanceled = false;
-                $("#translationModal").removeClass("active");   // 關閉翻譯視窗
-                $("#sampleLessonModal").removeClass("active");   // 關閉範例視窗
                 try {
                     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                     mediaRecorder = new MediaRecorder(stream);
@@ -1701,6 +1705,10 @@
                          }
 
                          const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+
+                         $("#translationModal").removeClass("active");   // 關閉翻譯視窗
+                         $("#sampleLessonModal").removeClass("active");   // 關閉範例視窗
+                         $("#overlay").removeClass('active').hide();
 
                          await this.uploadAudio(audioBlob);
                     };
