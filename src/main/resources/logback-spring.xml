@@ -16,7 +16,7 @@
         </encoder>
     </appender>
 
-    <logger name="com.net.ubn" level="DEBUG" additivity="false">
+    <logger name="com.gurula" level="DEBUG" additivity="false">
         <appender-ref ref="console"/>
     </logger>
 

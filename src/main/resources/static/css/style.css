@@ -43,7 +43,12 @@ body {
   position: relative;
   flex-grow: 1; /* 佔據剩餘空間 */
   height: 100dvh;
-  margin-top: 100px !important
+}
+
+@media (max-width: 768px) {
+  .chat-area {
+    margin-top: 100px !important;
+  }
 }
 
 .chat-header {

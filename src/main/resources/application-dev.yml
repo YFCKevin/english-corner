@@ -67,7 +67,7 @@ logging:
         data:
           mongodb:
             core:
-              MongoTemplate: DEBUG
+              MongoTemplate: INFO
 
 azure:
   ai:

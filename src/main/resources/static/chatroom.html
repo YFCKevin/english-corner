@@ -598,7 +598,7 @@
                         <i class="far fa-stop-circle fs-5 text-black" style="font-weight: 100;"></i>
                     </button>
                 </template>
-                <button @click.stop="isRecording? stopRecord() : startRecord()" :class="{ 'recording': isRecording }" class="btn rounded-circle bg-primary text-white p-0 mx-auto record-btn" style="width: 60px; height: 60px; border: none;">
+                <button @click.stop="isRecording? stopRecord() : startRecord()" :class="{ 'recording': isRecording }" class="btn rounded-circle bg-primary text-white p-0 mx-auto" style="width: 60px; height: 60px; border: none;">
                     <i :class="isRecording ? 'fas fa-paper-plane' : 'fas fa-microphone-alt'" class="fs-2"></i>
                 </button>
 <!--                無用-->
@@ -640,7 +640,7 @@
                     <i class="far fa-stop-circle fs-5 text-black" style="font-weight: 100;"></i>
                 </button>
             </template>
-            <button @click.stop="isRecording? stopRecord() : startRecord()" :class="{ 'recording': isRecording }" class="btn rounded-circle bg-primary text-white p-0 mx-auto record-btn" style="width: 60px; height: 60px; border: none;">
+            <button @click.stop="isRecording? stopRecord() : startRecord()" :class="{ 'recording': isRecording }" class="btn rounded-circle bg-primary text-white p-0 mx-auto" style="width: 60px; height: 60px; border: none;">
                 <i :class="isRecording ? 'fas fa-paper-plane' : 'fas fa-microphone-alt'" class="fs-2"></i>
             </button>
 <!--            無用-->
@@ -1312,7 +1312,12 @@
                     dataType: "json",
                     data: JSON.stringify(data),
                     contentType: "application/json; charset=utf-8",
-                    success: function (response) {},
+                    success: function (response) {
+                        if (response.code == "C000") {
+                            const audio = new Audio(response.data);
+                            audio.play();
+                        }
+                    },
                 });
             },
             sendTip () {
@@ -1447,7 +1452,7 @@
                     },
                 });
             },
-            genAudioForTranslation () {
+            genAudioForTranslation() {
                 let _this = this;
                 let data = { content: $(".translate-response").text() };
                 $.ajax({
@@ -1456,7 +1461,12 @@
                     dataType: "json",
                     data: JSON.stringify(data),
                     contentType: "application/json; charset=utf-8",
-                    success: function (response) {},
+                    success: function (response) {
+                        if (response.code == "C000") {
+                            const audio = new Audio(response.data);
+                            audio.play();
+                        }
+                    },
                 });
             },
 
@@ -1684,36 +1694,43 @@
             },
 
             async startRecord() {
-                if (this.isPartnerTalking() || this.isHumanTalking()) return;
-                this.isRecording = !this.isRecording;
+                if (this.isPartnerTalking() || this.isHumanTalking() || this.isRecording) return;
+                this.isRecording = true;
                 this.isRecordCanceled = false;
+
                 try {
                     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    mediaRecorder = new MediaRecorder(stream);
-                    audioChunks = [];
 
-                    mediaRecorder.ondataavailable = event => {
+                    if (this.mediaRecorder && this.mediaRecorder.state !== "inactive") {
+                        this.mediaRecorder.stop();
+                    }
+
+                    this.audioChunks = [];
+                    this.mediaRecorder = new MediaRecorder(stream);
+
+                    this.mediaRecorder.ondataavailable = event => {
                         if (!this.isRecordCanceled) {
-                            audioChunks.push(event.data);
+                            this.audioChunks.push(event.data);
                         }
                     };
 
-                     mediaRecorder.onstop = async () => {
-                         if (this.isRecordCanceled || audioChunks.length === 0) {
-                             console.log("錄音已取消");
-                             return;
-                         }
+                    this.mediaRecorder.onstop = async () => {
+                        if (this.isRecordCanceled || this.audioChunks.length === 0) {
+                            console.log("錄音已取消");
+                            return;
+                        }
 
-                         const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+                        const audioBlob = new Blob(this.audioChunks, { type: "audio/webm" });
 
-                         $("#translationModal").removeClass("active");   // 關閉翻譯視窗
-                         $("#sampleLessonModal").removeClass("active");   // 關閉範例視窗
-                         $("#overlay").removeClass('active').hide();
+                        $("#translationModal").removeClass("active");   // 關閉翻譯視窗
+                        $("#sampleLessonModal").removeClass("active");   // 關閉範例視窗
+                        $("#overlay").removeClass('active').hide();
 
-                         await this.uploadAudio(audioBlob);
+                        await this.uploadAudio(audioBlob);
+                        this.isRecording = false;
                     };
 
-                    mediaRecorder.start();
+                    this.mediaRecorder.start();
                 } catch (error) {
                     console.error("錄音初始化失敗：", error);
                     this.isRecording = false;

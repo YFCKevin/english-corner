@@ -25,13 +25,16 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -490,6 +493,12 @@ public class ChatroomController {
     }
 
 
+    /**
+     * 變更 branch
+     * @param previewMessageId
+     * @param targetVersion
+     * @return
+     */
     @GetMapping("/chatroom/switchMsg/{previewMessageId}/{targetVersion}")
     public ResponseEntity<?> switchMsg (@PathVariable String previewMessageId, @PathVariable int targetVersion){
         final Member member = MemberContext.getMember();
@@ -506,6 +515,10 @@ public class ChatroomController {
     }
 
 
+    /**
+     * 取得使用者所有 SITUATION 的歷史對話紀錄
+     * @return
+     */
     @GetMapping("/scenario/history/record")
     public ResponseEntity<?> scenarioHistoryRecord (){
         final Member member = MemberContext.getMember();
@@ -543,22 +556,37 @@ public class ChatroomController {
     }
 
 
+    /**
+     * 產生音檔
+     * @param chatAudioDTO
+     * @return
+     */
     @PostMapping("/chatroom/genAudio")
-    public void genAudio (@RequestBody ChatAudioDTO chatAudioDTO) {
+    public ResponseEntity<?> genAudio (@RequestBody ChatAudioDTO chatAudioDTO) {
         final Member member = MemberContext.getMember();
         logger.info("[{} {}] [genAudio]", member.getName(), member.getId());
 
         chatAudioDTO.setPartnerId(member.getPartnerId());
-
+        ResultStatus<String> resultStatus = new ResultStatus<>();
         try {
-            audioService.textToSpeechAndPlaySound(chatAudioDTO);
+            final String fileName = audioService.textToSpeechAndPlaySound(chatAudioDTO);
+            resultStatus.setCode("C000");
+            resultStatus.setMessage("成功");
+            resultStatus.setData(configProperties.getAudioShowPath() + "temp/" + fileName);
         } catch (Exception e) {
+            resultStatus.setCode("C999");
+            resultStatus.setMessage("系統錯誤");
             logger.error(e.getMessage());
         }
-
+        return ResponseEntity.ok(resultStatus);
     }
 
 
+    /**
+     * 取得 currentMessageId 用來回推根訊息
+     * @param chatroomId
+     * @return
+     */
     @GetMapping("/chatroom/getCurrentMsgId/{chatroomId}")
     public ResponseEntity<?> getCurrentMsgId (@PathVariable String chatroomId){
         final Member member = MemberContext.getMember();
@@ -638,7 +666,14 @@ public class ChatroomController {
     }
 
 
-
+    /**
+     * 取得 FREE_TALK 的歷史對話紀錄
+     * @param chatInitDTO
+     * @return
+     * @throws IOException
+     * @throws ExecutionException
+     * @throws InterruptedException
+     */
     @PostMapping("/chatroom/history/message/all")
     public ResponseEntity<?> historyMessages (@RequestBody ChatInitDTO chatInitDTO) throws IOException, ExecutionException, InterruptedException {
         final Member member = MemberContext.getMember();
@@ -651,5 +686,37 @@ public class ChatroomController {
         resultStatus.setMessage("成功");
         resultStatus.setData(messages);
         return ResponseEntity.ok(resultStatus);
+    }
+
+
+    /**
+     * 每日早上5點定時清空 audio/temp 內的音檔
+     */
+    @Scheduled(cron = "0 0 5 * * ?")
+    public void cleanTempDirectory() {
+        String tempDirectory = configProperties.getAudioSavePath() + "temp";
+        File tempDir = new File(tempDirectory);
+
+        if (!tempDir.exists() || !tempDir.isDirectory()) {
+            logger.warn("Temp directory does not exist: {}", tempDirectory);
+            return;
+        }
+
+        File[] files = tempDir.listFiles();
+        if (files == null || files.length == 0) {
+            logger.info("No files to clean in temp directory.");
+            return;
+        }
+
+        for (File file : files) {
+            try {
+                Files.deleteIfExists(file.toPath());
+                logger.info("Deleted file: {}", file.getName());
+            } catch (Exception e) {
+                logger.error("Failed to delete file: {}", file.getName(), e);
+            }
+        }
+
+        logger.info("Temp directory cleanup completed.");
     }
 }

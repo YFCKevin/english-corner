@@ -154,20 +154,20 @@ public class AudioService {
 
 
     // 文字轉語音 (直接播放不存檔)
-    public boolean textToSpeechAndPlaySound(ChatAudioDTO chatAudioDTO) throws ExecutionException, InterruptedException {
+    public String textToSpeechAndPlaySound(ChatAudioDTO chatAudioDTO) throws ExecutionException, InterruptedException {
 
         final String partnerId = chatAudioDTO.getPartnerId();
         final String content = chatAudioDTO.getContent();
 
         if (content == null || content.isEmpty()) {
             logger.warn("Text is empty, skipping speech synthesis.");
-            return false;
+            return null;
         }
 
         Optional<Partner> opt = partnerRepository.findById(partnerId);
         if (opt.isEmpty()) {
             logger.warn("Partner not found for ID: " + partnerId);
-            return false;
+            return null;
         }
 
         Partner partner = opt.get();
@@ -180,15 +180,20 @@ public class AudioService {
         // 設定語音
         speechConfig.setSpeechSynthesisVoiceName(partner.getShortName());
 
-        // 直接播放，不存檔
-        AudioConfig audioConfig = AudioConfig.fromDefaultSpeakerOutput();
+        // 產生時間戳檔名
+        String timestamp = String.valueOf(System.currentTimeMillis());
+        String fileName = timestamp + ".wav";
+        String filePath = configProperties.getAudioSavePath() + "temp/" + fileName;
 
-        try (audioConfig; SpeechSynthesizer speechSynthesizer = new SpeechSynthesizer(speechConfig, audioConfig)) {
+        // 存檔
+        try (AudioConfig audioConfig = AudioConfig.fromWavFileOutput(filePath);
+             SpeechSynthesizer speechSynthesizer = new SpeechSynthesizer(speechConfig, audioConfig)) {
+
             SpeechSynthesisResult result = speechSynthesizer.SpeakTextAsync(content).get();
 
             if (result.getReason() == ResultReason.SynthesizingAudioCompleted) {
-                logger.info("Speech successfully played using voice [" + partner.getShortName() + "]");
-                return true;
+                logger.info("Speech successfully saved to: " + filePath);
+                return fileName; // 回傳檔案名稱
             } else if (result.getReason() == ResultReason.Canceled) {
                 SpeechSynthesisCancellationDetails cancellation = SpeechSynthesisCancellationDetails.fromResult(result);
                 logger.error("CANCELED: Reason=" + cancellation.getReason());
@@ -202,7 +207,7 @@ public class AudioService {
             speechConfig.close();
         }
 
-        return false;
+        return null; // 失敗時回傳 null
     }
 
 
