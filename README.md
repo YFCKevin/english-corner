@@ -27,7 +27,7 @@
   
 </p>
 
-[TalkYo 登入首頁 (僅限手機版）](https://gurula.cc/talkyo/sign-in.html)<br><br>
+[TalkYo 登入首頁（僅限手機版）](https://gurula.cc/talkyo/sign-in.html)<br><br>
 
 ## 功能：
 
