@@ -281,7 +281,8 @@
                                         <img :src="item.lessonImagePath" alt="slack_logo">
                                     </div>
                                     <div class="ms-3 my-auto">
-                                        <h6 x-text="item.lessonName"></h6>
+                                        <span style="font-size: 0.75rem; font-weight: bold; color: #a0a4b0;">Lesson </span><span style="font-size: 0.75rem; font-weight: bold; color: #a0a4b0;" x-text="index + 1"></span>
+                                        <h6 class="mt-1" x-text="item.lessonName"></h6>
 
                                         <template x-if="item.starCount > 0">
                                             <template x-for="index in 3" :key="index">
@@ -550,6 +551,12 @@
                         _this.member = response;
                         _this.partner = response.partner;
                     },
+                    error: function (xhr, status, error) {
+                        if (xhr.status === 401) {
+                            // 401 Unauthorized
+                            window.location.href = "sign-in.html";
+                        }
+                    }
                 });
 
                 $.ajax({

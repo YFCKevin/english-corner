@@ -479,6 +479,12 @@
                     success: function (response) {
                         _this.member = response;
                     },
+                    error: function (xhr, status, error) {
+                        if (xhr.status === 401) {
+                            // 401 Unauthorized
+                            window.location.href = "sign-in.html";
+                        }
+                    }
                 });
 
                 $.ajax({

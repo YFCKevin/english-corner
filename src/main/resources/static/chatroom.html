@@ -887,6 +887,12 @@
                         _this.member = response;
                         _this.partner = response.partner;
                     },
+                    error: function (xhr, status, error) {
+                        if (xhr.status === 401) {
+                            // 401 Unauthorized
+                            window.location.href = "sign-in.html";
+                        }
+                    }
                 });
 
                 if (!this.closed){
