@@ -17,7 +17,7 @@
 <body x-data="loadData()" x-init="init()" @click.outside="clickOutsideEditIcon">
 <div class="container-fluid h-100">
     <div class="row h-100 d-flex justify-content-center align-items-center">
-        <div class="col-md-8 col-lg-9 chat-area p-0">
+        <div :class="{ 'closed-margin-top': closed }" class="col-md-8 col-lg-9 chat-area p-0">
 
             <div class="chat-header">
                 <div class="d-flex align-items-center justify-content-between p-2">
@@ -99,7 +99,7 @@
                     </div>
                 </div>
                 <template x-if="messages.length > 0 && (chatroomType == 'PROJECT' || chatroomType == 'SITUATION')">
-                    <div class="progress progress-md px-3" style="height: 5px; background-color: white;">
+                    <div x-show="!closed" class="progress progress-md px-3" style="height: 5px; background-color: white;">
                         <div class="progress-bar"
                              role="progressbar"
                              :aria-valuenow="messages.length * 10"
@@ -679,7 +679,8 @@
 <div id="waiting-screen">
     <div class="waiting-content">
         <img id="waiting-image" src="img/peanut.png" alt="Loading">
-        <p id="waiting-text">您順利完成了這堂課，獲得 5 EXP！</p>
+        <p id="waiting-text">您順利完成了這堂課，獲得 <span class="text-danger font-weight-bold">5 EXP</span>！</p>
+        <p><span class="text-primary font-weight-bold">正在製作你的學習報告，請稍候...</span></p>
     </div>
 </div>
 
@@ -902,7 +903,12 @@
                         url: "chatroom/create",
                         type: "post",
                         dataType: "json",
-                        data: JSON.stringify({ chatroomType: this.chatroomType, action: this.action, lessonId: this.lessonId }),
+                        data: JSON.stringify({
+                            chatroomType: this.chatroomType,
+                            action: this.action,
+                            lessonId: this.lessonId,
+                            unitNumber: this.unitNumber     // for FREE_TALK 辨識與朋友or與家教
+                        }),
                         contentType: "application/json; charset=utf-8",
                         success: function (response) {
                             if (response.code == "C000") {
@@ -1485,36 +1491,44 @@
                 imageInput.addEventListener(
                     "change",
                     function () {
-                        const file = imageInput.files[0]; // 取得選擇的檔案
-                        if (!file) return; // 若未選擇檔案則返回
+                        setTimeout(() => {
+                            const file = imageInput.files[0]; // 取得選擇的檔案
+                            if (!file) return; // 若未選擇檔案則返回
 
-                        let formData = new FormData();
-                        formData.append("multipartFile", file);
-                        formData.append("messageType", "IMAGE");
-                        formData.append("chatroomId", _this.globalChatroomId);
+                            const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+                            if (!allowedTypes.includes(file.type)) {
+                                alert("請選擇一張圖片");
+                                return;
+                            }
 
-                        $.ajax({
-                            url: "chatroom/upload",
-                            type: "POST",
-                            data: formData,
-                            processData: false,
-                            contentType: false,
-                            success: function (response) {
-                                if (response.code === "C000") {
-                                    console.log("上傳成功，文件 URL:", response.data);
-                                    $(".uploaded-img").attr('src', response.data);
-                                    $(".image-display").removeClass("d-none");
-                                    $("#textInput").css("transform", "translateY(-100.5px)");
-                                    _this.showKeyboard ();
-                                } else {
-                                    alert("上傳失敗：" + response.message);
-                                }
-                            },
-                            error: function (xhr, status, error) {
-                                console.error("上傳錯誤:", error);
-                                alert("上傳過程中發生錯誤！");
-                            },
-                        });
+                            let formData = new FormData();
+                            formData.append("multipartFile", file);
+                            formData.append("messageType", "IMAGE");
+                            formData.append("chatroomId", _this.globalChatroomId);
+
+                            $.ajax({
+                                url: "chatroom/upload",
+                                type: "POST",
+                                data: formData,
+                                processData: false,
+                                contentType: false,
+                                success: function (response) {
+                                    if (response.code === "C000") {
+                                        console.log("上傳成功，文件 URL:", response.data);
+                                        $(".uploaded-img").attr('src', response.data);
+                                        $(".image-display").removeClass("d-none");
+                                        $("#textInput").css("transform", "translateY(-100.5px)");
+                                        _this.showKeyboard ();
+                                    } else {
+                                        alert("上傳失敗：" + response.message);
+                                    }
+                                },
+                                error: function (xhr, status, error) {
+                                    console.error("上傳錯誤:", error);
+                                    alert("上傳過程中發生錯誤！");
+                                },
+                            });
+                        }, 500); // 延遲 500ms
                     },
                     { once: true }
                 );
@@ -1815,16 +1829,8 @@
 
             showWaitingAnimation() {
                 let loadingScreen = document.getElementById("waiting-screen");
-                let loadingText = document.getElementById("waiting-text");
-
                 // 讓畫面從右滑入
                 loadingScreen.style.right = "0";
-
-                // 2 秒後切換內容
-                setTimeout(() => {
-                    loadingText.textContent = "正在製作你的學習報告...";
-                    loadingText.style.fontWeight = "bold";
-                }, 2000);
             },
 
             scrollToMsgBottom() {
@@ -1883,6 +1889,8 @@
 
             hideTalkRecord() {
                 $("#chatroom-history").css({ top: "-100%", right: "-100%" });
+                $("#dropdownMenuBtn").toggleClass("show");
+                $(".dropdown-menu.dropdown-menu-end").removeClass("show");
             },
 
             enterChatroom(key) {

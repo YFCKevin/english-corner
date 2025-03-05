@@ -88,6 +88,7 @@ public class ChatroomServiceImpl implements ChatroomService {
         final ChatroomType chatroomType = chatroomDTO.getChatroomType();
         final ActionType action = chatroomDTO.getAction();
         final String lessonId = chatroomDTO.getLessonId();
+        final String unitNumber = chatroomDTO.getUnitNumber();
 
         List<Chatroom> chatrooms = chatroomRepository.findByOwnerIdAndChatroomTypeAndRoomStatusOrderByCreationDateDesc(member.getId(), chatroomType, RoomStatus.ACTIVE);
         final Set<LearningRecord> learningRecords = learningRecordRepository.findByChatroomIdIn(chatrooms.stream().map(Chatroom::getId).collect(Collectors.toSet()));
@@ -121,8 +122,12 @@ public class ChatroomServiceImpl implements ChatroomService {
                 switch (action) {
                     case LEGACY -> {
                         if (chatrooms.size() > 0) {
-                            // 已有聊天室，則回傳最新的chatroomId
-                            return chatrooms.get(0).getId();
+                            // 已有聊天室，比對unitNumber，則回傳最新的chatroomId
+                            return chatrooms.stream()
+                                    .filter(chatroom -> unitNumber.equals(chatroom.getScenario().getUnitNumber()))
+                                    .map(Chatroom::getId)
+                                    .findFirst()
+                                    .orElseGet(() -> createChatroom(member, chatroomType));
                         } else {
                             // 創建新的聊天室
                             return createChatroom(member, chatroomType);

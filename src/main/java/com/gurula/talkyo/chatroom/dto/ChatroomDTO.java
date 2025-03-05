@@ -7,6 +7,7 @@ public class ChatroomDTO {
     private ChatroomType chatroomType;
     private ActionType action;  // 用在自由談話聊天室中，使用者選擇創立新的 or 選擇舊的
     private String lessonId;    // For PROJECT
+    private String unitNumber;  // For FREE_TALK
 
     public ActionType getAction() {
         return action;
@@ -18,5 +19,9 @@ public class ChatroomDTO {
 
     public String getLessonId() {
         return lessonId;
+    }
+
+    public String getUnitNumber() {
+        return unitNumber;
     }
 }

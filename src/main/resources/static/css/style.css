@@ -51,6 +51,10 @@ body {
   }
 }
 
+.closed-margin-top {
+  margin-top: -100px !important;
+}
+
 .chat-header {
   background-color: var(--secondary);
   border-bottom: 1px solid var(--border);
