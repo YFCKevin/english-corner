@@ -1117,4 +1117,22 @@ public class ChatroomServiceImpl implements ChatroomService {
                         LinkedHashMap::new
                 ));
     }
+
+    @Override
+    public int deleteChatRecord(String chatroomId) {
+        return chatroomRepository.deleteChatroomById(chatroomId);
+    }
+
+    @Override
+    public int editName(ChatRecordDTO chatRecordDTO) {
+        final Optional<Chatroom> opt = chatroomRepository.findById(chatRecordDTO.getChatroomId());
+        if (opt.isPresent()) {
+            final Chatroom chatroom = opt.get();
+            chatroom.setTitle(chatRecordDTO.getEditName());
+            chatroomRepository.save(chatroom);
+            return 1;
+        } else {
+            return 0;
+        }
+    }
 }

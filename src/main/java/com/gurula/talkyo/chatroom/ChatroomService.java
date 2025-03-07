@@ -61,4 +61,8 @@ public interface ChatroomService {
     Map<String, String> genTitle(String chatroomId) throws JsonProcessingException;
 
     Map<String, String> getChatroomHistory(String memberId);
+
+    int deleteChatRecord(String chatroomId);
+
+    int editName(ChatRecordDTO chatRecordDTO);
 }

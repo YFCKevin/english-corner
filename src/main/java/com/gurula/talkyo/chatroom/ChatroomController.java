@@ -16,13 +16,15 @@ import com.gurula.talkyo.member.MemberService;
 import com.gurula.talkyo.openai.dto.LLMChatResponseDTO;
 import com.gurula.talkyo.properties.ConfigProperties;
 import com.gurula.talkyo.record.LearningRecordService;
+import com.gurula.talkyo.snapshot.SnapshotForm;
+import com.gurula.talkyo.snapshot.SnapshotService;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -32,6 +34,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -56,12 +59,13 @@ public class ChatroomController {
     private final MessageService messageService;
     private final MemberService memberService;
     private final AudioService audioService;
+    private final SnapshotService snapshotService;
 
     public ChatroomController(ChatroomService chatroomService, SimpMessageSendingOperations messagingTemplate, ConfigProperties configProperties, MessageTypeHandler handler, LearningRecordService learningRecordService,
                               ConversationRepository conversationRepository, SimpleDateFormat sdf,
                               MessageRepository messageRepository,
                               ChatroomRepository chatroomRepository,
-                              LessonRepository lessonRepository, MessageService messageService, MemberService memberService, AudioService audioService) {
+                              LessonRepository lessonRepository, MessageService messageService, MemberService memberService, AudioService audioService, SnapshotService snapshotService) {
         this.chatroomService = chatroomService;
         this.messagingTemplate = messagingTemplate;
         this.configProperties = configProperties;
@@ -75,6 +79,7 @@ public class ChatroomController {
         this.messageService = messageService;
         this.memberService = memberService;
         this.audioService = audioService;
+        this.snapshotService = snapshotService;
     }
 
 
@@ -685,6 +690,56 @@ public class ChatroomController {
         resultStatus.setCode("C000");
         resultStatus.setMessage("成功");
         resultStatus.setData(messages);
+        return ResponseEntity.ok(resultStatus);
+    }
+
+
+    /**
+     * 刪除歷史對話紀錄
+     * @param chatroomId
+     * @return
+     */
+    @DeleteMapping("/chatroom/chatRecord/delete/{chatroomId}")
+    public ResponseEntity<?> deleteChatRecord(@PathVariable String chatroomId) {
+        final Member member = MemberContext.getMember();
+        logger.info("[{} {}] [deleteChatRecord]", member.getName(), member.getId());
+
+        ResultStatus<Void> resultStatus = new ResultStatus<>();
+
+        int count = chatroomService.deleteChatRecord(chatroomId);
+
+        if (count > 0) {
+            resultStatus.setCode("C000");
+            resultStatus.setMessage("成功");
+        } else {
+            resultStatus.setCode("C999");
+            resultStatus.setMessage("系統錯誤");
+        }
+        return ResponseEntity.ok(resultStatus);
+    }
+
+
+    /**
+     * 重新命名
+     * @param chatRecordDTO
+     * @return
+     */
+    @PatchMapping("/chatroom/chatRecord/editName")
+    public ResponseEntity<?> editName(@RequestBody ChatRecordDTO chatRecordDTO) {
+        final Member member = MemberContext.getMember();
+        logger.info("[{} {}] [editName chatRecord]", member.getName(), member.getId());
+
+        ResultStatus<Void> resultStatus = new ResultStatus<>();
+
+        int count = chatroomService.editName(chatRecordDTO);
+
+        if (count > 0) {
+            resultStatus.setCode("C000");
+            resultStatus.setMessage("成功");
+        } else {
+            resultStatus.setCode("C999");
+            resultStatus.setMessage("系統錯誤");
+        }
         return ResponseEntity.ok(resultStatus);
     }
 
