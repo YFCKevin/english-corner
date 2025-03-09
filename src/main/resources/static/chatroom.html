@@ -30,6 +30,12 @@
                       <i class="fas fa-chevron-left"></i>
                     </span>
                     </a>
+                    <template x-if="globalLink">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-user-friends me-2 text-success"></i>
+                            <span>分享的聊天記錄</span>
+                        </div>
+                    </template>
                     <template x-if="['PROJECT', 'SITUATION'].includes(chatroomType)">
                         <div class="d-flex align-items-center">
                             <template x-if="messages && messages.length < 10">
@@ -37,6 +43,9 @@
                             </template>
                             <template x-if="closed">
                                 <span>聊天記錄</span>
+                            </template>
+                            <template x-if="globalLink">
+                                <span>分享的聊天記錄</span>
                             </template>
                             <template x-if="messages && messages.length >= 10">
                                 <button x-show="!closed" @click.stop="endLesson" class="end-lesson-button btn rounded-pill text-white btn-sm" style="background-color: #20c997;">End this lesson</button>
@@ -52,7 +61,7 @@
                         <button class="btn btn-link text-dark ps-3" id="dropdownMenuBtn" data-bs-toggle="dropdown">
                             <i class="fas fa-ellipsis-v"></i>
                         </button>
-                        <ul class="dropdown-menu dropdown-menu-end">
+                        <ul class="dropdown-menu dropdown-menu-end main">
                             <template x-if="chatroomType == 'FREE_TALK'">
                                 <li class="list-group-item border-0 px-0" @click.stop="startNewTalk">
                                     <div class="form-check form-switch ps-0 d-flex align-items-center">
@@ -698,13 +707,157 @@
     </div>
     <div class="chatroom-history-body">
         <template x-for="(item, index) in chatroomIdTitles" :key="index">
-            <button @click.stop="enterChatroom(item.key)" class="history-btn mb-2 py-2 px-4">
-                <span x-text="item.value" class="small"></span>
-                <i class="fas fa-chevron-right text-secondary ms-3 small"></i>
-            </button>
+            <div @click.stop="enterChatroom(item.key)" :class="{'custom-mb-9': dropdownRecordOpen === index, 'mb-2': dropdownRecordOpen !== index}" class="history-btn mb-2 py-2 px-4">
+                <span x-show="showEditRecordTitle !== index" x-text="item.value" class="small"></span>
+                <div x-show="showEditRecordTitle === index">
+                    <div class="d-flex align-items-center">
+                        <input x-model="item.value" class="form-control me-2" type="text" @click.stop/>
+                        <button class="btn btn-primary rounded-circle" @click.stop="editTitle(item)">
+                            <i class="fas fa-pen-alt text-white"></i>
+                        </button>
+                    </div>
+                </div>
+                <div x-show="showEditRecordTitle !== index" class="dropdown dropdown-history-record">
+                    <button @click.stop="toggleRecordDropdown(index, $event, item.key, item.value)"
+                            class="btn btn-link text-dark ps-3 dropdown-record-icon"
+                            id="dropdownRecordBtn"
+                            data-bs-toggle="dropdown-record"
+                    >
+                        <i class="fas fa-ellipsis-v text-secondary ms-3 small"></i>
+                    </button>
+                    <ul x-bind:style="dropdownRecordStyle" class="dropdown-menu dropdown-menu-end dropdown-record" :class="{'show': dropdownRecordOpen === index}">
+                        <li class="list-group-item border-0 px-0" data-bs-toggle="modal" data-bs-target="#shareModal" @click.stop="openSharingModal(item.key)">
+                            <div class="form-check form-switch ps-0 d-flex align-items-center">
+                                <label class="form-check-label text-body ms-3 mx-5 py-2 text-truncate w-80 mb-0 small">
+                                    <i class="fas fa-share-square me-2"></i>
+                                    <span>分享</span>
+                                </label>
+                            </div>
+                        </li>
+                        <li class="list-group-item border-0 px-0"
+                            @click.stop="showEditRecordTitle = (showEditRecordTitle === index ? null : index); dropdownRecordOpen = null"
+                        >
+                            <div class="form-check form-switch ps-0 d-flex align-items-center">
+                                <label class="form-check-label text-body ms-3 mx-5 py-2 text-truncate w-80 mb-0 small">
+                                    <i class="fas fa-pen-alt me-2"></i>
+                                    <span>重新命名</span>
+                                </label>
+                            </div>
+                        </li>
+                        <li class="list-group-item border-0 px-0" data-bs-toggle="modal" data-bs-target="#deleteRecordModal" @click.stop>
+                            <div class="form-check form-switch ps-0 d-flex align-items-center">
+                                <label class="form-check-label text-body ms-3 mx-5 py-2 text-truncate w-80 mb-0 small">
+                                    <i class="fas fa-trash-alt text-danger me-2"></i>
+                                    <span class="text-danger">刪除</span>
+                                </label>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
         </template>
     </div>
 
+</div>
+
+<!--deleteRecordModal-->
+<div class="modal fade" id="deleteRecordModal" tabindex="-1" role="dialog" aria-labelledby="deleteRecordModal" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteRecordModalLabel">刪除對話？</h5>
+                <span data-bs-dismiss="modal" aria-hidden="true" class="text-secondary">×</span>
+            </div>
+            <div class="modal-body d-flex flex-column">
+                <span class="text-start w-100">即將刪除 <span class="fw-bold" x-text="dropdownRecordName"></span></span>
+                <div class="d-flex justify-content-end w-100 mt-4">
+                    <button type="button" data-bs-dismiss="modal" class="btn btn-outline-dark rounded-pill px-3 btn-sm">取消</button>
+                    <button type="button" @click.stop="deleteChatRecord()" class="btn btn-danger text-white rounded-pill px-3 ms-2 btn-sm">刪除</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!--shareModal-->
+<div class="modal fade" id="shareModal" tabindex="-1" role="dialog" aria-labelledby="shareModal" aria-hidden="true" @click.stop>
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <template x-if="targetSnapshotId == null && snapshotLink == ''">
+                    <h5 class="modal-title">分享對話的公開連結</h5>
+                </template>
+                <template x-if="targetSnapshotId !== null && snapshotLink == ''">
+                    <h5 class="modal-title">更新對話的公開連結</h5>
+                </template>
+                <template x-if="targetSnapshotId !== null && snapshotLink !== ''">
+                    <h5 class="modal-title">已建立公開連結</h5>
+                </template>
+                <span data-bs-dismiss="modal" aria-hidden="true" class="text-secondary">×</span>
+            </div>
+            <div class="modal-body d-flex flex-column align-items-start">
+                <span class="text-start w-100">你的名稱以及分享後新增的任何對話都將保密。</span>
+                <div class="d-flex justify-content-between align-items-center border rounded-pill p-2 mt-4">
+                    <div class="flex-grow-1">
+                        <input x-model="snapshotLink" class="form-control border-0 shadow-none" readonly placeholder="https://gurula.cc/talkyo/share/...">
+                    </div>
+                    <template x-if="targetSnapshotId == null && snapshotLink == ''">
+                        <button @click.stop="createLink()" class="btn btn-dark rounded-pill d-flex align-items-center" style="white-space: nowrap;">
+                            <i class="fas fa-paperclip me-2 text-white"></i>
+                            <span>建立連結</span>
+                        </button>
+                    </template>
+                    <template x-if="targetSnapshotId !== null && snapshotLink == ''">
+                        <button @click.stop="updateLink" class="btn btn-dark rounded-pill d-flex align-items-center" style="white-space: nowrap;">
+                            <i class="fas fa-paperclip me-2 text-white"></i>
+                            <span>更新連結</span>
+                        </button>
+                    </template>
+                    <template x-if="snapshotLink !== ''">
+                        <button @click.stop="copyLink(snapshotLink)" class="btn btn-dark rounded-pill d-flex align-items-center" style="white-space: nowrap;">
+                            <i class="fas fa-copy me-2 text-white"></i>
+                            <span>複製</span>
+                        </button>
+                    </template>
+                </div>
+                <div class="w-100 mt-1" x-show="targetSnapshotId !== null">
+                    <span class="text-secondary" style="font-size: 0.8rem">已分享此對話的過往版本。請透過</span>
+                    <span @click.stop="openSettingModal" data-bs-toggle="modal" data-bs-target="#settingModal" class="text-secondary text-decoration-underline" style="font-size: 0.8rem">「設定」</span>
+                    <span class="text-secondary" style="font-size: 0.8rem">管理之前已分享的對話。</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!--settingModal-->
+<div class="modal fade" id="settingModal" tabindex="-1" role="dialog" aria-labelledby="deleteRecordModal" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">共享的連結</h5>
+                <span data-bs-dismiss="modal" aria-hidden="true" class="text-secondary">×</span>
+            </div>
+            <div class="modal-body d-flex flex-column">
+                <ul class="list-group">
+                    <template x-for="(item,index) in snapshotList" :key="index">
+                        <li class="list-group-item border-0 d-flex justify-content-between ps-0 mb-2 border-radius-lg">
+                            <div class="d-flex flex-column">
+                                <div class="d-flex align-items-center" @click.stop="showLink(item.link)">
+                                    <i style="font-size: 0.9rem;" class="fas fa-paperclip text-primary font-weight-bold mb-1 me-2"></i>
+                                    <h6 class="mb-1 text-primary font-weight-bold" x-text="item.title"></h6>
+                                </div>
+                                <span style="font-size: 0.8rem;" class="text-secondary" x-text="item.sharingDateTime"></span>
+                            </div>
+                            <div class="d-flex align-items-center" @click.stop="deleteLink(item.id)">
+                                <i class="fas fa-trash-alt text-danger"></i>
+                            </div>
+                        </li>
+                    </template>
+                </ul>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script src="js/sockjs.min.js"></script>
@@ -828,6 +981,11 @@
             chatroomIdTitles: [],                 // FREE_TALK的歷史對話標題集 (key: chatroomId, value: title)
             chatroomTitle: "",
             closed: false,              // 用來判斷是否為查看聊天記錄
+            dropdownRecordOpen: null,   // 歷史對話紀錄內的下拉選單顯示判斷
+            dropdownRecordStyle: '',    // 歷史對話紀錄內的下拉選單 css style
+            dropdownRecordChatroomId: '',   // 選定的歷史對話紀錄 (用來分享、重新命名、刪除)
+            dropdownRecordName: '',
+            showEditRecordTitle: null,
 
             // ===== Tip ===== //
             tipContent: "",
@@ -868,6 +1026,13 @@
             sentMsgLoading: false,
             receivedMsgCount: 0,
 
+            // ===== snapshot ===== //
+            globalLink: null,
+            targetSnapshotId: null,
+            snapshotChatroomId: null,
+            snapshotLink: '',
+            snapshotList: [],
+
             async init() {
                 let _this = this;
 
@@ -878,6 +1043,7 @@
                 this.lessonId = urlParams.get("lessonId");
                 this.closed = urlParams.get("closed");
                 this.globalChatroomId = urlParams.get("chatroomId");
+                this.globalLink = urlParams.get("link");
 
                 $.ajax({
                     url: "member/info",
@@ -931,39 +1097,51 @@
 
                 } else {
                     // 僅供查看
-                    $.ajax({
-                        url: "chatroom/history/message/all",
-                        type: "post",
-                        dataType: "json",
-                        data: JSON.stringify({ chatroomId: this.globalChatroomId, chatroomType: this.chatroomType }),
-                        contentType: "application/json; charset=utf-8",
-                        success: function (response) {
-                            if (response.code == "C000") {
-                                _this.messages = response.data.map(obj => {
-                                    const key = Number(Object.keys(obj)[0]);
-                                    return { key, value: obj[key] };
-                                });
-                                _this.updateMessages();
-                                $(".chat-messages").css("height", "90vh");
-                            }
-                        },
-                    });
+                    if (!this.globalLink) {
+                        // 非共享，是自己的對話紀錄
+                        $.ajax({
+                            url: "chatroom/history/message/all",
+                            type: "post",
+                            dataType: "json",
+                            data: JSON.stringify({ chatroomId: this.globalChatroomId, chatroomType: this.chatroomType }),
+                            contentType: "application/json; charset=utf-8",
+                            success: function (response) {
+                                if (response.code == "C000") {
+                                    _this.messages = response.data.map(obj => {
+                                        const key = Number(Object.keys(obj)[0]);
+                                        return { key, value: obj[key] };
+                                    });
+                                    _this.updateMessages();
+                                    $(".chat-messages").css("height", "90vh");
+                                }
+                            },
+                        });
+
+                    } else {
+                        // 共享
+                        $.ajax({
+                            url: "snapshot/link/" + this.globalLink,
+                            type: "get",
+                            dataType: "json",
+                            contentType: "application/json; charset=utf-8",
+                            success: function (response) {
+                                if (response.code == "C000") {
+                                    _this.messages = response.data.map(obj => {
+                                        const key = Number(Object.keys(obj)[0]);
+                                        return { key, value: obj[key] };
+                                    });
+                                    _this.updateMessages();
+                                    $(".chat-messages").css("height", "90vh");
+                                }
+                            },
+                        });
+                    }
+
                 }
 
-                $.ajax({
-                    url: "chatroom/history",
-                    type: "get",
-                    dataType: "json",
-                    contentType: "application/json; charset=utf-8",
-                    success: function (response) {
-                        if (response.code == "C000") {
-                            _this.chatroomIdTitles = Object.entries(response.data).map(([key, value]) => ({
-                                key: key,
-                                value: value
-                            }));
-                        }
-                    },
-                });
+                if (!this.globalLink) {
+                    this.getAllChatRecord();
+                }
 
 
                 const dropdownSetting = JSON.parse(localStorage.getItem("dropdownSettings")) || {
@@ -978,6 +1156,9 @@
                     this.showTipBtn = dropdownSetting.showTipBtn;
                     this.autoRecording = dropdownSetting.autoRecording;
                 }
+
+                // closeDropdownOnOutsideClick 方法在執行時，this 的上下文可能並未正確綁定到 Alpine.js 實例，使用 .bind() 方法顯式綁定 this
+                document.addEventListener('click', this.closeDropdownOnOutsideClick.bind(this));
             },
 
             updateMessages() {
@@ -1890,10 +2071,11 @@
             hideTalkRecord() {
                 $("#chatroom-history").css({ top: "-100%", right: "-100%" });
                 $("#dropdownMenuBtn").toggleClass("show");
-                $(".dropdown-menu.dropdown-menu-end").removeClass("show");
+                $(".dropdown-menu.dropdown-menu-end.main").removeClass("show");
             },
 
             enterChatroom(key) {
+                this.showEditRecordTitle = null;    // 關閉「重新命名」功能
                 let _this = this;
                 const parts = key.split("_");
                 const chatroomId = parts[0];
@@ -1966,6 +2148,198 @@
                         },
                     });
                 }
+            },
+
+            getAllChatRecord() {
+                let _this = this;
+                $.ajax({
+                    url: "chatroom/history",
+                    type: "get",
+                    dataType: "json",
+                    contentType: "application/json; charset=utf-8",
+                    success: function (response) {
+                        if (response.code == "C000") {
+                            _this.chatroomIdTitles = Object.entries(response.data).map(([key, value]) => ({
+                                key: key,
+                                value: value
+                            }));
+                        }
+                    },
+                });
+            },
+
+            toggleRecordDropdown(index, event, key, value) {
+                this.showEditRecordTitle = null;    // 關閉「重新命名」功能
+                if (this.dropdownRecordOpen === index) {
+                    this.dropdownRecordOpen = null;
+                } else {
+                    this.dropdownRecordOpen = index;
+                    // 設定選單樣式
+                    this.dropdownRecordStyle = `position: absolute; inset: 0px auto auto 0px; margin: 0px; transform: translate3d(-109.5px, 40px, 0px);`;
+
+                    const chatroomId = key.split("_")[0];
+                    this.dropdownRecordChatroomId = chatroomId;
+                    this.dropdownRecordName = value;
+                }
+            },
+
+            closeDropdownOnOutsideClick(event) {
+                const dropdown = document.querySelector('.dropdown-record.show');
+                if (dropdown) {
+                    this.dropdownRecordOpen = null;
+                }
+            },
+
+            deleteChatRecord() {
+                let _this = this;
+                $.ajax({
+                    url: "chatroom/chatRecord/delete/" + this.dropdownRecordChatroomId,
+                    type: "DELETE",
+                    dataType: "json",
+                    contentType: "application/json; charset=utf-8",
+                    beforeSend: function () {
+                        $("#deleteRecordModal").modal('hide');
+                    },
+                    success: function (response) {
+                        if (response.code === "C000") {
+                            console.log("刪除成功");
+                            _this.dropdownRecordOpen = null;
+                            _this.getAllChatRecord();
+                        } else {
+                            alert("刪除失敗，請稍後再試！");
+                        }
+                    },
+                });
+            },
+
+            editTitle(item) {
+                let _this = this;
+                const chatroomId = item.key.split("_")[0];
+                const editName = item.value;
+
+                $.ajax({
+                    url: "chatroom/chatRecord/editName",
+                    type: "PATCH",
+                    dataType: "json",
+                    data: JSON.stringify({ chatroomId: chatroomId, editName: editName }),
+                    contentType: "application/json; charset=utf-8",
+                    beforeSend: function () {
+                        this.showEditRecordTitle = null;
+                    },
+                    success: function (response) {
+                        if (response.code === "C000") {
+                            console.log("修改成功");
+                            _this.showEditRecordTitle = null;
+                            _this.getAllChatRecord();
+                        } else {
+                            alert("修改失敗，請稍後再試！");
+                        }
+                    },
+                });
+            },
+
+            openSharingModal(key) {
+                let _this = this;
+                const chatroomId = key.split("_")[0];
+                this.snapshotChatroomId = chatroomId;
+
+                $.ajax({
+                    url: "snapshot/info/" + chatroomId,
+                    type: "GET",
+                    dataType: "json",
+                    contentType: "application/json; charset=utf-8",
+                    beforeSend: function () {
+                        _this.targetSnapshotId = null;
+                        _this.snapshotLink = '';
+                    },
+                    success: function (response) {
+                        if (response.code === "C000") {
+                            _this.targetSnapshotId = response.data.id;
+                        }
+                    },
+                });
+            },
+
+            createLink() {
+                let _this = this;
+                $.ajax({
+                    url: "snapshot/create",
+                    type: "POST",
+                    dataType: "json",
+                    data: JSON.stringify({ chatroomId: this.snapshotChatroomId }),
+                    contentType: "application/json; charset=utf-8",
+                    success: function (response) {
+                        if (response.code === "C000") {
+                            _this.targetSnapshotId = response.data.id;
+                            _this.snapshotLink = "https://gurula.cc/talkyo/share/" + response.data.link;
+                            _this.copyLink(_this.snapshotLink);
+                        }
+                    },
+                });
+            },
+
+            updateLink() {
+                let _this = this;
+                $.ajax({
+                    url: "snapshot/update",
+                    type: "PATCH",
+                    dataType: "json",
+                    data: JSON.stringify({ chatroomId: this.snapshotChatroomId }),
+                    contentType: "application/json; charset=utf-8",
+                    success: function (response) {
+                        if (response.code === "C000") {
+                            _this.snapshotLink = "https://gurula.cc/talkyo/share/" + response.data;
+                            _this.copyLink(_this.snapshotLink);
+                        }
+                    },
+                });
+            },
+
+            copyLink(text) {
+                navigator.clipboard.writeText(text).then(() => {
+                    console.log('連結已複製到剪貼簿！');
+                }).catch(err => {
+                    console.error('複製失敗', err);
+                });
+            },
+
+            openSettingModal() {
+                $("#shareModal").modal('hide');
+                this.updateSnapshotList();
+            },
+
+            updateSnapshotList() {
+                let _this = this;
+                $.ajax({
+                    url: "snapshot/all",
+                    type: "GET",
+                    dataType: "json",
+                    contentType: "application/json; charset=utf-8",
+                    success: function (response) {
+                        if (response.code === "C000") {
+                            _this.snapshotList = response.data;
+                        }
+                    },
+                });
+            },
+
+            showLink(link) {
+                window.open("share/" + link, "_blank");
+            },
+
+            deleteLink(id) {
+                let _this = this;
+                $.ajax({
+                    url: "snapshot/delete/" + id,
+                    type: "DELETE",
+                    dataType: "json",
+                    contentType: "application/json; charset=utf-8",
+                    success: function (response) {
+                        if (response.code === "C000") {
+                            _this.updateSnapshotList();
+                        }
+                    },
+                });
             },
         }
     }

@@ -703,3 +703,13 @@ low {
   flex-grow: 1; /* 讓文字自動填滿按鈕空間 */
   text-align: left; /* 確保文字靠左對齊 */
 }
+
+.custom-mb-9 {
+  margin-bottom: 9rem !important;
+}
+
+.history-btn input {
+  width: 100%; /* 讓 input 佔滿整個容器寬度 */
+  padding: 0.5rem; /* 調整 padding 來讓它看起來不會太擠 */
+  border-radius: 0.25rem; /* 讓 input 有圓角 */
+}
