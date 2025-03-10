@@ -1538,7 +1538,7 @@
                 }
                 event.preventDefault();
             },
-            cancelTip () {
+            cancelTip() {
                 $(".message-footer").removeClass("move-up");
                 $(".loading-spinner").addClass("hidden");
                 this.isTipActive  = false;
@@ -1940,19 +1940,23 @@
             stopRecord() {
                 this.isRecording = !this.isRecording;
                 this.isRecordCanceled = false;
-                if (mediaRecorder && mediaRecorder.state !== "inactive") {
-                    mediaRecorder.stop();
+                if (this.mediaRecorder && this.mediaRecorder.state !== "inactive") {
+                    this.mediaRecorder.stop();
                 }
-                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                this.mediaRecorder.stream.getTracks().forEach(track => track.stop());
+
+                this.cancelTip();
             },
             cancelRecord() {
                 if (this.isPartnerTalking() || this.isHumanTalking()) return;
                 this.isRecording = !this.isRecording;
                 this.isRecordCanceled = true;
-                if (mediaRecorder && mediaRecorder.state !== "inactive") {
-                    mediaRecorder.stop();
+                if (this.mediaRecorder && this.mediaRecorder.state !== "inactive") {
+                    this.mediaRecorder.stop();
                 }
-                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                this.mediaRecorder.stream.getTracks().forEach(track => track.stop());
+
+                this.mediaRecorder = null;
             },
             async uploadAudio(audioBlob) {
                 let _this = this;
