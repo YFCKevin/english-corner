@@ -93,4 +93,3 @@ config:
   audioShowPath: https://gurula.cc/talkyo/audio/
   jsonPath: /opt/talkyo/static/data/
   openaiApiKey: ${openai-api-key}
-  cloudTranslateApiKey: ${cloud-translate-api-key}

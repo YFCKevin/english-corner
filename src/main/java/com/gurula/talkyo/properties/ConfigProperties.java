@@ -29,8 +29,6 @@ public class ConfigProperties {
     private String tokenUri;
     @Value("${spring.security.oauth2.client.provider.line.user-info-uri}")
     private String userInfoUri;
-    @Value("${config.cloudTranslateApiKey}")
-    private String cloudTranslateApiKey;
 
     public String getClientId() {
         return clientId;
@@ -80,10 +78,6 @@ public class ConfigProperties {
         return audioShowPath;
     }
 
-    public String getCloudTranslateApiKey() {
-        return cloudTranslateApiKey;
-    }
-
     public void setOpenaiApiKey(String openaiApiKey) {
         this.openaiApiKey = openaiApiKey;
     }
@@ -130,9 +124,5 @@ public class ConfigProperties {
 
     public void setUserInfoUri(String userInfoUri) {
         this.userInfoUri = userInfoUri;
-    }
-
-    public void setCloudTranslateApiKey(String cloudTranslateApiKey) {
-        this.cloudTranslateApiKey = cloudTranslateApiKey;
     }
 }

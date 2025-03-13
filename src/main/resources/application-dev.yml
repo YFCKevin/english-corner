@@ -99,4 +99,3 @@ config:
   audioShowPath: http://localhost:8086/talkyo/audio/
   jsonPath: /Users/chenyifan/Documents/workspace-fan/talkyo/src/main/resources/static/data/
   openaiApiKey: ${openai-api-key}
-  cloudTranslateApiKey: ${cloud-translate-api-key}
