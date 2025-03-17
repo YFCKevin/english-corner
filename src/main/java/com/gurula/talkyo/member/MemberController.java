@@ -5,10 +5,11 @@ import com.gurula.talkyo.azureai.PartnerRepository;
 import com.gurula.talkyo.azureai.dto.PartnerResponseDTO;
 import com.gurula.talkyo.azureai.enums.TailoredScenario;
 import com.gurula.talkyo.azureai.enums.VoicePersonality;
+import com.gurula.talkyo.member.dto.FavoriteDTO;
 import com.gurula.talkyo.member.dto.LearningPlanDTO;
 import com.gurula.talkyo.member.dto.MemberDTO;
 import com.gurula.talkyo.member.dto.ProfileDTO;
-import com.gurula.talkyo.member.enums.Role;
+import com.gurula.talkyo.openai.dto.TranslateRequestDTO;
 import com.gurula.talkyo.properties.ConfigProperties;
 import com.gurula.talkyo.exception.ResultStatus;
 import jakarta.servlet.http.HttpServletResponse;
@@ -63,7 +64,8 @@ public class MemberController {
                     member.getEmail(),
                     member.getChosenLevel(),
                     partnerResponseDTO,
-                    member.getRole().getLabel()
+                    member.getRole().getLabel(),
+                    member.getSavedFavoriteSentences()
             );
             return ResponseEntity.ok(Objects.requireNonNullElseGet(memberDTO, MemberDTO::new));
         }
@@ -138,6 +140,50 @@ public class MemberController {
         logger.info("[{} {}] [add exp]", member.getName(), member.getId());
 
         memberService.addExp(member, point);
+
+        ResultStatus<Void> resultStatus = new ResultStatus<>();
+        resultStatus.setCode("C000");
+        resultStatus.setMessage("成功");
+        return ResponseEntity.ok(resultStatus);
+    }
+
+
+    /**
+     * 新增or移除收藏句子
+     * @param favoriteDTO
+     * @return
+     */
+    @PostMapping("/favorite/toggle")
+    public ResponseEntity<?> toggleFavoriteSentence(@RequestBody FavoriteDTO favoriteDTO) {
+        final Member member = MemberContext.getMember();
+        logger.info("[{} {}] [toggle favorite sentence]", member.getName(), member.getId());
+
+        int count = memberService.toggleFavoriteSentence(favoriteDTO, member);
+
+        ResultStatus<Void> resultStatus = new ResultStatus<>();
+        if (count > 0) {
+            resultStatus.setCode("C000");
+            resultStatus.setMessage("成功");
+        } else {
+            resultStatus.setCode("C999");
+            resultStatus.setMessage("系統錯誤");
+        }
+
+        return ResponseEntity.ok(resultStatus);
+    }
+
+
+    /**
+     * 產生沒有中文翻譯的收藏句子
+     * @param dto
+     * @return
+     */
+    @PostMapping("/favorite/translation/save")
+    public ResponseEntity<?> saveFavoriteTranslation(@RequestBody TranslateRequestDTO dto) {
+        final Member member = MemberContext.getMember();
+        logger.info("[{} {}] [save favorite translation]", member.getName(), member.getId());
+
+        memberService.saveFavoriteTranslation(member, dto);
 
         ResultStatus<Void> resultStatus = new ResultStatus<>();
         resultStatus.setCode("C000");

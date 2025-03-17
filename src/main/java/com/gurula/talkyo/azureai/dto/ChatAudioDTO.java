@@ -5,6 +5,7 @@ public class ChatAudioDTO {
     private String memberId;
     private String partnerId;
     private String chatroomId;
+    private String unitNumber;
 
     public ChatAudioDTO() {
     }
@@ -52,6 +53,10 @@ public class ChatAudioDTO {
 
     public String getChatroomId() {
         return chatroomId;
+    }
+
+    public String getUnitNumber() {
+        return unitNumber;
     }
 
     @Override

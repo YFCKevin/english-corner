@@ -25,6 +25,10 @@ public class Sentence {
         this.unitNumber = CourseUtil.genSentenceUnitNumber();
     }
 
+    public void setUnitNumber(String unitNumber) {
+        this.unitNumber = unitNumber;
+    }
+
     public String getContent() {
         return content;
     }

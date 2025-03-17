@@ -418,6 +418,10 @@
                             <div class="grammar w-100" style="color: black; background-color: rgba(144, 238, 144, 0.1);">
                                 <i class="fas fa-check-circle me-2 small" style="color: var(--bs-teal);"></i>
                                 <span x-text="correctSentence"></span>
+                                <i @click="toggleFavorite(correctUnitNumber, correctSentence, '')"
+                                   x-bind:class="{'far fa-bookmark': !correctFavorite, 'fas fa-bookmark': correctFavorite}"
+                                   class="far fa-bookmark small"
+                                   style="cursor: pointer; color: #0d6efd; margin-top: 0.3rem;"></i>
                             </div>
                             <div class="grammar-text w-100 d-flex flex-column" style="color: black;">
                                 <span class="fw-bold small">錯誤原因</span>
@@ -441,7 +445,11 @@
                         <div class="d-flex align-items-start">
                             <div class="w-100">
                                 <div class="message-content">
-                                    <span x-text="informalContent"></span>
+                                    <span class="me-2" x-text="informalContent" style="font-size: 0.9rem"></span>
+                                    <i @click="toggleFavorite(informalUnitNumber, informalContent, '')"
+                                       x-bind:class="{'far fa-bookmark': !informalFavorite, 'fas fa-bookmark': informalFavorite}"
+                                       class="far fa-bookmark small"
+                                       style="cursor: pointer; color: #0d6efd; margin-top: 0.3rem;"></i>
                                 </div>
                             </div>
                             <i :data-url="informalAudioPath" @click="playAdvancedSound($event.target)" class="fas fa-rss ms-3 text-primary" style="font-size: 0.8rem; margin-top: 0.4rem"></i>
@@ -457,7 +465,11 @@
                         <div class="d-flex align-items-start">
                             <div class="w-100">
                                 <div class="message-content">
-                                    <span x-text="formalContent"></span>
+                                    <span class="me-2" x-text="formalContent" style="font-size: 0.9rem"></span>
+                                    <i @click="toggleFavorite(formalUnitNumber, formalContent, '')"
+                                       x-bind:class="{'far fa-bookmark': !formalFavorite, 'fas fa-bookmark': formalFavorite}"
+                                       class="far fa-bookmark small"
+                                       style="cursor: pointer; color: #0d6efd; margin-top: 0.3rem;"></i>
                                 </div>
                             </div>
                             <i :data-url="formalAudioPath" @click="playAdvancedSound($event.target)" class="fas fa-rss ms-3 text-primary" style="font-size: 0.8rem; margin-top: 0.4rem"></i>
@@ -562,11 +574,15 @@
                     <template x-for="(item,index) in basicSentences" :key="index">
                         <li class="list-group-item border-0 d-flex align-items-start px-0 mb-1">
                             <div class="d-flex align-items-start flex-column justify-content-center me-4">
-                                <p class="mb-1 small font-weight-bold text-dark english" x-text="item.content"></p>
-                                <p class="mb-0 small translate text-secondary" x-text="item.translation"></p>
+                                <div class="d-flex w-100">
+                                    <p class="mb-1 small font-weight-bold text-dark english me-2" x-text="item.content" style="font-size: 0.9rem"></p>
+                                    <i @click="toggleFavorite(item.unitNumber, item.content, item.translation)" x-bind:class="{'far fa-bookmark': !item.favorite, 'fas fa-bookmark': item.favorite}"
+                                       class="small" style="cursor: pointer; color: #0d6efd; margin-top: 0.3rem;"></i>
+                                </div>
+                                <p class="mb-0 small translate text-secondary" x-text="item.translation" style="font-size: 0.7rem"></p>
                             </div>
                             <i
-                                    class="mt-2 fas fa-rss text-primary small ms-auto"
+                                    class="mt-1 fas fa-rss text-primary small ms-auto"
                                     @click="playSound(item.lessonNumber, item.audioName[0])"
                                     style="cursor: pointer;"
                             ></i>
@@ -585,11 +601,15 @@
                     <template x-for="(item,index) in advancedSentences" :key="index">
                         <li class="list-group-item border-0 d-flex align-items-start px-0 mb-1">
                             <div class="d-flex align-items-start flex-column justify-content-center me-2">
-                                <p class="mb-1 small font-weight-bold text-dark english" x-text="item.content"></p>
-                                <p class="mb-0 small translate text-secondary" x-text="item.translation"></p>
+                                <div class="d-flex w-100">
+                                    <p class="mb-1 font-weight-bold text-dark english me-2" x-text="item.content" style="font-size: 0.9rem"></p>
+                                    <i @click="toggleFavorite(item.unitNumber, item.content, item.translation)" x-bind:class="{'far fa-bookmark': !item.favorite, 'fas fa-bookmark': item.favorite}"
+                                       class="small" style="cursor: pointer; color: #0d6efd; margin-top: 0.3rem;"></i>
+                                </div>
+                                <p class="mb-0 small translate text-secondary" x-text="item.translation" style="font-size: 0.7rem"></p>
                             </div>
                             <i
-                                    class="mt-2 fas fa-rss text-primary small ms-auto"
+                                    class="mt-1 fas fa-rss text-primary small ms-auto"
                                     @click="playSound(item.lessonNumber, item.audioName[0])"
                                     style="cursor: pointer;"
                             ></i>
@@ -1013,12 +1033,18 @@
             correctSentence: "",
             errorReason: "",
             grammarReasonTranslation: "",
+            correctUnitNumber: "",
             informalContent: "",
             formalContent: "",
             informalExplanation: "",
             formalExplanation: "",
             informalAudioPath: "",
             formalAudioPath: "",
+            informalUnitNumber: "",
+            formalUnitNumber: "",
+            informalFavorite: false,
+            formalFavorite: false,
+            correctFavorite: false,
 
             // ===== message loading ===== //
             openingLineLoading: false,
@@ -1045,22 +1071,7 @@
                 this.globalChatroomId = urlParams.get("chatroomId");
                 this.globalLink = urlParams.get("link");
 
-                $.ajax({
-                    url: "member/info",
-                    type: "get",
-                    dataType: "json",
-                    contentType: "application/json; charset=utf-8",
-                    success: function (response) {
-                        _this.member = response;
-                        _this.partner = response.partner;
-                    },
-                    error: function (xhr, status, error) {
-                        if (xhr.status === 401) {
-                            // 401 Unauthorized
-                            window.location.href = "sign-in.html";
-                        }
-                    }
-                });
+                this.memberInfo();
 
                 if (!this.closed){
                     // 可以對話
@@ -1159,6 +1170,25 @@
 
                 // closeDropdownOnOutsideClick 方法在執行時，this 的上下文可能並未正確綁定到 Alpine.js 實例，使用 .bind() 方法顯式綁定 this
                 document.addEventListener('click', this.closeDropdownOnOutsideClick.bind(this));
+            },
+
+            async memberInfo() {
+                let _this = this;
+                try {
+                    const response = await $.ajax({
+                        url: "member/info",
+                        type: "get",
+                        dataType: "json",
+                        contentType: "application/json; charset=utf-8"
+                    });
+                    _this.member = response;
+                    _this.partner = response.partner;
+                } catch (error) {
+                    if (xhr.status === 401) {
+                        window.location.href = "sign-in.html";
+                    }
+                    throw error;
+                }
             },
 
             updateMessages() {
@@ -1339,8 +1369,11 @@
                 this.correctSentence = "";
                 this.errorReason = "";
                 this.grammarReasonTranslation = "";
+                this.correctUnitNumber = "";
                 this.informalContent = "";
                 this.formalContent = "";
+                this.informalUnitNumber = "",
+                this.formalUnitNumber = "",
                 this.informalExplanation = "";
                 this.formalExplanation = "";
                 this.informalAudioPath = "";
@@ -1355,6 +1388,7 @@
                     this.correctSentence = grammar.correctSentence || "";
                     this.errorReason = grammar.errorReason || "";
                     this.grammarReasonTranslation = grammar.translation || "";
+                    this.correctUnitNumber = grammar.unitNumber || "";
                 }
                 this.grammarAccuracy = message.accuracy;
 
@@ -1362,10 +1396,13 @@
                 let advancedSentences = message.advancedSentences;
                 this.informalContent = advancedSentences[0].content || "";
                 this.formalContent = advancedSentences[1].content || "";
+                this.informalUnitNumber = advancedSentences[0].unitNumber || "";
+                this.formalUnitNumber = advancedSentences[1].unitNumber || "";
                 this.informalExplanation = advancedSentences[0].explanation || "";
                 this.formalExplanation = advancedSentences[1].explanation || "";
                 this.informalAudioPath = advancedSentences[0].audioName ? `audio/${this.globalChatroomId}/${advancedSentences[0].audioName[0]}` : "";
                 this.formalAudioPath = advancedSentences[1].audioName ? `audio/${this.globalChatroomId}/${advancedSentences[1].audioName[0]}` : "";
+                this.updateFavorite();
 
                 // 發音分析
                 if (message.conversationScore != null) {
@@ -1378,7 +1415,18 @@
                     this.highlightText(displayText, displayWords);
                 }
 
-                console.log(this.grammarOverallScore)
+            },
+
+            updateFavorite() {
+                this.basicSentences.forEach(item => {
+                    item.favorite = this.member.savedFavoriteSentences.map(sentence => sentence.unitNumber).includes(item.unitNumber);
+                });
+                this.advancedSentences.forEach(item => {
+                    item.favorite = this.member.savedFavoriteSentences.map(sentence => sentence.unitNumber).includes(item.unitNumber);
+                });
+                this.informalFavorite = this.member.savedFavoriteSentences.map(sentence => sentence.unitNumber).includes(this.informalUnitNumber);
+                this.formalFavorite = this.member.savedFavoriteSentences.map(sentence => sentence.unitNumber).includes(this.formalUnitNumber);
+                this.correctFavorite = this.member.savedFavoriteSentences.map(sentence => sentence.unitNumber).includes(this.correctUnitNumber);
             },
 
             highlightText(displayText, displayWords) {
@@ -1551,9 +1599,23 @@
                     if (tabId === 'basic-tabs-simple') {    // 基礎
                         this.basicSentences = [];
                         this.basicSentences = this.lesson.sentences.slice(0, 5);
+                        this.basicSentences.forEach(sentence => {
+                            if (this.member.savedFavoriteSentences.map(item => item.unitNumber).includes(sentence.unitNumber)) {
+                                sentence.favorite = true;
+                            } else {
+                                 sentence.favorite = false;
+                           }
+                        });
                     } else if (tabId === 'advanced-tabs-simple') {   // 進階
                         this.advancedSentences = [];
                         this.advancedSentences = this.lesson.sentences.slice(-5);
+                        this.advancedSentences.forEach(sentence => {
+                            if (this.member.savedFavoriteSentences.map(item => item.unitNumber).includes(sentence.unitNumber)) {
+                                sentence.favorite = true;
+                            } else {
+                                sentence.favorite = false;
+                            }
+                        });
                     }
                 } else {
                     console.log('Tab is already active, doing nothing.');
@@ -1581,6 +1643,13 @@
                             _this.lesson = response.data;
                             _this.courseId = _this.lesson.courseId;
                             _this.basicSentences = _this.lesson.sentences.slice(0, 5);    // 先裝填
+                            _this.basicSentences.forEach(sentence => {
+                                if (_this.member.savedFavoriteSentences.map(item => item.unitNumber).includes(sentence.unitNumber)) {
+                                    sentence.favorite = true;
+                                } else {
+                                    sentence.favorite = false;
+                                }
+                            });
 
                             _this.showSampleLessonModal();
                         }
@@ -2345,6 +2414,28 @@
                     },
                 });
             },
+
+            // ===== favorite ===== //
+            async toggleFavorite(unitNumber, content, translation) {
+                let data = { unitNumber, content, translation };
+
+                try {
+                    const response = await $.ajax({
+                        url: "member/favorite/toggle",
+                        type: "POST",
+                        dataType: "json",
+                        data: JSON.stringify(data),
+                        contentType: "application/json; charset=utf-8"
+                    });
+
+                    if (response.code === 'C000') {
+                        await this.memberInfo();
+                        this.updateFavorite();
+                    }
+                } catch (error) {
+                    console.error("Error in toggleFavorite:", error);
+                }
+          },
         }
     }
 </script>

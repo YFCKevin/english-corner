@@ -1,5 +1,8 @@
 package com.gurula.talkyo.chatroom;
 
+import com.gurula.talkyo.course.Sentence;
+import com.gurula.talkyo.member.Member;
+import com.gurula.talkyo.member.MemberRepository;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -12,10 +15,13 @@ import java.util.*;
 public class MessageServiceImpl implements MessageService{
     private final MessageRepository messageRepository;
     private final MongoTemplate mongoTemplate;
+    private final MemberRepository memberRepository;
 
-    public MessageServiceImpl(MessageRepository messageRepository, MongoTemplate mongoTemplate) {
+    public MessageServiceImpl(MessageRepository messageRepository, MongoTemplate mongoTemplate,
+                              MemberRepository memberRepository) {
         this.messageRepository = messageRepository;
         this.mongoTemplate = mongoTemplate;
+        this.memberRepository = memberRepository;
     }
 
     @Override
@@ -66,5 +72,16 @@ public class MessageServiceImpl implements MessageService{
 
         Collections.reverse(historyMsgs);
         return historyMsgs;
+    }
+
+    @Override
+    public void saveAudio(Member member, String unitNumber, String fileName) {
+        final List<Sentence> savedFavoriteSentences = member.getSavedFavoriteSentences();
+        savedFavoriteSentences.stream()
+                .filter(sentence -> unitNumber.equals(sentence.getUnitNumber()))
+                .findFirst()
+                .ifPresent(sentence -> sentence.setAudioName(Collections.singletonList(fileName)));
+
+        memberRepository.save(member);
     }
 }

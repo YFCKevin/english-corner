@@ -1,10 +1,14 @@
 package com.gurula.talkyo.member;
 
+import com.gurula.talkyo.course.Sentence;
 import com.gurula.talkyo.course.enums.Level;
 import com.gurula.talkyo.member.enums.Provider;
 import com.gurula.talkyo.member.enums.Role;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Document(collection = "member")
 public class Member {
@@ -23,6 +27,7 @@ public class Member {
     private String modificationDate;
     private String suspendDate;
     private int totalExp;
+    private List<Sentence> savedFavoriteSentences = new ArrayList<>();
 
     public String getId() {
         return id;
@@ -134,5 +139,13 @@ public class Member {
 
     public void setTotalExp(int totalExp) {
         this.totalExp = totalExp;
+    }
+
+    public List<Sentence> getSavedFavoriteSentences() {
+        return savedFavoriteSentences;
+    }
+
+    public void setSavedFavoriteSentences(List<Sentence> savedFavoriteSentences) {
+        this.savedFavoriteSentences = savedFavoriteSentences;
     }
 }

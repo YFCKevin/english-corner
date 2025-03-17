@@ -191,6 +191,7 @@ public class CourseServiceImpl implements CourseService{
                                 newSentence.setContent(sentence.getContent());
                                 newSentence.setTranslation(sentence.getTranslation());
                                 newSentence.setAudioName(filteredAudioNames);
+                                newSentence.setUnitNumber(sentence.getUnitNumber());
                                 return newSentence;
                             } else {
                                 return null;

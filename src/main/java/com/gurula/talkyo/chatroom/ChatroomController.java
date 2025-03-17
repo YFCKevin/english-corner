@@ -571,13 +571,21 @@ public class ChatroomController {
         final Member member = MemberContext.getMember();
         logger.info("[{} {}] [genAudio]", member.getName(), member.getId());
 
+        final String unitNumber = chatAudioDTO.getUnitNumber();
+
         chatAudioDTO.setPartnerId(member.getPartnerId());
+        chatAudioDTO.setMemberId(member.getId());
         ResultStatus<String> resultStatus = new ResultStatus<>();
         try {
             final String fileName = audioService.textToSpeechAndPlaySound(chatAudioDTO);
             resultStatus.setCode("C000");
             resultStatus.setMessage("成功");
-            resultStatus.setData(configProperties.getAudioShowPath() + "temp/" + fileName);
+            if (StringUtils.isBlank(unitNumber)) {
+                resultStatus.setData(configProperties.getAudioShowPath() + "temp/" + fileName);
+            } else {
+                messageService.saveAudio(member, unitNumber, fileName);
+                resultStatus.setData(configProperties.getAudioShowPath() + "favorite/" + fileName);
+            }
         } catch (Exception e) {
             resultStatus.setCode("C999");
             resultStatus.setMessage("系統錯誤");

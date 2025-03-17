@@ -5,14 +5,14 @@ import com.gurula.talkyo.azureai.utils.AudioUtil;
 import com.gurula.talkyo.chatroom.*;
 import com.gurula.talkyo.chatroom.enums.ChatroomType;
 import com.gurula.talkyo.chatroom.enums.RoomStatus;
-import com.gurula.talkyo.course.Course;
-import com.gurula.talkyo.course.CourseRepository;
-import com.gurula.talkyo.course.Lesson;
-import com.gurula.talkyo.course.LessonRepository;
+import com.gurula.talkyo.course.*;
 import com.gurula.talkyo.course.enums.LessonType;
 import com.gurula.talkyo.exception.ResultStatus;
+import com.gurula.talkyo.member.dto.FavoriteDTO;
 import com.gurula.talkyo.member.dto.LearningPlanDTO;
 import com.gurula.talkyo.member.dto.ProfileDTO;
+import com.gurula.talkyo.openai.LLMService;
+import com.gurula.talkyo.openai.dto.TranslateRequestDTO;
 import com.gurula.talkyo.properties.ConfigProperties;
 import com.gurula.talkyo.record.LearningRecord;
 import com.gurula.talkyo.record.LearningRecordRepository;
@@ -35,13 +35,13 @@ public class MemberServiceImpl implements MemberService{
     private final CourseRepository courseRepository;
     private final MessageRepository messageRepository;
     private final ConfigProperties configProperties;
-
+    private final LLMService llmService;
     public MemberServiceImpl(MemberRepository memberRepository, PartnerRepository partnerRepository,
                              ChatroomRepository chatroomRepository,
                              LearningRecordRepository learningRecordRepository,
                              LessonRepository lessonRepository,
                              CourseRepository courseRepository,
-                             MessageRepository messageRepository, ConfigProperties configProperties) {
+                             MessageRepository messageRepository, ConfigProperties configProperties, LLMService llmService) {
         this.memberRepository = memberRepository;
         this.partnerRepository = partnerRepository;
         this.chatroomRepository = chatroomRepository;
@@ -50,6 +50,7 @@ public class MemberServiceImpl implements MemberService{
         this.courseRepository = courseRepository;
         this.messageRepository = messageRepository;
         this.configProperties = configProperties;
+        this.llmService = llmService;
     }
 
     @Override
@@ -244,6 +245,45 @@ public class MemberServiceImpl implements MemberService{
         int totalExp = member.getTotalExp();
         totalExp += point;
         member.setTotalExp(totalExp);
+        memberRepository.save(member);
+    }
+
+    @Override
+    public int toggleFavoriteSentence(FavoriteDTO favoriteDTO, Member member) {
+        Sentence sentence = new Sentence();
+        sentence.setUnitNumber(favoriteDTO.getUnitNumber());
+        sentence.setContent(favoriteDTO.getContent());
+        sentence.setTranslation(favoriteDTO.getTranslation());
+        final List<Sentence> savedFavoriteSentences = member.getSavedFavoriteSentences();
+
+        boolean exists = savedFavoriteSentences.stream()
+                .anyMatch(s -> s.getUnitNumber().equals(favoriteDTO.getUnitNumber()));
+
+        if (exists) {
+            savedFavoriteSentences.removeIf(s -> s.getUnitNumber().equals(favoriteDTO.getUnitNumber()));
+        } else {
+            savedFavoriteSentences.add(sentence);
+        }
+
+        final Member savedMember = memberRepository.save(member);
+
+        if (savedMember != null) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
+    @Override
+    public void saveFavoriteTranslation(Member member, TranslateRequestDTO dto) {
+        String translation = llmService.nativeTranslation(dto.getText());
+        final List<Sentence> savedFavoriteSentences = member.getSavedFavoriteSentences();
+
+        savedFavoriteSentences.stream()
+                .filter(sentence -> dto.getUnitNumber().equals(sentence.getUnitNumber()))
+                .findFirst()
+                .ifPresent(sentence -> sentence.setTranslation(translation));
+
         memberRepository.save(member);
     }
 

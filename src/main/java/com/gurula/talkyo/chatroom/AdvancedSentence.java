@@ -1,8 +1,11 @@
 package com.gurula.talkyo.chatroom;
 
+import com.gurula.talkyo.course.utils.CourseUtil;
+
 import java.util.List;
 
 public class AdvancedSentence {
+    private String unitNumber;
     private String content;
     private List<String> audioName;
     private String explanation;
@@ -41,5 +44,17 @@ public class AdvancedSentence {
 
     public void setFormal(boolean formal) {
         this.formal = formal;
+    }
+
+    public String getUnitNumber() {
+        return unitNumber;
+    }
+
+    public void setUnitNumber(String unitNumber) {
+        this.unitNumber = unitNumber;
+    }
+
+    public void genUnitNumber() {
+        this.unitNumber = CourseUtil.genAdvancedSentenceUnitNumber();
     }
 }

@@ -1,8 +1,11 @@
 package com.gurula.talkyo.member.dto;
 
 import com.gurula.talkyo.azureai.dto.PartnerResponseDTO;
+import com.gurula.talkyo.course.Sentence;
 import com.gurula.talkyo.course.enums.Level;
-import com.gurula.talkyo.member.enums.Role;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class MemberDTO {
     private String id;
@@ -14,11 +17,12 @@ public class MemberDTO {
     private Level chosenLevel;
     private PartnerResponseDTO partner;
     private String role;
+    private List<Sentence> savedFavoriteSentences = new ArrayList<>();
 
     public MemberDTO() {
     }
 
-    public MemberDTO(String id, String userId, String pictureUrl, String coverName, String name, String email, Level chosenLevel, PartnerResponseDTO partner, String role) {
+    public MemberDTO(String id, String userId, String pictureUrl, String coverName, String name, String email, Level chosenLevel, PartnerResponseDTO partner, String role, List<Sentence> savedFavoriteSentences) {
         this.id = id;
         this.userId = userId;
         this.pictureUrl = pictureUrl;
@@ -28,6 +32,7 @@ public class MemberDTO {
         this.chosenLevel = chosenLevel;
         this.partner = partner;
         this.role = role;
+        this.savedFavoriteSentences = savedFavoriteSentences;
     }
 
     public String getId() {
@@ -64,5 +69,9 @@ public class MemberDTO {
 
     public String getRole() {
         return role;
+    }
+
+    public List<Sentence> getSavedFavoriteSentences() {
+        return savedFavoriteSentences;
     }
 }

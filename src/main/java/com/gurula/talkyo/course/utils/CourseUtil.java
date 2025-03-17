@@ -29,4 +29,30 @@ public class CourseUtil {
 
         return sb.toString();
     }
+
+    public static String genGrammarResultUnitNumber() {
+        Random random = new Random();
+        StringBuilder sb = new StringBuilder("GR");
+
+        // 產生隨機的16個數字
+        for (int i = 0; i < 16; i++) {
+            int digit = random.nextInt(10);
+            sb.append(digit);
+        }
+
+        return sb.toString();
+    }
+
+    public static String genAdvancedSentenceUnitNumber() {
+        Random random = new Random();
+        StringBuilder sb = new StringBuilder("AS");
+
+        // 產生隨機的16個數字
+        for (int i = 0; i < 16; i++) {
+            int digit = random.nextInt(10);
+            sb.append(digit);
+        }
+
+        return sb.toString();
+    }
 }

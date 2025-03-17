@@ -1,8 +1,9 @@
 package com.gurula.talkyo.chatroom;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
+import com.gurula.talkyo.course.utils.CourseUtil;
+
 public class GrammarResult {
+    private String unitNumber;
     private String errorSentence;
     private String correctSentence;
     private String translation;     // 正確語句的翻譯
@@ -38,5 +39,17 @@ public class GrammarResult {
 
     public void setErrorReason(String errorReason) {
         this.errorReason = errorReason;
+    }
+
+    public String getUnitNumber() {
+        return unitNumber;
+    }
+
+    public void setUnitNumber(String unitNumber) {
+        this.unitNumber = unitNumber;
+    }
+
+    public void genUnitNumber() {
+        this.unitNumber = CourseUtil.genGrammarResultUnitNumber();
     }
 }

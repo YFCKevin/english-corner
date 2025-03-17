@@ -8,6 +8,7 @@ import com.gurula.talkyo.properties.AzureProperties;
 import com.gurula.talkyo.properties.ConfigProperties;
 import com.microsoft.cognitiveservices.speech.*;
 import com.microsoft.cognitiveservices.speech.audio.AudioConfig;
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -158,6 +159,7 @@ public class AudioService {
 
         final String partnerId = chatAudioDTO.getPartnerId();
         final String content = chatAudioDTO.getContent();
+        final String unitNumber = chatAudioDTO.getUnitNumber();
 
         if (content == null || content.isEmpty()) {
             logger.warn("Text is empty, skipping speech synthesis.");
@@ -183,7 +185,13 @@ public class AudioService {
         // 產生時間戳檔名
         String timestamp = String.valueOf(System.currentTimeMillis());
         String fileName = timestamp + ".wav";
-        String filePath = configProperties.getAudioSavePath() + "temp/" + fileName;
+        String filePath;
+        if (StringUtils.isBlank(unitNumber)) {
+            filePath = configProperties.getAudioSavePath() + "temp/" + fileName;
+        } else {    // 會員收藏的句子音檔路徑
+            filePath = configProperties.getAudioSavePath() + "favorite/" + fileName;
+            System.out.println("filePath = " + filePath);
+        }
 
         // 存檔
         try (AudioConfig audioConfig = AudioConfig.fromWavFileOutput(filePath);

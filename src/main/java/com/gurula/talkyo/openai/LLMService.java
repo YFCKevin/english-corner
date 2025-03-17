@@ -11,6 +11,7 @@ import java.util.List;
 
 public interface LLMService {
     String translate(String text);
+    String nativeTranslation(String text);
 
     String translateSentence(String sentencesJson) throws JsonProcessingException;
 

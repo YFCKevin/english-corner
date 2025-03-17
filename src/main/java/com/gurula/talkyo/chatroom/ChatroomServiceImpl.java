@@ -654,6 +654,7 @@ public class ChatroomServiceImpl implements ChatroomService {
             GrammarResult grammarResult = new GrammarResult();
 
             if (StringUtils.isNotBlank(grammarResponseDTO.getErrorReason())) {  // 文法有錯誤
+                grammarResult.genUnitNumber();
                 grammarResult.setCorrectSentence(grammarResponseDTO.getCorrectSentence());
                 grammarResult.setErrorReason(grammarResponseDTO.getErrorReason());
                 grammarResult.setTranslation(grammarResponseDTO.getTranslation());
@@ -710,6 +711,7 @@ public class ChatroomServiceImpl implements ChatroomService {
             List<AdvancedSentence> sentences = new ArrayList<>();
             advanceSentencesResponseDTOS.forEach(s -> {
                 AdvancedSentence advancedSentence = new AdvancedSentence();
+                advancedSentence.genUnitNumber();
                 advancedSentence.setExplanation(s.getExplanation());
                 advancedSentence.setContent(s.getSentence());
                 advancedSentence.setFormal(s.isFormal());
