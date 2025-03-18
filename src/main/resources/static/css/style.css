@@ -359,29 +359,42 @@ body {
 
 
 .nav-wrapper {
-    background-color: #f2f2f2; /* Background color of the entire bar */
-    border-radius: 50px; /* Rounded corners */
-    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1); /* Optional: Subtle shadow for depth */
+  background-color: #f2f2f2; /* Background color of the entire bar */
+  border-radius: 50px; /* Rounded corners */
+  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1); /* Optional: Subtle shadow for depth */
 }
 
 .nav-pills .nav-link {
-    color: #666; /* Default text color */
-    border-radius: 50px; /* Rounded corners for the tabs */
-    transition: background-color 0.3s ease, color 0.3s ease; /* Smooth transition for hover/active states */
+  color: #666; /* Default text color */
+  border-radius: 50px; /* Rounded corners for the tabs */
+  transition: background-color 0.3s ease, color 0.3s ease; /* Smooth transition for hover/active states */
 }
 
 .nav-pills .nav-link.active {
-    background-color: #fff !important; /* Background color for the active tab */
-    color: #333 !important; /* Text color for the active tab */
-    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2); /* Slightly stronger shadow for active tab */
+  background-color: #fff !important; /* Background color for the active tab */
+  color: #333 !important; /* Text color for the active tab */
+  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2); /* Slightly stronger shadow for active tab */
 }
 
 .nav-pills .nav-link:hover {
-    background-color: rgba(0, 0, 0, 0.05); /* Light background color on hover */
-    color: #444; /* Darker text color on hover */
+  background-color: rgba(0, 0, 0, 0.05); /* Light background color on hover */
+  color: #444; /* Darker text color on hover */
+}
+
+.loading-spinner-area {
+  min-height: 0px;
 }
 
 .loading-spinner {
+  width: 25px;
+  height: 25px;
+  border: 5px solid #f3f3f3;
+  border-top: 5px solid #3498db;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.advanced-check-loading-spinner {
   width: 25px;
   height: 25px;
   border: 5px solid #f3f3f3;

@@ -280,7 +280,7 @@
                                             </div>
                                         </div>
                                         <div class="position-absolute top-0 end-0" @click="playSound(item.shortName)">
-                                            <i class="fas fa-rss small" style="color: #0d6efd"></i>
+                                            <i class="fas fa-rss small mt-4 me-3" style="color: #0d6efd"></i>
                                         </div>
                                     </div>
                                     <div class="d-flex flex-column align-items-start mt-3 ps-1" x-show="selectedPartnerId === item.id">
@@ -318,8 +318,8 @@
                 </div>
             </div>
         </div>
-        <div x-show="selectedPartnerId" class="position-fixed bottom-0 start-50 translate-middle-x mb-3">
-            <button class="btn btn-primary" @click="pickUpPartner()">繼續</button>
+        <div x-show="selectedPartnerId" class="position-fixed bottom-0 translate-middle-x mb-3" style="right: -10px;">
+            <button class="btn btn-primary fs-6" @click="pickUpPartner()" style="border-radius: 10px 50px 50px 10px;">繼續<i class="ms-2 fas fa-angle-double-right"></i></button>
         </div>
 
         <footer class="footer pt-3  ">
@@ -356,11 +356,11 @@
         </footer>
     </div>
 </main>
-<div class="fixed-plugin">
-    <a class="fixed-plugin-button text-dark position-fixed px-3 py-3 d-flex justify-content-center align-items-center">
-        <img src="img/robot.png" alt="robot" width="40" height="40">
-    </a>
-</div>
+<!--<div class="fixed-plugin">-->
+<!--    <a class="fixed-plugin-button text-dark position-fixed px-3 py-3 d-flex justify-content-center align-items-center">-->
+<!--        <img src="img/robot.png" alt="robot" width="40" height="40">-->
+<!--    </a>-->
+<!--</div>-->
 <!--   Core JS Files   -->
 <script src="js/popper.min.js"></script>
 <script src="js/bootstrap.min.js"></script>

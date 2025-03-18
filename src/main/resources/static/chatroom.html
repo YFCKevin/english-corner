@@ -98,12 +98,6 @@
                                     <input class="form-check-input ms-auto mx-3 dropdown-checkbox" type="checkbox" id="showTipBtn" x-model="showTipBtn" @change="saveAndChangeDropdownSettings">
                                 </div>
                             </li>
-                            <li class="list-group-item border-0 px-0">
-                                <div class="form-check form-switch ps-0 d-flex align-items-center justify-content-between">
-                                    <label class="form-check-label text-body ms-3 mx-5 py-2 text-truncate w-80 mb-0 small" for="autoAudio">自動錄音</label>
-                                    <input class="form-check-input ms-auto mx-3 dropdown-checkbox" type="checkbox" id="autoAudio" x-model="autoRecording" @change="saveAndChangeDropdownSettings">
-                                </div>
-                            </li>
                         </ul>
                     </div>
                 </div>
@@ -162,9 +156,6 @@
                                             </div>
                                             <div class="rounded-circle icon-button me-3" @click.stop="copy(index)">
                                                 <i style="font-size: 0.8rem" class="fas fa-clone text-white"></i>
-                                            </div>
-                                            <div class="rounded-circle icon-button me-3">
-                                                <i style="font-size: 0.8rem" class="fas fa-file-alt text-white"></i>
                                             </div>
                                         </div>
                                     </div>
@@ -381,8 +372,8 @@
     </div>
 
     <div class="advanced-check-modal" id="advancedCheckModal">
-        <div class="d-flex align-items-center justify-content-center" style="height: 200px;">
-            <div class="loading-spinner-area loading-spinner mt-5 mb-5" style="display: none"></div>
+        <div class="d-flex align-items-center justify-content-center loading-spinner-area" style="display: none">
+            <div class="advanced-check-loading-spinner mt-5 mb-5" style="display: none"></div>
         </div>
         <div class="advanced-check-area">
             <div class="nav-wrapper position-relative end-0">
@@ -406,7 +397,7 @@
             </div>
             <hr>
 
-            <div class="tab-content mt-3">
+            <div class="tab-content mt-3 grammar-tab-content">
                 <div class="tab-pane fade show active" id="grammar-tabs-simple" role="tabpanel" aria-labelledby="grammar-tab">
                     <template x-if="!grammarAccuracy">
                         <div>
@@ -420,13 +411,14 @@
                                 <span x-text="correctSentence"></span>
                                 <i @click="toggleFavorite(correctUnitNumber, correctSentence, '')"
                                    x-bind:class="{'far fa-bookmark': !correctFavorite, 'fas fa-bookmark': correctFavorite}"
-                                   class="far fa-bookmark small"
+                                   class="far fa-bookmark small ms-2"
                                    style="cursor: pointer; color: #0d6efd; margin-top: 0.3rem;"></i>
                             </div>
                             <div class="grammar-text w-100 d-flex flex-column" style="color: black;">
                                 <span class="fw-bold small">錯誤原因</span>
-                                <span x-text="errorReason" class="small"></span>
-                                <span x-text="grammarReasonTranslation" class="small"></span>
+                                <span x-text="errorReason" style="font-size: 0.8rem;"></span>
+                                <span class="fw-bold small mt-2">翻譯</span>
+                                <span x-text="grammarReasonTranslation" style="font-size: 0.8rem;"></span>
                             </div>
                         </div>
                     </template>
@@ -440,7 +432,7 @@
 
                 <div class="tab-pane fade" id="sentence-tabs-simple" role="tabpanel" aria-labelledby="sentence-tab">
                     <!-- 精進 Tab 的內容 -->
-                    <span class="text-center small" style="color: var(--bs-purple);">非正式</span>
+                    <span class="text-center" style="color: var(--bs-purple);">非正式</span>
                     <div class="sentence w-100 mt-2" style="color: black; background-color: rgba(173, 216, 230, 0.1);">
                         <div class="d-flex align-items-start">
                             <div class="w-100">
@@ -456,11 +448,12 @@
                         </div>
                     </div>
                     <div class="sentence-text w-100 d-flex flex-column mb-3" style="color: black;">
+                        <span class="fw-bold small">解釋</span>
                         <span x-text="informalExplanation" class="small"></span>
                     </div>
                     <hr>
 
-                    <span class="text-center small" style="color: var(--bs-purple);">正式</span>
+                    <span class="text-center" style="color: var(--bs-purple);">正式</span>
                     <div class="sentence w-100 mt-2" style="color: black; background-color: rgba(173, 216, 230, 0.1);">
                         <div class="d-flex align-items-start">
                             <div class="w-100">
@@ -476,6 +469,7 @@
                         </div>
                     </div>
                     <div class="sentence-text w-100 d-flex flex-column" style="color: black;">
+                        <span class="fw-bold small">解釋</span>
                         <span x-text="formalExplanation" class="small"></span>
                     </div>
 
@@ -1023,7 +1017,6 @@
             blurText: true,
             showTranslation: false,
             showTipBtn: true,
-            autoRecording: false,
 
             // ===== AdvancedCheck ===== //
             pronunciationText: "",
@@ -1067,7 +1060,7 @@
                 this.action = urlParams.get("action");
                 this.unitNumber = urlParams.get("unitNumber");
                 this.lessonId = urlParams.get("lessonId");
-                this.closed = urlParams.get("closed");
+                this.closed = urlParams.get("closed") != null ? urlParams.get("closed") : false;
                 this.globalChatroomId = urlParams.get("chatroomId");
                 this.globalLink = urlParams.get("link");
 
@@ -1159,13 +1152,11 @@
                     blurText: false,
                     showTranslation: false,
                     showTipBtn: true,
-                    autoRecording: false
                 };
                 if (dropdownSetting) {
                     this.blurText = dropdownSetting.blurText;
                     this.showTranslation = dropdownSetting.showTranslation;
                     this.showTipBtn = dropdownSetting.showTipBtn;
-                    this.autoRecording = dropdownSetting.autoRecording;
                 }
 
                 // closeDropdownOnOutsideClick 方法在執行時，this 的上下文可能並未正確綁定到 Alpine.js 實例，使用 .bind() 方法顯式綁定 this
@@ -1334,6 +1325,8 @@
                     beforeSend: function () {
                         $(".advanced-check-area").hide();
                         $(".loading-spinner-area").show();
+                        $('.loading-spinner-area').css('min-height', '100');
+                        $(".advanced-check-loading-spinner").show();
                     },
                     success: function (response) {
                         if (response.code == "C000"){
@@ -1350,6 +1343,8 @@
                     complete: function () {
                         console.log("請求完成");
                         $(".loading-spinner-area").hide();
+                        $('.loading-spinner-area').css('min-height', '0');
+                        $(".advanced-check-loading-spinner").hide();
                         $(".advanced-check-area").show();
                     }
                 });
@@ -1519,10 +1514,14 @@
             // ======== Tips 相關 ======== //
             genTip() {
                 if (this.isPartnerTalking() || this.isHumanTalking()) return;
+
+                // 清空文字區
+                this.tipContent = "";
+
                 // 顯示視窗和loading圖示
                 this.isTipActive = true;
                 $(".message-footer").addClass("move-up");
-                $(".loading-spinner").removeClass("hidden").css("display", "block");
+                $(".loading-spinner").show();
 
                 let _this = this;
                 let messageId = this.messages[this.messages.length - 1].value.id;
@@ -1533,7 +1532,7 @@
                     contentType: "application/json; charset=utf-8",
                     success: function (response) {
                         if (response.code == "C000") {
-                            $(".loading-spinner").addClass("hidden");
+                            $(".loading-spinner").hide();
                             let tip = response.data;
                             _this.tipContent = tip.content;
                             _this.tipTranslation = tip.translation;
@@ -1541,7 +1540,7 @@
                     },
                 });
             },
-            renewTip () {
+            renewTip() {
                 this.genTip();
             },
             genAudioForTip() {
@@ -1564,7 +1563,7 @@
             sendTip () {
                 this.isTipActive  = false;
                 $(".message-footer").removeClass("move-up");
-                $(".loading-spinner").addClass("hidden");
+                $(".loading-spinner").hide();
                 if (this.stompClient) {
 
                     if (this.tipContent === '') {
@@ -1588,7 +1587,7 @@
             },
             cancelTip() {
                 $(".message-footer").removeClass("move-up");
-                $(".loading-spinner").addClass("hidden");
+                $(".loading-spinner").hide();
                 this.isTipActive  = false;
             },
 
@@ -1693,6 +1692,10 @@
 
             // ===== translation ===== //
             translation() {
+                $(".translation-button").css({
+                    "pointer-events": "none",
+                    "opacity": "0.5"
+                });
                 let text = $(".translation-input").val();
                 if (text == '') {
                     alert('請輸入文字！');
@@ -1710,6 +1713,10 @@
                         if (response.code == "C000") {
                             $(".translate-response").text(response.data);
                             $("#translation-response-div").removeClass('d-none');
+                            $(".translation-button").css({
+                                "pointer-events": "auto",
+                                "opacity": "1"
+                            });
                         }
                     },
                 });
@@ -1817,7 +1824,6 @@
                     blurText: this.blurText,
                     showTranslation: this.showTranslation,
                     showTipBtn: this.showTipBtn,
-                    autoRecording: this.autoRecording
                 };
                 localStorage.setItem("dropdownSettings", JSON.stringify(settings));
             },
