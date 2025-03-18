@@ -27,7 +27,7 @@
   
 </p>
 
-[TalkYo 登入首頁（僅限手機版）](https://gurula.cc/talkyo/sign-in.html)<br><br>
+[TalkYo 登入首頁（僅限手機版）](https://gurula.cc/talkyo/index.html)<br><br>
 
 ## 功能：
   1. 14位英語 AI 導師供你學習。
@@ -44,7 +44,6 @@
   - **即時通訊：** WebSocket
   - **雲端部署：** Google Cloud
   - **第三方 API：** openAI (gpt-4o-mini), Gemini-1.5-Flash, Microsoft Azure Audio Service
-  - 
 <p align="center">
   <img src="https://github.com/YFCKevin/english-corner/blob/main/architecture-diagram.png" width="100%" alt="架構圖">
 </p>
