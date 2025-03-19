@@ -90,6 +90,7 @@ public class SnapshotServiceImpl implements SnapshotService{
     @Override
     public SnapshotForm getInfoByLink(String link) {
         final Optional<SnapshotForm> opt = snapshotRepository.findByLink(link);
+        System.out.println("test::: " + opt.isPresent());
         return opt.orElseGet(SnapshotForm::new);
     }
 

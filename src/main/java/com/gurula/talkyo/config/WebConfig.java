@@ -39,8 +39,10 @@ public class WebConfig implements WebMvcConfigurer {
                         "/practice-tools.html",
                         "/profile.html",
                         "/role-play.html",
+                        "/review.html",
                         "/chatroom.html/**",
-                        "/callback"
+                        "/callback",
+                        "/share/**"
                 )
                 .excludePathPatterns("/css/**", "/js/**", "/img/**", "/images/**", "/webfonts/**", "/fonts/**", "/file/**", "/image/**", "/audio/**");
     }

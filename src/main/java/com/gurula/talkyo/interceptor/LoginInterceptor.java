@@ -35,10 +35,16 @@ public class LoginInterceptor implements HandlerInterceptor{
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handle) {
         String requestURI = request.getRequestURI();
         String method = request.getMethod();
-//        logger.info("Request URL: " + requestURI + ", Method: " + method);
+        logger.info("Request URL: " + requestURI + ", Method: " + method);
 
         String internalHeader = request.getHeader("Internal-Request");
         if ("true".equals(internalHeader)) {
+            return true;
+        }
+
+        // 開啟公開連結不會被攔截
+        if (requestURI.startsWith("/talkyo/snapshot/link/")) {
+            System.out.println("開啟公開連結不會被攔截");
             return true;
         }
 

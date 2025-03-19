@@ -755,14 +755,9 @@ public class ChatroomController {
     @GetMapping("/share/{link}")
     public ResponseEntity<Void> redirectToChatroom(@PathVariable String link) {
         logger.info("[open share link]");
-        final SnapshotForm snapshotForm = snapshotService.getInfoByLink(link);
-        if (snapshotForm != null) {
-            return ResponseEntity.status(HttpStatus.FOUND)
-                    .location(URI.create(configProperties.getGlobalDomain() + "chatroom.html?closed=true&link=" + link))
-                    .build();
-        } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
+        return ResponseEntity.status(HttpStatus.FOUND)
+                .location(URI.create(configProperties.getGlobalDomain() + "chatroom.html?closed=true&link=" + link))
+                .build();
     }
 
 

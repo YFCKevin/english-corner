@@ -134,18 +134,21 @@ public class SnapshotController {
 
     @GetMapping("/link/{link}")
     public ResponseEntity<?> link(@PathVariable String link) {
-        final Member member = MemberContext.getMember();
-        logger.info("[{} {}] [link]", member.getName(), member.getId());
-
-        SnapshotForm snapshotForm = snapshotService.getInfoByLink(link);
-        List<Map<Integer, SnapshotDetail>> messages = snapshotForm.getSnapshotDetails().stream()
-                .map(detail -> Collections.singletonMap(1, detail))
-                .toList();
 
         ResultStatus<List<Map<Integer, SnapshotDetail>>> resultStatus = new ResultStatus<>();
-        resultStatus.setCode("C000");
-        resultStatus.setMessage("成功");
-        resultStatus.setData(messages);
+
+        SnapshotForm snapshotForm = snapshotService.getInfoByLink(link);
+        if (StringUtils.isNotBlank(snapshotForm.getId())) {
+            List<Map<Integer, SnapshotDetail>> messages = snapshotForm.getSnapshotDetails().stream()
+                    .map(detail -> Collections.singletonMap(1, detail))
+                    .toList();
+            resultStatus.setCode("C000");
+            resultStatus.setMessage("成功");
+            resultStatus.setData(messages);
+        } else {    // 公開連結已被刪除
+            resultStatus.setCode("C004");
+            resultStatus.setMessage("公開連結已被刪除");
+        }
         return ResponseEntity.ok(resultStatus);
     }
 }
