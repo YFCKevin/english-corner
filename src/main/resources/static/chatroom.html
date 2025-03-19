@@ -3,6 +3,10 @@
 
 <head>
     <meta charset="utf-8"/>
+    <meta property="og:title" content="TalkYo">
+    <meta property="og:description" content="TalkYo - 英文口說智慧學習，讓你更有自信開口說英文！">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="img/favicon.png">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link rel="apple-touch-icon" sizes="76x76" href="img/favicon.png">
     <link rel="icon" type="image/png" href="img/favicon.png">
@@ -404,11 +408,11 @@
                             <!-- 文法 Tab 的內容 -->
                             <div class="grammar w-100" style="color: black; background-color: rgba(255, 192, 203, 0.1);">
                                 <i class="fas fa-times-circle me-2 small text-danger"></i>
-                                <span x-text="errorSentence"></span>
+                                <span x-text="errorSentence" style="font-size: 0.9rem"></span>
                             </div>
                             <div class="grammar w-100" style="color: black; background-color: rgba(144, 238, 144, 0.1);">
                                 <i class="fas fa-check-circle me-2 small" style="color: var(--bs-teal);"></i>
-                                <span x-text="correctSentence"></span>
+                                <span x-text="correctSentence" style="font-size: 0.9rem"></span>
                                 <i @click="toggleFavorite(correctUnitNumber, correctSentence, '')"
                                    x-bind:class="{'far fa-bookmark': !correctFavorite, 'fas fa-bookmark': correctFavorite}"
                                    class="far fa-bookmark small ms-2"
@@ -874,6 +878,20 @@
     </div>
 </div>
 
+<!--errorModal-->
+<div class="modal fade" id="errorModal" tabindex="-1" role="dialog" aria-labelledby="errorModal" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Oops! 連結已失效...</h5>
+            </div>
+            <div class="modal-body d-flex align-items-center justify-content-center">
+                <a href="index.html" type="button" class="btn btn-outline-dark rounded-pill px-3 btn-sm">回首頁</a>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="js/sockjs.min.js"></script>
 <script src="js/stomp.min.js"></script>
 <script src="js/bootstrap.bundle.min.js"></script>
@@ -1064,7 +1082,9 @@
                 this.globalChatroomId = urlParams.get("chatroomId");
                 this.globalLink = urlParams.get("link");
 
-                this.memberInfo();
+                if (!this.globalLink) {
+                    this.memberInfo();
+                }
 
                 if (!this.closed){
                     // 可以對話
@@ -1136,6 +1156,8 @@
                                     });
                                     _this.updateMessages();
                                     $(".chat-messages").css("height", "90vh");
+                                } else if (response.code == "C004") {   // 公開連結已被刪除
+                                    $("#errorModal").modal('show');
                                 }
                             },
                         });
@@ -1174,7 +1196,7 @@
                     });
                     _this.member = response;
                     _this.partner = response.partner;
-                } catch (error) {
+                } catch (xhr) {
                     if (xhr.status === 401) {
                         window.location.href = "sign-in.html";
                     }
@@ -1388,19 +1410,22 @@
                 this.grammarAccuracy = message.accuracy;
 
                 // 精進
-                let advancedSentences = message.advancedSentences;
-                this.informalContent = advancedSentences[0].content || "";
-                this.formalContent = advancedSentences[1].content || "";
-                this.informalUnitNumber = advancedSentences[0].unitNumber || "";
-                this.formalUnitNumber = advancedSentences[1].unitNumber || "";
-                this.informalExplanation = advancedSentences[0].explanation || "";
-                this.formalExplanation = advancedSentences[1].explanation || "";
-                this.informalAudioPath = advancedSentences[0].audioName ? `audio/${this.globalChatroomId}/${advancedSentences[0].audioName[0]}` : "";
-                this.formalAudioPath = advancedSentences[1].audioName ? `audio/${this.globalChatroomId}/${advancedSentences[1].audioName[0]}` : "";
+                if (message.advancedSentences != null || message.advancedSentences != undefined) {
+                    let advancedSentences = message.advancedSentences;
+                    this.informalContent = advancedSentences[0].content || "";
+                    this.formalContent = advancedSentences[1].content || "";
+                    this.informalUnitNumber = advancedSentences[0].unitNumber || "";
+                    this.formalUnitNumber = advancedSentences[1].unitNumber || "";
+                    this.informalExplanation = advancedSentences[0].explanation || "";
+                    this.formalExplanation = advancedSentences[1].explanation || "";
+                    this.informalAudioPath = advancedSentences[0].audioName ? `audio/${this.globalChatroomId}/${advancedSentences[0].audioName[0]}` : "";
+                    this.formalAudioPath = advancedSentences[1].audioName ? `audio/${this.globalChatroomId}/${advancedSentences[1].audioName[0]}` : "";
+                }
+
                 this.updateFavorite();
 
                 // 發音分析
-                if (message.conversationScore != null) {
+                if (message.conversationScore != null || message.conversationScore != undefined) {
                     let displayText = message.conversationScore.displayText;
                     let displayWords = message.conversationScore.displayWords;
                     this.grammarOverallScore = Math.floor((message.conversationScore.fluency +
@@ -1457,7 +1482,11 @@
                 if (audioName) {
                     const audioUrl = "audio/" + this.globalChatroomId + "/" + audioName;
                     const audio = new Audio(audioUrl);
-                    audio.play();
+                    audio.play().then(() => {
+                        setTimeout(() => {
+                            audio.muted = false;
+                        }, 10);
+                    }).catch(error => console.error("播放音訊失敗"));
                 }
             },
 
@@ -1466,7 +1495,11 @@
 
                 if (audioUrl) {
                     const audio = new Audio(audioUrl);
-                    audio.play();
+                    audio.play().then(() => {
+                        setTimeout(() => {
+                            audio.muted = false;
+                        }, 10);
+                    }).catch(error => console.error("播放音訊失敗"));
 
                     // (可選) 添加播放結束事件監聽器
                     audio.addEventListener('ended', function() {
@@ -1486,7 +1519,7 @@
                         setTimeout(() => {
                             audio.muted = false;
                         }, 10);
-                    }).catch(error => console.log("播放音訊失敗"));
+                    }).catch(error => console.error("播放音訊失敗"));
                 }
             },
 
@@ -1555,7 +1588,11 @@
                     success: function (response) {
                         if (response.code == "C000") {
                             const audio = new Audio(response.data);
-                            audio.play();
+                            audio.play().then(() => {
+                                setTimeout(() => {
+                                    audio.muted = false;
+                                }, 10);
+                            }).catch(error => console.error("播放音訊失敗"));
                         }
                     },
                 });
@@ -1624,7 +1661,11 @@
                 let audioFile = "audio/" + this.lesson.courseTopic + "/" + this.lesson.lessonNumber + "/" + audioName;
                 if (audioName) {
                     const audio = new Audio(audioFile);
-                    audio.play();
+                    audio.play().then(() => {
+                        setTimeout(() => {
+                            audio.muted = false;
+                        }, 10);
+                    }).catch(error => console.error("播放音訊失敗"));
                 } else {
                     console.warn("No audio file specified.");
                 }
@@ -1733,7 +1774,11 @@
                     success: function (response) {
                         if (response.code == "C000") {
                             const audio = new Audio(response.data);
-                            audio.play();
+                            audio.play().then(() => {
+                                setTimeout(() => {
+                                    audio.muted = false;
+                                }, 10);
+                            }).catch(error => console.error("播放音訊失敗"));
                         }
                     },
                 });

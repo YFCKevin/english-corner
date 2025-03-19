@@ -599,11 +599,10 @@
                     });
                     _this.member = response;
                     _this.partner = response.partner;
-                } catch (error) {
+                } catch (xhr) {
                     if (xhr.status === 401) {
                         window.location.href = "sign-in.html";
                     }
-                    throw error;
                 }
             },
 

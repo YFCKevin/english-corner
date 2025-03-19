@@ -372,7 +372,7 @@
                     _this.member = response;
                     console.log(response.savedFavoriteSentences)
                     _this.sentenceList = response.savedFavoriteSentences;
-                } catch (error) {
+                } catch (xhr) {
                     if (xhr.status === 401) {
                         window.location.href = "sign-in.html";
                     }
