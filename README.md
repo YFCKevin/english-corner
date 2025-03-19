@@ -6,25 +6,25 @@
  - [技術](#技術)
  - [致謝](#致謝)
 
-<p align="center">
-  
-</p>
-
+<p>選擇 AI 導師：</p>
+<p align="left">
+  <img src="https://github.com/YFCKevin/english-corner/blob/main/src/main/resources/static/img/screenshots/partner.gif" height="500px" alt="描述">
+</p><br>
 <p>課程學習：</p>
-<p align="center">
-  
+<p align="left">
+  <img src="https://github.com/YFCKevin/english-corner/blob/main/src/main/resources/static/img/screenshots/project.gif" height="615px" alt="描述">
 </p><br>
 <p>情境練習：</p>
-<p align="center">
-  
+<p align="left">
+  <img src="https://github.com/YFCKevin/english-corner/blob/main/src/main/resources/static/img/screenshots/situation.gif" height="615px" alt="描述">
 </p><br>
-<p>自由對話：</p>
-<p align="center">
-
+<p>我的收藏句子：</p>
+<p align="left">
+  <img src="https://github.com/YFCKevin/english-corner/blob/main/src/main/resources/static/img/screenshots/favorite.gif" height="500px" alt="描述">
 </p><br>
 <p>個人檔案：</p>
-<p align="center">
-  
+<p align="left">
+  <img src="https://github.com/YFCKevin/english-corner/blob/main/src/main/resources/static/img/screenshots/profile.gif" height="500px" alt="描述">
 </p>
 
 [TalkYo 登入首頁（僅限手機版）](https://gurula.cc/talkyo/index.html)<br><br>
