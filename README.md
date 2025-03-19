@@ -26,7 +26,7 @@
 <p align="left">
   <img src="https://github.com/YFCKevin/english-corner/blob/main/src/main/resources/static/img/screenshots/profile.gif" height="500px" alt="描述">
 </p><br>
-<p>進階功能（對產生對話標題、標題修改刪除、分享公開連結）：</p>
+<p>進階功能（產生對話標題、標題修改刪除、分享公開連結）：</p>
 <p align="left">
   <img src="https://github.com/YFCKevin/english-corner/blob/main/src/main/resources/static/img/screenshots/advanced_features.gif" height="615px" alt="描述">
 </p><br>
@@ -41,6 +41,7 @@
   4. 能解析文字、語音以及圖片。
   5. 逐句練習發音，AI 導師說給你聽。
   6. 視覺化追蹤學習進度。
+  7. 分享與 AI 導師的對話紀錄給好友。
 ## 技術：
   - **後端：** Spring Boot
   - **前端：** Alpine.js
