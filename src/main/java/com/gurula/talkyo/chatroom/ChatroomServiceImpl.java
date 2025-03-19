@@ -544,7 +544,7 @@ public class ChatroomServiceImpl implements ChatroomService {
         final Message message = messageRepository.findById(messageId).get();
 
         switch (chatroomType) {
-            case PROJECT -> {
+            case PROJECT, SITUATION -> {
                 System.out.println("執行 [文法校正、取得進階語句、夥伴回應、發音分析] 攜帶的參數：" + chatRequestDTO);
 
                 chatRequestDTO.setChatroomId(message.getChatroomId());
@@ -572,26 +572,26 @@ public class ChatroomServiceImpl implements ChatroomService {
                             return resultStatus;
                         });
             }
-            case SITUATION -> {
-                System.out.println("執行 [文法校正、夥伴回應] 攜帶的參數：" + chatRequestDTO);
-
-                CompletableFuture<Void> grammarFuture = new CompletableFuture<>();
-
-                chattingFutures.put(messageId, new ArrayList<>(List.of(grammarFuture)));
-
-                rabbitTemplate.convertAndSend(
-                        RabbitMQConfig.TALKYO_SITUATION_FANOUT_EXCHANGE,
-                        "",
-                        chatRequestDTO
-                );
-
-                // 等待所有 Queue 完成
-                return CompletableFuture.allOf(grammarFuture).thenApply(v -> {
-                    ResultStatus<Void> resultStatus = new ResultStatus<>();
-                    resultStatus.setCode("C000");
-                    return resultStatus;
-                });
-            }
+//            case SITUATION -> {
+//                System.out.println("執行 [文法校正、夥伴回應] 攜帶的參數：" + chatRequestDTO);
+//
+//                CompletableFuture<Void> grammarFuture = new CompletableFuture<>();
+//
+//                chattingFutures.put(messageId, new ArrayList<>(List.of(grammarFuture)));
+//
+//                rabbitTemplate.convertAndSend(
+//                        RabbitMQConfig.TALKYO_SITUATION_FANOUT_EXCHANGE,
+//                        "",
+//                        chatRequestDTO
+//                );
+//
+//                // 等待所有 Queue 完成
+//                return CompletableFuture.allOf(grammarFuture).thenApply(v -> {
+//                    ResultStatus<Void> resultStatus = new ResultStatus<>();
+//                    resultStatus.setCode("C000");
+//                    return resultStatus;
+//                });
+//            }
 //            case FREE_TALK -> {
 //                message.setBranch(branch);
 //                message.setPreviewMessageId(previewMessageId);
@@ -670,9 +670,7 @@ public class ChatroomServiceImpl implements ChatroomService {
 
         if (chattingFutures.containsKey(messageId)) {
             List<CompletableFuture<Void>> futures = chattingFutures.get(messageId);
-            if (futures.size() >= 3) {
-                futures.get(0).complete(null);
-            }
+            futures.get(0).complete(null);
         }
     }
 
@@ -730,9 +728,7 @@ public class ChatroomServiceImpl implements ChatroomService {
 
         if (chattingFutures.containsKey(chatRequestDTO.getMessageId())) {
             List<CompletableFuture<Void>> futures = chattingFutures.get(chatRequestDTO.getMessageId());
-            if (futures.size() >= 3) {
-                futures.get(1).complete(null);
-            }
+            futures.get(1).complete(null);
         }
     }
 
