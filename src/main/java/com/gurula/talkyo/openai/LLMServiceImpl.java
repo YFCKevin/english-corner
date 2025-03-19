@@ -584,13 +584,28 @@ public class LLMServiceImpl implements LLMService{
     private String grammarCheckPayload(String currentMsgContent, String previewMsgContent) {
         String systemMessageContent = "You are a helpful assistant that helps correct grammar and provides reasons for the errors.";
         String userMessageContent = String.format(
-                "Please correct the grammar of the following sentence, translate the corrected sentence into Traditional Chinese, and explain the reason for the mistake in Traditional Chinese. Consider the context provided by the previous sentence. Return the result in the following format: \n" +
-                        "{\"correctSentence\": \"<corrected sentence>\", \"translation\": \"<corrected sentence in Traditional Chinese>\", \"errorReason\": \"<explanation of the error in Traditional Chinese>\"}\n" +
-                        "If the input sentence is already grammatically correct, return the result in the following format: \n" +
-                        "{\"correctSentence\": \"<original sentence>\", \"translation\": \"<original sentence in Traditional Chinese>\", \"errorReason\": \"\"}\n" +
-                        "Do not modify the original sentence if it is correct. Always ensure that the errorReason is an empty string if there is no error.\n\n" +
+                "Please check the grammatical correctness of the following sentence, considering the context provided by the previous sentence. " +
+                        "If there is any mistake, even a minor one, correct it while preserving the original meaning. Then, translate the corrected sentence into Traditional Chinese " +
+                        "and explain the grammatical mistake in Traditional Chinese. Ensure the explanation is precise and specifies the incorrect part and the reason. " +
+                        "Also, check if the sentence is natural and fluent, and improve it if necessary. " +
+                        "Return the result strictly in the following JSON format:\n\n" +
+                        "{\n" +
+                        "  \"correctSentence\": \"<corrected sentence>\",\n" +
+                        "  \"translation\": \"<corrected sentence in Traditional Chinese>\",\n" +
+                        "  \"errorReason\": \"<explanation of the error in Traditional Chinese>\"\n" +
+                        "}\n\n" +
+                        "If the input sentence is already grammatically correct, do not change it. However, only consider a sentence correct if it is completely free of grammar, punctuation, or phrasing issues. " +
+                        "If there is even a slight mistake, correct it. Return the following JSON format:\n\n" +
+                        "{\n" +
+                        "  \"correctSentence\": \"<original sentence>\",\n" +
+                        "  \"translation\": \"<original sentence in Traditional Chinese>\",\n" +
+                        "  \"errorReason\": \"\"\n" +
+                        "}\n\n" +
+                        "Highlight the incorrect parts in the explanation, and ensure the reasoning is clear and specific. " +
+                        "Return only a valid JSON object with no additional text.\n\n" +
                         "Previous sentence: %s\n" +
-                        "Original sentence: %s", currentMsgContent, previewMsgContent
+                        "Original sentence: %s",
+                previewMsgContent, currentMsgContent
         );
 
         MsgDTO systemMessage = new MsgDTO(Role.system, systemMessageContent);
