@@ -17,11 +17,16 @@
     <link rel="stylesheet" href="css/style.css">
     <link href="css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet"/>
+    <script src="js/deviceType.js"></script>
 </head>
 <body x-data="loadData()" x-init="init()" @click.outside="clickOutsideEditIcon">
 <div class="container-fluid h-100">
     <div class="row h-100 d-flex justify-content-center align-items-center">
-        <div :class="{ 'closed-margin-top': closed }" class="col-md-8 col-lg-9 chat-area p-0">
+        <div   :class="{
+                    'closed-margin-top': closed && !(browserType === 'Chrome' || browserType === 'Safari'),
+                    'closed-margin-top-chrome': closed && browserType === 'Chrome',
+                    'closed-margin-top-safaris': closed && browserType === 'Safari'
+                  }"  class="col-md-8 col-lg-9 chat-area p-0">
 
             <div class="chat-header">
                 <div class="d-flex align-items-center justify-content-between p-2">
@@ -995,6 +1000,7 @@
             member: {},
             partner: {},
             messages: [],
+            browserType: getBrowserType(),
             editActiveIndex: null,  // 編輯訊息時，用來放置 message 的 index
             isTextInputActive: false,   // 控制 textInput 的顯示與隱藏
             isTipActive: false,

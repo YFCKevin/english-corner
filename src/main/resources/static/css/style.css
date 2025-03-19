@@ -59,6 +59,14 @@ body {
   margin-top: -100px !important;
 }
 
+.closed-margin-top-chrome {
+  margin-top: -80px !important;
+}
+
+.closed-margin-top-safaris {
+  margin-top: -100px !important;
+}
+
 .chat-header {
   background-color: var(--secondary);
   border-bottom: 1px solid var(--border);
