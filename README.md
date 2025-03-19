@@ -25,6 +25,11 @@
 <p>個人檔案：</p>
 <p align="left">
   <img src="https://github.com/YFCKevin/english-corner/blob/main/src/main/resources/static/img/screenshots/profile.gif" height="500px" alt="描述">
+</p><br>
+<p>進階功能（對產生對話標題、標題修改刪除、分享公開連結）：</p>
+<p align="left">
+  <img src="https://github.com/YFCKevin/english-corner/blob/main/src/main/resources/static/img/screenshots/advanced_features.gif" height="615px" alt="描述">
+</p><br>
 </p>
 
 [TalkYo 登入首頁（僅限手機版）](https://gurula.cc/talkyo/index.html)<br><br>
