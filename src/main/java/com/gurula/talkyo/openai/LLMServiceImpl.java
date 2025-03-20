@@ -393,19 +393,19 @@ public class LLMServiceImpl implements LLMService{
 
     private String guidingSentencePayload(String partnerAskMsg, Scenario scenario) {
         String systemMessageContent = String.format(
-                "You're an AI assistant designed to simulate role-playing conversations, helping users practice real-life dialogues in different scenarios.\n\n" +
+                "You're an AI assistant designed to simulate natural, real-life conversations, helping users practice everyday dialogues in different scenarios.\n\n" +
                         "### Role Setup\n" +
                         "- Your role: \"%s\"\n" +
                         "- User's role: \"%s\"\n" +
                         "- Scenario: \"%s\"\n\n" +
                         "### How to Respond\n" +
-                        "1. Stay fully in character at all times.\n" +
-                        "2. Respond naturally and keep the conversation engaging.\n" +
-                        "3. Let the conversation flow smoothly and end it naturally when it feels right.\n\n" +
+                        "1. Stay fully in character and respond naturally, just like a real person would.\n" +
+                        "2. Keep the conversation smooth and engaging—don't sound robotic or scripted.\n" +
+                        "3. Let things flow naturally, and if the conversation feels like it should wrap up, end it in a natural way.\n\n" +
                         "### Response Format\n" +
                         "Reply in the following JSON format:\n" +
                         "{\n" +
-                        "    \"content\": \"[Your reply in casual, fluent English]\",\n" +
+                        "    \"content\": \"[Your reply in casual, native-like spoken English]\",\n" +
                         "    \"translation\": \"[Your reply translated into Traditional Chinese]\"\n" +
                         "}",
                 scenario.getHumanRole(),
@@ -450,7 +450,11 @@ public class LLMServiceImpl implements LLMService{
 
         String systemMessageContent = "You are a language learning assistant. Your task is to evaluate *only* the user's sentences from the provided dialogue. " +
                 "Focus on identifying *both* errors and correct usage in the user's sentences. Provide feedback in a concise, bullet-point format (using '*' as the bullet point indicator) with approximately 300 words. " +
-                "Translate *only* the feedback into Traditional Chinese. The translation should *also* be in a bullet-point format (using '*' as the bullet point indicator), with each bullet point being the translation of the corresponding English feedback point. Do *not* evaluate or reference the partner's sentences. Do *not* translate the user's original sentences. " +
+                "Translate *only* the feedback into Traditional Chinese. Do *not* translate the user's original sentences—this is strictly prohibited. " +
+                "Do *not* evaluate or reference the partner's sentences. Your response must adhere to the following strict rules:\n\n" +
+                "1. **Do *not* translate or modify the user's original sentences under any circumstances.**\n" +
+                "2. **Do *not* include the user's original sentences in the response.**\n" +
+                "3. **Only provide feedback on the user's language use. Do not paraphrase or rewrite their sentences.**\n\n" +
                 "Exclude *any* phrases of appreciation or gratitude, such as 'Thank you' or 'Great job'. " +
                 "Ensure that both 'comment' and 'translation' are single strings, *not* arrays or lists. Each bullet point in *both* the English feedback and the Traditional Chinese translation should end with a `<br>` tag.  " +
                 "*Specifically, each English feedback item should look like this: '* [Feedback point]<br>', and each Traditional Chinese translation item should look like this: '* [Translation point]<br>'.*\n" +
@@ -462,7 +466,8 @@ public class LLMServiceImpl implements LLMService{
 
         String userMessageContent = String.format(
                 "Here is the dialogue:\n%s\n" +
-                        "Evaluate *only* the user's sentences, providing detailed feedback as specified above.",
+                        "Evaluate *only* the user's sentences, providing detailed feedback as specified above. " +
+                        "**Do not translate the user's sentences. Only provide feedback on their correctness.**",
                 dialogueText
         );
 
@@ -546,19 +551,19 @@ public class LLMServiceImpl implements LLMService{
     }
 
     private String advancedPayload(String correctSentence) {
-        String systemMessageContent = "You are a helpful assistant that rewrites sentences in both informal and formal styles while explaining why the rewritten sentences better suit their respective styles.";
+        String systemMessageContent = "You are a helpful assistant that rewrites sentences in both informal and formal spoken styles, ensuring that each version sounds natural to a native speaker in conversation.";
         String userMessageContent = String.format(
-                "Please rewrite the following sentence into two new sentences: one in an informal tone and one in a formal tone. Provide an explanation for why each rewritten sentence better suits its respective tone compared to the original sentence. Return the result as an array of JSON objects in the following format: \n" +
+                "Please rewrite the following sentence into two new sentences: one in an informal spoken style and one in a formal spoken style. Ensure that both sentences sound natural to native speakers in conversational contexts. Provide an explanation for why each rewritten sentence better suits its respective style compared to the original sentence. Return the result as an array of JSON objects in the following format: \n" +
                         "[\n" +
                         "  {\n" +
                         "    \"formal\": false,\n" +
-                        "    \"sentence\": \"<informal sentence>\",\n" +
-                        "    \"explanation\": \"<reason why the informal sentence is more informal compared to the original sentence>\"\n" +
+                        "    \"sentence\": \"<informal spoken sentence>\",\n" +
+                        "    \"explanation\": \"<reason why the informal sentence is more natural and conversational compared to the original sentence>\"\n" +
                         "  },\n" +
                         "  {\n" +
                         "    \"formal\": true,\n" +
-                        "    \"sentence\": \"<formal sentence>\",\n" +
-                        "    \"explanation\": \"<reason why the formal sentence is more formal compared to the original sentence>\"\n" +
+                        "    \"sentence\": \"<formal spoken sentence>\",\n" +
+                        "    \"explanation\": \"<reason why the formal sentence is more polished and professional while still sounding natural in spoken language>\"\n" +
                         "  }\n" +
                         "]\n" +
                         "Original sentence: %s", correctSentence
@@ -688,9 +693,11 @@ public class LLMServiceImpl implements LLMService{
 
     private String translatePayload(String text) {
 
-        String systemMessageContent = "You are a professional translator. Your task is to translate the given text into natural and grammatically correct English. Ensure the translation sounds fluent and contextually appropriate. Only return the translated text without any additional formatting, quotation marks, or explanations.";
+        String systemMessageContent = "You are a fluent English speaker. Your task is to translate the given text into natural, conversational English that sounds like something a native speaker would say. Keep it smooth, natural, and contextually appropriate. Only return the translated text—no extra formatting, quotation marks, or explanations.";
 
-        String userMessageContent = String.format("Translate the following text into proper English:\n\n%s\n\nDo not add quotation marks or extra symbols. Only return the translation.", text);
+        String userMessageContent = String.format(
+                "Translate the following text into natural, spoken English:\n\n%s\n\nMake sure it sounds like something a native speaker would actually say. No quotation marks, no extra symbols—just the translation.", text
+        );
 
         MsgDTO systemMessage = new MsgDTO(Role.system, systemMessageContent);
         MsgDTO userMessage = new MsgDTO(Role.user, userMessageContent);
