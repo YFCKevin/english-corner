@@ -38,6 +38,10 @@
             color: #344767 !important;
             border-radius: 5px;
         }
+        .disabled {
+            pointer-events: none;
+            opacity: 0.5;
+        }
     </style>
     <title>
         TalkYo
@@ -396,7 +400,7 @@
 <!-- lessonModal -->
 <div class="modal fade" id="lessonModal" tabindex="-1" role="dialog" aria-labelledby="lessonModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content">
+        <div class="modal-content" style="overflow-y: auto; max-height: 95vh;">
             <div class="modal-header">
                 <h5 class="modal-title" id="lessonModalLabel"></h5>
                 <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close">
@@ -430,7 +434,7 @@
 <!-- prepareModal -->
 <div class="modal fade" id="prepareModal" tabindex="-1" role="dialog" aria-labelledby="prepareModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content">
+        <div class="modal-content" style="overflow-y: auto; max-height: 95vh;">
             <div class="modal-header d-flex align-items-center justify-content-between">
                 <button
                         @click="nextModal('prepareModal', 'lessonModal')"
@@ -496,6 +500,9 @@
                                 </li>
                             </template>
                         </ul>
+                        <div class="mt-3">
+                            <button @click="shadowing('basic')" class="btn btn-primary btn-sm w-100">快速練習</button>
+                        </div>
                     </div>
 
                     <div
@@ -523,6 +530,123 @@
                                 </li>
                             </template>
                         </ul>
+                        <div class="mt-3">
+                            <button @click="shadowing('advanced')" class="btn btn-primary btn-sm w-100">快速練習</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!--shadowingModal-->
+<div class="modal fade" id="shadowingModal" tabindex="-1" role="dialog" aria-labelledby="shadowingModal" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content" style="overflow-y: auto; max-height: 95vh; background: linear-gradient(to bottom, #007bff, #6f42c1);">
+            <div class="modal-header">
+                <h6 class="modal-title text-white"><i class="fab fa-rocketchat text-secondary me-2 text-white"></i>跟讀練習</h6>
+                <span class="text-white" @click="leaveShadowing">×</span>
+            </div>
+            <div class="modal-body d-flex flex-column justify-content-center w-100 mt-4 mb-4" style="padding-top: 20px">
+                <div class="pt-2 pb-2 d-flex justify-content-center align-items-center w-100" style="background-color: #cfe2ff; border-radius: 15px 15px 0px 0px;">
+                    <img x-bind:src="partner.coverPath" class="avatar small me-2" style="width: 35px; height: 35px; border-radius: 50%;" alt="partner img">
+                    <span class="text-center" style="color: #0d6efd; font-weight: 600;">跟著我重複一遍</span>
+                </div>
+                <div class="d-flex flex-column justify-content-center w-100 pt-4 pe-4 ps-4" style="background-color: #f8f9fa; border-radius: 0px 0px 15px 15px; padding-bottom: 20px">
+                    <template x-if="switchBasic && basicSentences.length > 0">
+                        <div class="d-flex align-items-center justify-content-between mb-5">
+                            <!-- 左箭頭 -->
+                            <i @click="if (currentIndex > 0) currentIndex--"
+                               :class="{'text-secondary': currentIndex === 0}"
+                               :style="currentIndex === 0 ? 'pointer-events: none; opacity: 0.5;' : 'color: #0d6efd;'"
+                               class="fas fa-chevron-left me-2"></i>
+
+                            <div class="flex-grow-1 text-center">
+                                <span x-text="basicSentences[currentIndex].content" class="mb-2 fs-5 text-center" style="color: black; font-weight: 600;"></span><br>
+                                <span x-text="basicSentences[currentIndex].translation"
+                                      style="font-size: 0.6rem; line-height: 1;"
+                                      class="text-secondary text-center">
+                                </span>
+                            </div>
+
+                            <!-- 右箭頭 -->
+                            <i @click="if (currentIndex < basicSentences.length - 1) currentIndex++"
+                               :class="{'text-secondary': currentIndex === basicSentences.length - 1}"
+                               :style="currentIndex === basicSentences.length - 1 ? 'pointer-events: none; opacity: 0.5;' : 'color: #0d6efd;'"
+                               class="fas fa-chevron-right ms-2"></i>
+                        </div>
+                    </template>
+                    <template x-if="switchBasic && basicSentences.length > 0">
+                        <div class="d-flex justify-content-between w-100 pe-5 ps-5 mb-5 pb-5">
+                            <div :data-url="basicSentences[currentIndex].audioName[0]" @click.stop="playShadowingSound($event.target, 0.7)" style="background-color: #cfe2ff" class="rounded-circle pe-2 ps-2 pt-1 pb-1 d-flex justify-content-center align-items-center">
+                                <img :data-url="basicSentences[currentIndex].audioName[0]" src="img/turtle.png" width="20" height="20">
+                            </div>
+                            <div :data-url="basicSentences[currentIndex].audioName[0]" @click.stop="playShadowingSound($event.target, 1)" class="rounded-circle pe-2 ps-2 pt-2 pb-2 d-flex justify-content-center align-items-center" style="background-color: #cfe2ff">
+                                <i :data-url="basicSentences[currentIndex].audioName[0]" class="fas fa-rss" style="color: #0d6efd"></i>
+                            </div>
+                            <div :data-url="shadowingAudioUrl" @click.stop="myVoice($event.target, 1)" :class="{ 'disabled': !shadowingAudioUrl }" class="rounded-circle pe-2 ps-2 pt-1 pb-1 d-flex justify-content-center align-items-center" style="background-color: #cfe2ff">
+                                <i :data-url="shadowingAudioUrl" class="fas fa-assistive-listening-systems" style="color: #0d6efd"></i>
+                            </div>
+                        </div>
+                    </template>
+                    <template x-if="switchAdvanced && advancedSentences.length > 0">
+                        <div class="d-flex align-items-center justify-content-between mb-5">
+                            <!-- 左箭頭 -->
+                            <i @click="if (currentIndex > 0) currentIndex--"
+                               :class="{'text-secondary': currentIndex === 0}"
+                               :style="currentIndex === 0 ? 'pointer-events: none; opacity: 0.5;' : 'color: #0d6efd;'"
+                               class="fas fa-chevron-left me-2"></i>
+
+                            <div class="flex-grow-1 text-center">
+                                <span x-text="advancedSentences[currentIndex].content" class="mb-2 fs-5 text-center" style="color: black; font-weight: 600;"></span><br>
+                                <span x-text="advancedSentences[currentIndex].translation"
+                                      style="font-size: 0.6rem; line-height: 1;"
+                                      class="mb-5 text-secondary text-center">
+                                </span>
+                            </div>
+
+                            <!-- 右箭頭 -->
+                            <i @click="if (currentIndex < advancedSentences.length - 1) currentIndex++"
+                               :class="{'text-secondary': currentIndex === advancedSentences.length - 1}"
+                               :style="currentIndex === advancedSentences.length - 1 ? 'pointer-events: none; opacity: 0.5;' : 'color: #0d6efd;'"
+                               class="fas fa-chevron-right ms-2"></i>
+                        </div>
+                    </template>
+                    <template x-if="switchAdvanced && advancedSentences.length > 0">
+                        <div class="d-flex justify-content-between w-100 pe-5 ps-5 mb-5 pb-5">
+                            <div :data-url="advancedSentences[currentIndex].audioName[0]" @click.stop="playShadowingSound($event.target, 0.7)" style="background-color: #cfe2ff" class="rounded-circle pe-2 ps-2 pt-1 pb-1 d-flex justify-content-center align-items-center">
+                                <img :data-url="advancedSentences[currentIndex].audioName[0]" src="img/turtle.png" width="20" height="20">
+                            </div>
+                            <div :data-url="advancedSentences[currentIndex].audioName[0]" @click.stop="playShadowingSound($event.target, 1)" class="rounded-circle pe-2 ps-2 pt-2 pb-2 d-flex justify-content-center align-items-center" style="background-color: #cfe2ff">
+                                <i :data-url="advancedSentences[currentIndex].audioName[0]" class="fas fa-rss" style="color: #0d6efd"></i>
+                            </div>
+                            <div :data-url="shadowingAudioUrl" @click.stop="myVoice($event.target, 1)" :class="{ 'disabled': !shadowingAudioUrl }" class="rounded-circle pe-2 ps-2 pt-1 pb-1 d-flex justify-content-center align-items-center" style="background-color: #cfe2ff">
+                                <i :data-url="shadowingAudioUrl" class="fas fa-assistive-listening-systems" style="color: #0d6efd"></i>
+                            </div>
+                        </div>
+                    </template>
+                    <div class="d-flex align-items-center justify-content-between w-100 pe-3 ps-3 pt-5 mb-3">
+                        <template x-if="isRecording">
+                            <button
+                                    @click.stop="cancelRecord()"
+                                    class="btn btn-link rounded-circle border p-0 d-flex align-items-center justify-content-center"
+                                    style="width: 45px; height: 45px;">
+                                <i class="far fa-stop-circle fs-5" style="font-weight: 100; color: #0d6efd;"></i>
+                            </button>
+                        </template>
+                        <button @click.stop="isRecording? stopRecord() : startShadowing()" :class="{ 'recording': isRecording }" class="btn rounded-circle text-white p-0 mx-auto" style="width: 60px; height: 60px; border: none; background-color: #0d6efd;">
+                            <i :class="isRecording ? 'fas fa-paper-plane' : 'fas fa-microphone-alt'" class="fs-2"></i>
+                        </button>
+                        <!--            無用-->
+                        <template x-if="isRecording">
+                            <button
+                                    class="btn btn-link rounded-circle border p-0 d-flex align-items-center justify-content-center"
+                                    style="width: 45px; height: 45px; visibility: hidden;">
+                                <i class="far fa-times-circle fs-5 text-black" style="font-weight: 100;"></i>
+                            </button>
+                        </template>
+                        <!--            無用-->
                     </div>
                 </div>
             </div>
@@ -566,6 +690,15 @@
             iconText: '翻譯',
             basicSentences: [],
             advancedSentences: [],
+
+            // ===== shadowing 跟讀 ===== //
+            switchBasic: false,
+            switchAdvanced: false,
+            currentIndex: 0,
+            shadowingAudioUrl: "",
+            isRecording: false,
+            isRecordCanceled: false,    // 用來判斷 cancelRecord and stopRecord
+            shadowingModel: false,
 
 
             async init() {
@@ -810,6 +943,137 @@
                       anchor.scrollIntoView({ behavior: "smooth", block: "start" });
                   }
               })
+          },
+
+          // ===== 跟讀 shadowing ===== //
+          shadowing(tag) {
+              this.switchBasic = false;
+              this.switchAdvanced = false;
+              if (tag == "basic") {
+                  this.switchBasic = true;
+              } else if (tag == "advanced") {
+                  this.switchAdvanced = true;
+              }
+              $("#prepareModal").modal('hide');
+              $("#shadowingModal").modal('show');
+          },
+          async startRecord() {
+              this.isRecording = true;
+              this.isRecordCanceled = false;
+
+              try {
+                  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+                  if (this.mediaRecorder && this.mediaRecorder.state !== "inactive") {
+                      this.mediaRecorder.stop();
+                  }
+
+                  this.audioChunks = [];
+                  this.mediaRecorder = new MediaRecorder(stream);
+
+                  this.mediaRecorder.ondataavailable = event => {
+                      if (!this.isRecordCanceled) {
+                          this.audioChunks.push(event.data);
+                      }
+                  };
+
+                  this.mediaRecorder.onstop = async () => {
+                      if (this.isRecordCanceled || this.audioChunks.length === 0) {
+                          console.log("錄音已取消");
+                          return;
+                      }
+
+                      const audioBlob = new Blob(this.audioChunks, { type: "audio/webm" });
+                      if (this.shadowingModel) {
+                          this.shadowingAudioUrl = URL.createObjectURL(audioBlob);
+                          this.shadowingModel = false;
+                          return;
+                      }
+
+                      this.isRecording = false;
+                  };
+
+                  this.mediaRecorder.start();
+              } catch (error) {
+                  console.error("錄音初始化失敗：", error);
+                  this.isRecording = false;
+              }
+          },
+          stopRecord() {
+              this.isRecording = !this.isRecording;
+              this.isRecordCanceled = false;
+              if (this.mediaRecorder && this.mediaRecorder.state !== "inactive") {
+                  this.mediaRecorder.stop();
+              }
+              this.mediaRecorder.stream.getTracks().forEach(track => track.stop());
+          },
+          cancelRecord() {
+              this.isRecording = !this.isRecording;
+              this.isRecordCanceled = true;
+              this.shadowingModel = false;
+              if (this.mediaRecorder && this.mediaRecorder.state !== "inactive") {
+                  this.mediaRecorder.stop();
+              }
+              this.mediaRecorder.stream.getTracks().forEach(track => track.stop());
+
+              this.mediaRecorder = null;
+          },
+
+          async startShadowing() {
+              this.shadowingModel = true;
+              this.startRecord();
+          },
+
+          playShadowingSound(el, rate) {
+              const audioName = $(el).attr("data-url");
+              let audioUrl = "audio/" + this.lesson.courseTopic + "/" + this.lesson.lessonNumber + "/" + audioName;
+
+              if (audioName) {
+                  const audio = new Audio(audioUrl);
+
+                  audio.playbackRate = rate;
+
+                  audio.play().then(() => {
+                      setTimeout(() => {
+                          audio.muted = false;
+                      }, 10);
+                  }).catch(error => console.error("播放音訊失敗"));
+
+                  // (可選) 添加播放結束事件監聽器
+                  audio.addEventListener('ended', function() {
+                      console.log('Audio playback finished.');
+                      // 在播放結束後執行一些操作，例如更改 icon 或顯示訊息
+                  });
+
+              }
+          },
+
+          myVoice(el, rate) {
+              const audioUrl = $(el).attr("data-url");
+              if (audioUrl) {
+                  const audio = new Audio(audioUrl);
+
+                  audio.playbackRate = rate;
+
+                  audio.play().then(() => {
+                      setTimeout(() => {
+                          audio.muted = false;
+                      }, 10);
+                  }).catch(error => console.error("播放音訊失敗"));
+
+                  // (可選) 添加播放結束事件監聽器
+                  audio.addEventListener('ended', function() {
+                      console.log('Audio playback finished.');
+                      // 在播放結束後執行一些操作，例如更改 icon 或顯示訊息
+                  });
+
+              }
+          },
+
+          leaveShadowing() {
+              $("#shadowingModal").modal('hide');
+              this.currentIndex = 0;
+              $("#prepareModal").modal('show');
           },
         }
     }
