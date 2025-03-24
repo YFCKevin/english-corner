@@ -738,3 +738,8 @@ low {
   padding: 0.5rem; /* 調整 padding 來讓它看起來不會太擠 */
   border-radius: 0.25rem; /* 讓 input 有圓角 */
 }
+
+.disabled {
+  pointer-events: none;
+  opacity: 0.5;
+}

@@ -7,6 +7,7 @@ import java.util.List;
 public class AdvancedSentence {
     private String unitNumber;
     private String content;
+    private String translation;
     private List<String> audioName;
     private String explanation;
     private boolean formal;
@@ -56,5 +57,13 @@ public class AdvancedSentence {
 
     public void genUnitNumber() {
         this.unitNumber = CourseUtil.genAdvancedSentenceUnitNumber();
+    }
+
+    public String getTranslation() {
+        return translation;
+    }
+
+    public void setTranslation(String translation) {
+        this.translation = translation;
     }
 }

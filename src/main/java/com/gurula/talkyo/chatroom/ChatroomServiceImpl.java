@@ -617,11 +617,12 @@ public class ChatroomServiceImpl implements ChatroomService {
      */
     @Override
     @RabbitListener(queues = RabbitMQConfig.GRAMMAR_QUEUE)
-    public void grammarCheck(ChatRequestDTO chatRequestDTO) throws JsonProcessingException {
+    public void grammarCheck(ChatRequestDTO chatRequestDTO) throws JsonProcessingException, ExecutionException, InterruptedException {
         System.out.println("GrammarCheck");
 
         final String messageId = chatRequestDTO.getMessageId();
         final String chatroomId = chatRequestDTO.getChatroomId();
+        final String partnerId = chatRequestDTO.getPartnerId();
 
         final Optional<Message> opt = messageRepository.findById(messageId);
         if (opt.isPresent()) {
@@ -655,10 +656,15 @@ public class ChatroomServiceImpl implements ChatroomService {
 
             if (StringUtils.isNotBlank(grammarResponseDTO.getErrorReason())) {  // 文法有錯誤
                 grammarResult.genUnitNumber();
-                grammarResult.setCorrectSentence(grammarResponseDTO.getCorrectSentence());
+                final String correctSentence = grammarResponseDTO.getCorrectSentence();
+                grammarResult.setCorrectSentence(correctSentence);
                 grammarResult.setErrorReason(grammarResponseDTO.getErrorReason());
                 grammarResult.setTranslation(grammarResponseDTO.getTranslation());
                 grammarResult.setErrorSentence(currentMsgContent);
+                final List<Path> audioFilePaths = audioService.textToSpeechInChatting(List.of(
+                        new ChatAudioDTO(correctSentence, partnerId, chatroomId)
+                ));
+                grammarResult.setAudioName(audioFilePaths.get(0).getFileName().toString());
                 message.setGrammarResult(grammarResult);
                 messageRepository.updateGrammarResult(messageId, grammarResult);
             } else {    // 文法正確
@@ -712,6 +718,7 @@ public class ChatroomServiceImpl implements ChatroomService {
                 advancedSentence.genUnitNumber();
                 advancedSentence.setExplanation(s.getExplanation());
                 advancedSentence.setContent(s.getSentence());
+                advancedSentence.setTranslation(s.getTranslation());
                 advancedSentence.setFormal(s.isFormal());
                 if (s.isFormal()) { // formal
                     advancedSentence.setAudioName(List.of(audioMap.get("formal").getFileName().toString()));

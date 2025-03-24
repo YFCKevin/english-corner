@@ -211,6 +211,8 @@ public class AudioService {
                     logger.error("CANCELED: ErrorDetails=" + cancellation.getErrorDetails());
                 }
             }
+        } catch (Exception e) {
+            e.printStackTrace();
         } finally {
             speechConfig.close();
         }

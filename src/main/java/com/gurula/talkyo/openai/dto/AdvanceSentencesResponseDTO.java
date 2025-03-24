@@ -4,6 +4,7 @@ public class AdvanceSentencesResponseDTO {
     private boolean formal;
     private String explanation;
     private String sentence;
+    private String translation;
 
     public boolean isFormal() {
         return formal;
@@ -29,12 +30,11 @@ public class AdvanceSentencesResponseDTO {
         this.sentence = sentence;
     }
 
-    @Override
-    public String toString() {
-        return "AdvanceSentencesResponseDTO{" +
-                "formal=" + formal +
-                ", explanation='" + explanation + '\'' +
-                ", sentence='" + sentence + '\'' +
-                '}';
+    public String getTranslation() {
+        return translation;
+    }
+
+    public void setTranslation(String translation) {
+        this.translation = translation;
     }
 }

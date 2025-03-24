@@ -551,18 +551,20 @@ public class LLMServiceImpl implements LLMService{
     }
 
     private String advancedPayload(String correctSentence) {
-        String systemMessageContent = "You are a helpful assistant that rewrites sentences in both informal and formal spoken styles, ensuring that each version sounds natural to a native speaker in conversation.";
+        String systemMessageContent = "You are a helpful assistant that rewrites sentences in both informal and formal spoken styles, ensuring that each version sounds natural to a native speaker in conversation. Additionally, you provide a Traditional Chinese (繁體中文) translation for each rewritten sentence.";
         String userMessageContent = String.format(
-                "Please rewrite the following sentence into two new sentences: one in an informal spoken style and one in a formal spoken style. Ensure that both sentences sound natural to native speakers in conversational contexts. Provide an explanation for why each rewritten sentence better suits its respective style compared to the original sentence. Return the result as an array of JSON objects in the following format: \n" +
+                "Please rewrite the following sentence into two new sentences: one in an informal spoken style and one in a formal spoken style. Ensure that both sentences sound natural to native speakers in conversational contexts. Provide an explanation for why each rewritten sentence better suits its respective style compared to the original sentence. Additionally, provide a Traditional Chinese (繁體中文) translation of each rewritten sentence. Return the result as an array of JSON objects in the following format: \n" +
                         "[\n" +
                         "  {\n" +
                         "    \"formal\": false,\n" +
                         "    \"sentence\": \"<informal spoken sentence>\",\n" +
+                        "    \"translation\": \"<informal spoken sentence translated to Traditional Chinese>\",\n" +
                         "    \"explanation\": \"<reason why the informal sentence is more natural and conversational compared to the original sentence>\"\n" +
                         "  },\n" +
                         "  {\n" +
                         "    \"formal\": true,\n" +
                         "    \"sentence\": \"<formal spoken sentence>\",\n" +
+                        "    \"translation\": \"<formal spoken sentence translated to Traditional Chinese>\",\n" +
                         "    \"explanation\": \"<reason why the formal sentence is more polished and professional while still sounding natural in spoken language>\"\n" +
                         "  }\n" +
                         "]\n" +

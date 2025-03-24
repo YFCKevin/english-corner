@@ -40,4 +40,9 @@ public interface MessageRepository extends MongoRepository<Message, String> {
     Optional<Message> findByPreviewMessageIdAndVersion(String previewMessageId, int targetVersion);
 
     Optional<Message> findByChatroomIdAndCurrentLastMsg(String chatroomId, boolean currentLastMsg);
+
+    @Query("{'id' : {$in : ?0}}")
+    int deleteMessageById(List<String> messageIds);
+
+    List<Message> findByIdIn(List<String> messageIds);
 }

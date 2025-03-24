@@ -1,27 +1,36 @@
 package com.gurula.talkyo.chatroom;
 
+import com.gurula.talkyo.chatroom.dto.ChatDTO;
+import com.gurula.talkyo.chatroom.enums.MessageType;
+import com.gurula.talkyo.chatroom.handler.MessageTypeHandler;
 import com.gurula.talkyo.course.Sentence;
 import com.gurula.talkyo.member.Member;
 import com.gurula.talkyo.member.MemberRepository;
+import com.gurula.talkyo.properties.ConfigProperties;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.util.*;
 
 @Service
-public class MessageServiceImpl implements MessageService{
+public class MessageServiceImpl implements MessageService {
     private final MessageRepository messageRepository;
     private final MongoTemplate mongoTemplate;
     private final MemberRepository memberRepository;
+    private final MessageTypeHandler handler;
+    private final ConfigProperties configProperties;
 
     public MessageServiceImpl(MessageRepository messageRepository, MongoTemplate mongoTemplate,
-                              MemberRepository memberRepository) {
+                              MemberRepository memberRepository, MessageTypeHandler handler, ConfigProperties configProperties) {
         this.messageRepository = messageRepository;
         this.mongoTemplate = mongoTemplate;
         this.memberRepository = memberRepository;
+        this.handler = handler;
+        this.configProperties = configProperties;
     }
 
     @Override
@@ -83,5 +92,27 @@ public class MessageServiceImpl implements MessageService{
                 .ifPresent(sentence -> sentence.setAudioName(Collections.singletonList(fileName)));
 
         memberRepository.save(member);
+    }
+
+    @Override
+    public void deleteMessage(String[] msgIds) throws IOException {
+        final List<String> messageIds = Arrays.stream(msgIds).toList();
+        List<Message> messages = messageRepository.findByIdIn(messageIds);
+
+        messageRepository.deleteAll(messages);
+
+        for (Message message : messages) {
+            ChatDTO chatDTO = new ChatDTO();
+            chatDTO.setChatroomId(message.getChatroomId());
+            if (StringUtils.isNotBlank(message.getAudioName())) {
+                chatDTO.setMessageType(MessageType.AUDIO);
+                chatDTO.setAudioFileName(message.getAudioName());
+            } else if (StringUtils.isNotBlank(message.getImageName())) {
+                chatDTO.setMessageType(MessageType.IMAGE);
+            } else {
+                chatDTO.setMessageType(MessageType.TEXT);
+            }
+            handler.deleteFile(chatDTO, configProperties);
+        }
     }
 }

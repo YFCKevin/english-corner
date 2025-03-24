@@ -762,6 +762,25 @@ public class ChatroomController {
 
 
     /**
+     * 刪除訊息(PROJECT & SITUATION)
+     * @param messageStr
+     * @return
+     */
+    @DeleteMapping("/chatroom/message/delete/{messageStr}")
+    public ResponseEntity<?> messageDelete(@PathVariable String messageStr) throws IOException {
+        final Member member = MemberContext.getMember();
+        logger.info("[{} {}] [delete message]", member.getName(), member.getId());
+
+        ResultStatus<Void> resultStatus = new ResultStatus<>();
+
+        final String[] messageIds = messageStr.split("_");
+        messageService.deleteMessage(messageIds);
+        resultStatus.setCode("C000");
+        return ResponseEntity.ok(resultStatus);
+    }
+
+
+    /**
      * 每日早上5點定時清空 audio/temp 內的音檔
      */
     @Scheduled(cron = "0 0 5 * * ?")

@@ -194,7 +194,7 @@
 
                                         <hr>
                                         <div class="d-flex align-items-center">
-                                            <div x-show="!closed" class="rounded-circle icon-button me-3">
+                                            <div x-show="!closed && ['FREE_TALK'].includes(chatroomType)" class="rounded-circle icon-button me-3">
                                                 <i
                                                         style="font-size: 0.8rem"
                                                         class="fas fa-eraser"
@@ -206,8 +206,17 @@
                                                         @click.stop="edit(index, $event)"
                                                 ></i>
                                             </div>
+                                            <template x-if="!closed && ['PROJECT', 'SITUATION'].includes(chatroomType) && (index >= messages.length - 2)">
+                                                <div class="rounded-circle icon-button me-3">
+                                                    <i
+                                                            style="font-size: 0.8rem"
+                                                            class="fas fa-trash-alt text-primary"
+                                                            @click.stop="openDeleteModal(index)"
+                                                    ></i>
+                                                </div>
+                                            </template>
                                             <template x-if="['PROJECT', 'SITUATION'].includes(chatroomType)">
-                                                <div x-show="!closed" class="rounded-circle icon-button advanced-check" @click="advancedCheck(index)">
+                                                <div class="rounded-circle icon-button advanced-check" @click="advancedCheck(index)">
                                                     <i style="font-size: 0.8rem" class="fas fa-spell-check text-primary"></i>
                                                 </div>
                                             </template>
@@ -418,10 +427,18 @@
                             <div class="grammar w-100" style="color: black; background-color: rgba(144, 238, 144, 0.1);">
                                 <i class="fas fa-check-circle me-2 small" style="color: var(--bs-teal);"></i>
                                 <span x-text="correctSentence" style="font-size: 0.9rem"></span>
-                                <i @click="toggleFavorite(correctUnitNumber, correctSentence, '')"
-                                   x-bind:class="{'far fa-bookmark': !correctFavorite, 'fas fa-bookmark': correctFavorite}"
-                                   class="far fa-bookmark small ms-2"
-                                   style="cursor: pointer; color: #0d6efd; margin-top: 0.3rem;"></i>
+                                <hr class="mt-2 mb-2" style="color: var(--bs-teal);">
+                                <div class="d-inline-flex align-items-center flex-nowrap w-100">
+                                    <i @click="toggleFavorite(correctUnitNumber, correctSentence, '')"
+                                       x-bind:class="{'far fa-bookmark': !correctFavorite, 'fas fa-bookmark': correctFavorite}"
+                                       class="far fa-bookmark small me-3"
+                                       style="cursor: pointer; color: #0d6efd; font-size: 0.8rem;"></i>
+                                    <i :data-url="grammarAudioPath" @click.stop="playAdvancedSound($event.target, 1)" class="fas fa-rss text-primary" style="font-size: 0.8rem;"></i>
+                                    <div @click.stop="shadowing('grammar')" class="audio-practice bg-white border-0 rounded-pill ms-auto d-inline-flex align-items-center">
+                                        <i class="fab fa-rocketchat text-primary ms-2" style="font-size: 0.8rem;"></i>
+                                        <span class="ms-1 text-primary mt-1 mb-1 me-2" style="font-size: 0.8rem;">練習</span>
+                                    </div>
+                                </div>
                             </div>
                             <div class="grammar-text w-100 d-flex flex-column" style="color: black;">
                                 <span class="fw-bold small">錯誤原因</span>
@@ -446,14 +463,25 @@
                         <div class="d-flex align-items-start">
                             <div class="w-100">
                                 <div class="message-content">
-                                    <span class="me-2" x-text="informalContent" style="font-size: 0.9rem"></span>
-                                    <i @click="toggleFavorite(informalUnitNumber, informalContent, '')"
-                                       x-bind:class="{'far fa-bookmark': !informalFavorite, 'fas fa-bookmark': informalFavorite}"
-                                       class="far fa-bookmark small"
-                                       style="cursor: pointer; color: #0d6efd; margin-top: 0.3rem;"></i>
+                                    <div class="d-flex flex-column">
+                                        <span class="mb-1" x-text="informalContent" style="font-size: 0.9rem"></span>
+                                        <span x-show="showInformalTranslation" class="text-secondary" x-text="informalTranslation" style="font-size: 0.7rem"></span>
+                                    </div>
+                                    <hr class="mt-2 mb-2" style="color: var(--bs-cyan);">
+                                    <div class="d-inline-flex align-items-center flex-nowrap w-100">
+                                        <i @click="toggleFavorite(informalUnitNumber, informalContent, '')"
+                                           x-bind:class="{'far fa-bookmark': !informalFavorite, 'fas fa-bookmark': informalFavorite}"
+                                           class="far fa-bookmark small me-3"
+                                           style="cursor: pointer; color: #0d6efd;"></i>
+                                        <i @click.stop="toggleInformalTranslation" style="font-size: 0.8rem" class="fas fa-language text-primary me-3"></i>
+                                        <i :data-url="informalAudioPath" @click="playAdvancedSound($event.target, 1)" class="fas fa-rss text-primary" style="font-size: 0.8rem;"></i>
+                                        <div @click.stop="shadowing('informal')" class="audio-practice bg-white border-0 rounded-pill ms-auto d-inline-flex align-items-center">
+                                            <i class="fab fa-rocketchat text-primary ms-2" style="font-size: 0.8rem;"></i>
+                                            <span class="ms-1 text-primary mt-1 mb-1 me-2" style="font-size: 0.8rem;">練習</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            <i :data-url="informalAudioPath" @click="playAdvancedSound($event.target)" class="fas fa-rss ms-3 text-primary" style="font-size: 0.8rem; margin-top: 0.4rem"></i>
                         </div>
                     </div>
                     <div class="sentence-text w-100 d-flex flex-column mb-3" style="color: black;">
@@ -467,14 +495,25 @@
                         <div class="d-flex align-items-start">
                             <div class="w-100">
                                 <div class="message-content">
-                                    <span class="me-2" x-text="formalContent" style="font-size: 0.9rem"></span>
-                                    <i @click="toggleFavorite(formalUnitNumber, formalContent, '')"
-                                       x-bind:class="{'far fa-bookmark': !formalFavorite, 'fas fa-bookmark': formalFavorite}"
-                                       class="far fa-bookmark small"
-                                       style="cursor: pointer; color: #0d6efd; margin-top: 0.3rem;"></i>
+                                    <div class="d-flex flex-column">
+                                        <span class="mb-1" x-text="formalContent" style="font-size: 0.9rem"></span>
+                                        <span x-show="showFormalTranslation" class="text-secondary" x-text="formalTranslation" style="font-size: 0.7rem"></span>
+                                    </div>
+                                    <hr class="mt-2 mb-2" style="color: var(--bs-cyan);">
+                                    <div class="d-inline-flex align-items-center flex-nowrap w-100">
+                                        <i @click="toggleFavorite(formalUnitNumber, formalContent, '')"
+                                           x-bind:class="{'far fa-bookmark': !formalFavorite, 'fas fa-bookmark': formalFavorite}"
+                                           class="far fa-bookmark small me-3"
+                                           style="cursor: pointer; color: #0d6efd;"></i>
+                                        <i @click.stop="toggleFormalTranslation" style="font-size: 0.8rem" class="fas fa-language text-primary me-3"></i>
+                                        <i :data-url="formalAudioPath" @click="playAdvancedSound($event.target, 1)" class="fas fa-rss text-primary" style="font-size: 0.8rem;"></i>
+                                        <div @click.stop="shadowing('formal')" class="audio-practice bg-white border-0 rounded-pill ms-auto d-inline-flex align-items-center">
+                                            <i class="fab fa-rocketchat text-primary ms-2" style="font-size: 0.8rem;"></i>
+                                            <span class="ms-1 text-primary mt-1 mb-1 me-2" style="font-size: 0.8rem;">練習</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            <i :data-url="formalAudioPath" @click="playAdvancedSound($event.target)" class="fas fa-rss ms-3 text-primary" style="font-size: 0.8rem; margin-top: 0.4rem"></i>
                         </div>
                     </div>
                     <div class="sentence-text w-100 d-flex flex-column" style="color: black;">
@@ -528,6 +567,19 @@
                                         <span x-html="pronunciationText"></span>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-start mt-2">
+                            <div @click="pronunciationAudio" style="background-color: rgba(173, 216, 230, 0.3);" class="rounded-pill border-0 pe-2 ps-1 pt-1 pb-1 d-flex align-items-center me-3">
+                                <img x-bind:src="partner.coverPath" class="avatar small me-2" alt="partner img">
+                                <i class="fas fa-rss text-primary me-2" style="font-size: 0.8rem;"></i>
+                            </div>
+                            <div @click="myVoice" style="background-color: rgba(173, 216, 230, 0.3);" class="rounded-pill border-0 pe-2 ps-1 pt-1 pb-1 d-flex align-items-center">
+                                <div class="rounded-circle d-flex justify-content-center align-items-center me-2"
+                                     style="width: 35px; height: 35px; background-color: white; font-weight: bold; color: black;">
+                                    Me
+                                </div>
+                                <i class="fas fa-rss text-primary me-2" style="font-size: 0.8rem;"></i>
                             </div>
                         </div>
                     </template>
@@ -897,6 +949,121 @@
     </div>
 </div>
 
+<!--deleteMessageModal-->
+<div class="modal fade" id="deleteMessageModal" tabindex="-1" role="dialog" aria-labelledby="deleteMessageModal" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-times-circle me-2 text-danger"></i>刪除該則對話？</h5>
+                <span data-bs-dismiss="modal" aria-hidden="true" class="text-secondary">×</span>
+            </div>
+            <div class="modal-body d-flex justify-content-center w-100">
+                <button type="button" data-bs-dismiss="modal" class="btn btn-outline-dark rounded-pill px-3 btn-sm">取消</button>
+                <button type="button" @click.stop="deleteMessage" class="btn btn-danger text-white rounded-pill px-3 ms-2 btn-sm">刪除</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!--shadowingModal-->
+<div class="modal fade" id="shadowingModal" tabindex="-1" role="dialog" aria-labelledby="shadowingModal" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content" style="background: linear-gradient(to bottom, #007bff, #6f42c1);">
+            <div class="modal-header">
+                <h6 class="modal-title text-white"><i class="fab fa-rocketchat text-secondary me-2 text-white"></i>跟讀練習</h6>
+                <span data-bs-dismiss="modal" aria-hidden="true" class="text-white">×</span>
+            </div>
+            <div class="modal-body d-flex flex-column justify-content-center w-100 mt-4 mb-4" style="padding-top: 20px">
+                <div class="pt-2 pb-2 d-flex justify-content-center align-items-center w-100" style="background-color: #cfe2ff; border-radius: 15px 15px 0px 0px;">
+                    <img x-bind:src="partner.coverPath" class="avatar small me-2" alt="partner img">
+                    <span class="text-primary text-center">跟著我重複一遍</span>
+                </div>
+                <div class="d-flex flex-column justify-content-center w-100 pt-4 pe-4 ps-4" style="background-color: #f8f9fa; border-radius: 0px 0px 15px 15px; padding-bottom: 20px">
+                    <template x-if="switchGrammar">
+                        <span x-text="correctSentence" class="mb-2 fs-5 text-center"></span>
+                    </template>
+                    <template x-if="switchGrammar">
+                        <span x-text="grammarReasonTranslation" style="font-size: 0.6rem" class="mb-5 text-secondary text-center"></span>
+                    </template>
+                    <template x-if="switchInformal">
+                        <span x-text="informalContent" class="mb-2 fs-5 text-center"></span>
+                    </template>
+                    <template x-if="switchInformal">
+                        <span x-text="informalTranslation" style="font-size: 0.6rem" class="mb-5 text-secondary text-center"></span>
+                    </template>
+                    <template x-if="switchFormal">
+                        <span x-text="formalContent" class="mb-2 fs-5 text-center"></span>
+                    </template>
+                    <template x-if="switchFormal">
+                        <span x-text="informalTranslation" style="font-size: 0.6rem" class="mb-5 text-secondary text-center"></span>
+                    </template>
+                    <template x-if="switchInformal">
+                        <div class="d-flex justify-content-between w-100 pe-5 ps-5 mb-5 pb-5">
+                            <div :data-url="informalAudioPath" @click.stop="playAdvancedSound($event.target, 0.7)" style="background-color: #cfe2ff" class="rounded-circle pe-2 ps-2 pt-1 pb-1 d-flex justify-content-center align-items-center">
+                                <img :data-url="informalAudioPath" src="img/turtle.png" width="20" height="20">
+                            </div>
+                            <div :data-url="informalAudioPath" @click.stop="playAdvancedSound($event.target, 1)" class="rounded-circle pe-2 ps-2 pt-2 pb-2 d-flex justify-content-center align-items-center" style="background-color: #cfe2ff">
+                                <i :data-url="informalAudioPath" class="fas fa-rss text-primary"></i>
+                            </div>
+                            <div :data-url="shadowingAudioUrl" @click.stop="playAdvancedSound($event.target, 1)" :class="{ 'disabled': !shadowingAudioUrl }" class="rounded-circle pe-2 ps-2 pt-1 pb-1 d-flex justify-content-center align-items-center" style="background-color: #cfe2ff">
+                                <i :data-url="shadowingAudioUrl" class="fas fa-assistive-listening-systems text-primary"></i>
+                            </div>
+                        </div>
+                    </template>
+                    <template x-if="switchFormal">
+                        <div class="d-flex justify-content-between w-100 pe-5 ps-5 mb-5 pb-5">
+                            <div :data-url="formalAudioPath" @click.stop="playAdvancedSound($event.target, 0.7)" style="background-color: #cfe2ff" class="rounded-circle pe-2 ps-2 pt-1 pb-1 d-flex justify-content-center align-items-center">
+                                <img :data-url="formalAudioPath" src="img/turtle.png" width="20" height="20">
+                            </div>
+                            <div :data-url="formalAudioPath" @click.stop="playAdvancedSound($event.target, 1)" class="rounded-circle pe-2 ps-2 pt-2 pb-2 d-flex justify-content-center align-items-center" style="background-color: #cfe2ff">
+                                <i :data-url="formalAudioPath" class="fas fa-rss text-primary"></i>
+                            </div>
+                            <div :data-url="shadowingAudioUrl" @click.stop="playAdvancedSound($event.target, 1)" :class="{ 'disabled': !shadowingAudioUrl }" class="rounded-circle pe-2 ps-2 pt-1 pb-1 d-flex justify-content-center align-items-center" style="background-color: #cfe2ff">
+                                <i :data-url="shadowingAudioUrl" class="fas fa-assistive-listening-systems text-primary"></i>
+                            </div>
+                        </div>
+                    </template>
+                    <template x-if="switchGrammar">
+                        <div class="d-flex justify-content-between w-100 pe-5 ps-5 mb-5 pb-5">
+                            <div :data-url="grammarAudioPath" @click.stop="playAdvancedSound($event.target, 0.7)" style="background-color: #cfe2ff" class="rounded-circle pe-2 ps-2 pt-1 pb-1 d-flex justify-content-center align-items-center">
+                                <img :data-url="grammarAudioPath" src="img/turtle.png" width="20" height="20">
+                            </div>
+                            <div :data-url="grammarAudioPath" @click.stop="playAdvancedSound($event.target, 1)" class="rounded-circle pe-2 ps-2 pt-2 pb-2 d-flex justify-content-center align-items-center" style="background-color: #cfe2ff">
+                                <i :data-url="grammarAudioPath" class="fas fa-rss text-primary"></i>
+                            </div>
+                            <div :data-url="shadowingAudioUrl" @click.stop="playAdvancedSound($event.target, 1)" :class="{ 'disabled': !shadowingAudioUrl }" class="rounded-circle pe-2 ps-2 pt-1 pb-1 d-flex justify-content-center align-items-center" style="background-color: #cfe2ff">
+                                <i :data-url="shadowingAudioUrl" class="fas fa-assistive-listening-systems text-primary"></i>
+                            </div>
+                        </div>
+                    </template>
+                    <div class="d-flex align-items-center justify-content-between w-100 pe-3 ps-3 pt-5 mb-3">
+                        <template x-if="isRecording">
+                            <button
+                                    @click.stop="cancelRecord()"
+                                    class="btn btn-link rounded-circle border p-0 d-flex align-items-center justify-content-center"
+                                    style="width: 45px; height: 45px;">
+                                <i class="far fa-stop-circle fs-5 text-black" style="font-weight: 100;"></i>
+                            </button>
+                        </template>
+                        <button @click.stop="isRecording? stopRecord() : startShadowing()" :class="{ 'recording': isRecording }" class="btn rounded-circle bg-primary text-white p-0 mx-auto" style="width: 60px; height: 60px; border: none;">
+                            <i :class="isRecording ? 'fas fa-paper-plane' : 'fas fa-microphone-alt'" class="fs-2"></i>
+                        </button>
+                        <!--            無用-->
+                        <template x-if="isRecording">
+                            <button
+                                    class="btn btn-link rounded-circle border p-0 d-flex align-items-center justify-content-center"
+                                    style="width: 45px; height: 45px; visibility: hidden;">
+                                <i class="far fa-times-circle fs-5 text-black" style="font-weight: 100;"></i>
+                            </button>
+                        </template>
+                        <!--            無用-->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="js/sockjs.min.js"></script>
 <script src="js/stomp.min.js"></script>
 <script src="js/bootstrap.bundle.min.js"></script>
@@ -1050,11 +1217,14 @@
             correctSentence: "",
             errorReason: "",
             grammarReasonTranslation: "",
+            grammarAudioPath: "",
             correctUnitNumber: "",
             informalContent: "",
             formalContent: "",
             informalExplanation: "",
             formalExplanation: "",
+            informalTranslation: "",
+            formalTranslation: "",
             informalAudioPath: "",
             formalAudioPath: "",
             informalUnitNumber: "",
@@ -1062,6 +1232,10 @@
             informalFavorite: false,
             formalFavorite: false,
             correctFavorite: false,
+            showInformalTranslation: false,
+            showFormalTranslation: false,
+            humanContent: "",
+            myAudioName: "",
 
             // ===== message loading ===== //
             openingLineLoading: false,
@@ -1075,6 +1249,17 @@
             snapshotChatroomId: null,
             snapshotLink: '',
             snapshotList: [],
+
+            // ===== delete message ===== //
+            deletedMsgIndex: "",
+            switchGrammar: false,
+            switchInformal: false,
+            switchFormal: false,
+
+            // ===== shadowing ===== //
+            shadowingModel: false,
+            shadowingAudioUrl: "",
+
 
             async init() {
                 let _this = this;
@@ -1332,10 +1517,44 @@
                 }
             },
 
+            openDeleteModal(index) {
+                if (this.isPartnerTalking() || this.isHumanTalking()) return;
+                this.deletedMsgIndex = index;
+                $("#deleteMessageModal").modal('show');
+            },
+
+            deleteMessage() {
+                let _this = this;
+                let currentMessageId = this.messages[this.deletedMsgIndex].value.id;
+                let nextMessageId = this.messages[this.deletedMsgIndex + 1]?.value.id;
+                console.log(currentMessageId)
+                console.log(nextMessageId)
+
+                $.ajax({
+                    url: "chatroom/message/delete/" + currentMessageId + "_" + nextMessageId,
+                    type: "DELETE",
+                    dataType: "json",
+                    contentType: "application/json; charset=utf-8",
+                    success: function (response) {
+                        if (response.code == "C000") {
+                            _this.messages.splice(_this.deletedMsgIndex, 2);
+                            _this.updateMessages();
+                            $("#deleteMessageModal").modal('hide');
+                        } else {
+                            alert('系統錯誤，請稍後再試！');
+                        }
+                    },
+                });
+            },
+
             advancedCheck(index) {
                 if (this.isPartnerTalking() || this.isHumanTalking()) return;
                 let _this = this;
                 let message = this.messages[index].value;
+
+                // 該則訊息的內容賦值變數，之後用來產生 partner voice
+                this.humanContent = message.parsedText;
+                this.myAudioName = message.audioName;
 
                 // 出現進階文法語句視窗
                 this.showAdvancedCheckModal();
@@ -1393,12 +1612,15 @@
                 this.errorReason = "";
                 this.grammarReasonTranslation = "";
                 this.correctUnitNumber = "";
+                this.grammarAudioPath = "";
                 this.informalContent = "";
                 this.formalContent = "";
                 this.informalUnitNumber = "",
                 this.formalUnitNumber = "",
                 this.informalExplanation = "";
                 this.formalExplanation = "";
+                this.informalTranslation = "";
+                this.formalTranslation = "";
                 this.informalAudioPath = "";
                 this.formalAudioPath = "";
                 this.grammarOverallScore = -1;
@@ -1412,6 +1634,7 @@
                     this.errorReason = grammar.errorReason || "";
                     this.grammarReasonTranslation = grammar.translation || "";
                     this.correctUnitNumber = grammar.unitNumber || "";
+                    this.grammarAudioPath = grammar.audioName ? `audio/${this.globalChatroomId}/${grammar.audioName}` : "";
                 }
                 this.grammarAccuracy = message.accuracy;
 
@@ -1424,6 +1647,8 @@
                     this.formalUnitNumber = advancedSentences[1].unitNumber || "";
                     this.informalExplanation = advancedSentences[0].explanation || "";
                     this.formalExplanation = advancedSentences[1].explanation || "";
+                    this.informalTranslation = advancedSentences[0].translation || "";
+                    this.formalTranslation = advancedSentences[1].translation || "";
                     this.informalAudioPath = advancedSentences[0].audioName ? `audio/${this.globalChatroomId}/${advancedSentences[0].audioName[0]}` : "";
                     this.formalAudioPath = advancedSentences[1].audioName ? `audio/${this.globalChatroomId}/${advancedSentences[1].audioName[0]}` : "";
                 }
@@ -1441,6 +1666,14 @@
                     this.highlightText(displayText, displayWords);
                 }
 
+            },
+
+            toggleInformalTranslation() {
+                this.showInformalTranslation = !this.showInformalTranslation;
+            },
+
+            toggleFormalTranslation() {
+                this.showFormalTranslation = !this.showFormalTranslation;
             },
 
             updateFavorite() {
@@ -1496,11 +1729,14 @@
                 }
             },
 
-            playAdvancedSound(el) {
+            playAdvancedSound(el, rate) {
                 const audioUrl = $(el).attr("data-url");
 
                 if (audioUrl) {
                     const audio = new Audio(audioUrl);
+
+                    audio.playbackRate = rate;
+
                     audio.play().then(() => {
                         setTimeout(() => {
                             audio.muted = false;
@@ -1527,6 +1763,38 @@
                         }, 10);
                     }).catch(error => console.error("播放音訊失敗"));
                 }
+            },
+
+            pronunciationAudio() {
+                let data = { content: this.humanContent };
+                $.ajax({
+                    url: "chatroom/genAudio",
+                    type: "post",
+                    dataType: "json",
+                    data: JSON.stringify(data),
+                    contentType: "application/json; charset=utf-8",
+                    success: function (response) {
+                        if (response.code == "C000") {
+                            const audio = new Audio(response.data);
+                            audio.play().then(() => {
+                                setTimeout(() => {
+                                    audio.muted = false;
+                                }, 10);
+                            }).catch(error => console.error("播放音訊失敗"));
+                        }
+                    },
+                });
+            },
+
+            myVoice() {
+                console.log(this.myAudioName)
+                const audioUrl = "audio/" + this.globalChatroomId + "/" + this.myAudioName;
+                const audio = new Audio(audioUrl);
+                audio.play().then(() => {
+                    setTimeout(() => {
+                        audio.muted = false;
+                    }, 10);
+                }).catch(error => console.error("播放音訊失敗"));
             },
 
             showKeyboard () {
@@ -2048,6 +2316,11 @@
                         }
 
                         const audioBlob = new Blob(this.audioChunks, { type: "audio/webm" });
+                        if (this.shadowingModel) {
+                            this.shadowingAudioUrl = URL.createObjectURL(audioBlob);
+                            this.shadowingModel = false;
+                            return;
+                        }
 
                         $("#translationModal").removeClass("active");   // 關閉翻譯視窗
                         $("#sampleLessonModal").removeClass("active");   // 關閉範例視窗
@@ -2077,6 +2350,7 @@
                 if (this.isPartnerTalking() || this.isHumanTalking()) return;
                 this.isRecording = !this.isRecording;
                 this.isRecordCanceled = true;
+                this.shadowingModel = false;
                 if (this.mediaRecorder && this.mediaRecorder.state !== "inactive") {
                     this.mediaRecorder.stop();
                 }
@@ -2492,7 +2766,30 @@
                 } catch (error) {
                     console.error("Error in toggleFavorite:", error);
                 }
-          },
+            },
+
+            // ===== 跟讀 shadowing ===== //
+            shadowing(tag) {
+                this.switchGrammar = false;
+                this.switchInformal = false;
+                this.switchFormal = false;
+                if (tag == "grammar") {
+                    this.switchGrammar = true;
+                } else if (tag == "informal") {
+                    this.switchInformal = true;
+                    console.log(this.informalContent)
+                } else if (tag == "formal") {
+                    this.switchFormal = true;
+                }
+                $("#shadowingModal").modal('show');
+            },
+
+            async startShadowing() {
+                // 發音分析
+
+                this.shadowingModel = true;
+                this.startRecord();
+            },
         }
     }
 </script>

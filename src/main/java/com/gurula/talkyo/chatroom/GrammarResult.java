@@ -8,6 +8,7 @@ public class GrammarResult {
     private String correctSentence;
     private String translation;     // 正確語句的翻譯
     private String errorReason;
+    private String audioName;
 
     public String getErrorSentence() {
         return errorSentence;
@@ -51,5 +52,13 @@ public class GrammarResult {
 
     public void genUnitNumber() {
         this.unitNumber = CourseUtil.genGrammarResultUnitNumber();
+    }
+
+    public String getAudioName() {
+        return audioName;
+    }
+
+    public void setAudioName(String audioName) {
+        this.audioName = audioName;
     }
 }

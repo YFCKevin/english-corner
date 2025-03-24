@@ -447,7 +447,7 @@
             },
 
             genAudio(unitNumber, content, audioName) {
-                if (audioName[0] != '' || audioName[0] != null){
+                if (audioName != null){
                     let audioUrl = "audio/favorite/" + audioName;
                     const audio = new Audio(audioUrl);
                     audio.play();
