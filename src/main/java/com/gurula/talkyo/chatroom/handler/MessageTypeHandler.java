@@ -31,7 +31,16 @@ public abstract class MessageTypeHandler {
         }
     }
 
+    public void deleteFiles (ChatDTO chatDTO, ConfigProperties configProperties) throws IOException {
+        if (match(chatDTO.getMessageType())) {
+            doBatchDeleteHandler(chatDTO, configProperties);
+        } else if (next != null){
+            next.deleteFiles(chatDTO, configProperties);
+        }
+    }
+
     protected abstract boolean match(MessageType messageType);
     protected abstract String doSaveHandler(ChatDTO chatDTO, ConfigProperties configProperties) throws IOException;
     protected abstract void doDeleteHandler(ChatDTO chatDTO, ConfigProperties configProperties) throws IOException;
+    protected abstract void doBatchDeleteHandler(ChatDTO chatDTO, ConfigProperties configProperties) throws IOException;
 }

@@ -8,6 +8,8 @@ import com.gurula.talkyo.properties.ConfigProperties;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ImageProcessor extends MessageTypeHandler{
     public ImageProcessor(MessageTypeHandler next) {
@@ -31,5 +33,16 @@ public class ImageProcessor extends MessageTypeHandler{
         final String imageFileName = chatDTO.getImageFileName();
         Path filePath = Paths.get(configProperties.getPicSavePath(), chatDTO.getChatroomId(), imageFileName);
         FileUtils.deleteFile(filePath);
+    }
+
+    @Override
+    protected void doBatchDeleteHandler(ChatDTO chatDTO, ConfigProperties configProperties) throws IOException {
+        List<Path> filePaths = new ArrayList<>();
+        final List<String> imageFileNames = chatDTO.getImageFileNames();
+        for (String imageFileName : imageFileNames) {
+            Path filePath = Paths.get(configProperties.getPicSavePath(), chatDTO.getChatroomId(), imageFileName);
+            filePaths.add(filePath);
+        }
+        FileUtils.deleteFiles(filePaths);
     }
 }

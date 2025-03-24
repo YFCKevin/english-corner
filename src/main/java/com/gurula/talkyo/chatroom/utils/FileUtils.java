@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.List;
 
 @Component
 public class FileUtils {
@@ -79,6 +80,22 @@ public class FileUtils {
             }
         } else {
             System.out.println("File does not exist: " + filePath);
+        }
+    }
+
+
+    public static void deleteFiles(List<Path> filePaths) {
+        for (Path filePath : filePaths) {
+            try {
+                if (Files.exists(filePath)) {
+                    Files.delete(filePath);
+                    System.out.println("File deleted successfully: " + filePath);
+                } else {
+                    System.out.println("File does not exist: " + filePath);
+                }
+            } catch (IOException e) {
+                System.err.println("Failed to delete file: " + filePath + " - " + e.getMessage());
+            }
         }
     }
 }

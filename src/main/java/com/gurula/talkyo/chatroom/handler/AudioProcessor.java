@@ -8,6 +8,8 @@ import com.gurula.talkyo.properties.ConfigProperties;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 
 public class AudioProcessor extends MessageTypeHandler{
 
@@ -32,5 +34,16 @@ public class AudioProcessor extends MessageTypeHandler{
         final String audioFileName = chatDTO.getAudioFileName();
         Path filePath = Paths.get(configProperties.getAudioSavePath(), chatDTO.getChatroomId(), audioFileName);
         FileUtils.deleteFile(filePath);
+    }
+
+    @Override
+    protected void doBatchDeleteHandler(ChatDTO chatDTO, ConfigProperties configProperties) throws IOException {
+        List<Path> filePaths = new ArrayList<>();
+        final List<String> audioFileNames = chatDTO.getAudioFileNames();
+        for (String audioFileName : audioFileNames) {
+            Path filePath = Paths.get(configProperties.getAudioSavePath(), chatDTO.getChatroomId(), audioFileName);
+            filePaths.add(filePath);
+        }
+        FileUtils.deleteFiles(filePaths);
     }
 }

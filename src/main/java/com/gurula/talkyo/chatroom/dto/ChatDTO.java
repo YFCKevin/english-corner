@@ -5,13 +5,17 @@ import com.gurula.talkyo.chatroom.enums.ChatroomType;
 import com.gurula.talkyo.chatroom.enums.MessageType;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 public class ChatDTO {
     private ChatroomType chatroomType;
     private String chatroomId;
     private MultipartFile multipartFile;
     private String content;
     private String audioFileName;
+    private List<String> audioFileNames;
     private String imageFileName;
+    private List<String> imageFileNames;
     private String lessonId;
     private MessageType messageType;
     private String previewMessageId;
@@ -113,6 +117,22 @@ public class ChatDTO {
 
     public void setMessageId(String messageId) {
         this.messageId = messageId;
+    }
+
+    public List<String> getAudioFileNames() {
+        return audioFileNames;
+    }
+
+    public void setAudioFileNames(List<String> audioFileNames) {
+        this.audioFileNames = audioFileNames;
+    }
+
+    public List<String> getImageFileNames() {
+        return imageFileNames;
+    }
+
+    public void setImageFileNames(List<String> imageFileNames) {
+        this.imageFileNames = imageFileNames;
     }
 
     @Override

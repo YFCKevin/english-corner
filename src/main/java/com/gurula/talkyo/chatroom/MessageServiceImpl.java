@@ -106,13 +106,39 @@ public class MessageServiceImpl implements MessageService {
             chatDTO.setChatroomId(message.getChatroomId());
             if (StringUtils.isNotBlank(message.getAudioName())) {
                 chatDTO.setMessageType(MessageType.AUDIO);
-                chatDTO.setAudioFileName(message.getAudioName());
+                chatDTO.setAudioFileNames(Collections.singletonList(message.getAudioName()));
             } else if (StringUtils.isNotBlank(message.getImageName())) {
                 chatDTO.setMessageType(MessageType.IMAGE);
-            } else {
+            } else if (StringUtils.isNotBlank(message.getText())) {
                 chatDTO.setMessageType(MessageType.TEXT);
             }
-            handler.deleteFile(chatDTO, configProperties);
+
+            final List<String> advancedAudioNames = advancedAudioNames(message);
+            if (!advancedAudioNames.isEmpty()) {
+                chatDTO.setMessageType(MessageType.AUDIO);
+
+                if (chatDTO.getAudioFileNames() == null) {
+                    chatDTO.setAudioFileNames(new ArrayList<>());
+                }
+
+                chatDTO.getAudioFileNames().addAll(advancedAudioNames);
+            }
+            handler.deleteFiles(chatDTO, configProperties);
         }
+    }
+
+    private static List<String> advancedAudioNames(Message message) {
+        List<String> audioFileNames = new ArrayList<>();
+        if (message.getGrammarResult() != null && StringUtils.isNotBlank(message.getGrammarResult().getAudioName())) {
+            audioFileNames.add(message.getGrammarResult().getAudioName());
+        }
+        if (message.getAdvancedSentences() != null && !message.getAdvancedSentences().isEmpty()) {
+            audioFileNames.addAll(message.getAdvancedSentences()
+                    .stream()
+                    .map(AdvancedSentence::getAudioName)
+                    .flatMap(List::stream)
+                    .toList());
+        }
+        return audioFileNames;
     }
 }
