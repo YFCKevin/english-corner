@@ -27,7 +27,7 @@ public class OauthLoginFailureHandler implements AuthenticationFailureHandler {
     @Override
     public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response,
                                         AuthenticationException exception) throws IOException, ServletException {
-        response.sendRedirect(configProperties.getGlobalDomain() + "index.html");
+        response.sendRedirect(configProperties.getGlobalDomain() + "sign-in.html");
     }
 
 }

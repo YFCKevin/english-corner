@@ -58,7 +58,7 @@ public class LoginInterceptor implements HandlerInterceptor{
         System.out.println("token = " + token);
 
         // TODO
-//        final Member member = memberService.findById("67960c00007e72369f0dba1d").get();
+//        final Member member = memberService.findById("67e100e1f8486e3f7bde8492").get();
 //        MemberContext.setMember(member);
 
         // 取出 token 內的 memberId
@@ -79,7 +79,9 @@ public class LoginInterceptor implements HandlerInterceptor{
                 .orElseGet(() -> {
                     logger.warn("未登入索取的資源是：{}", request.getRequestURI());
                     try {
-                        response.sendRedirect(configProperties.getGlobalDomain() + "sign-in.html");
+                        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                        response.setContentType("application/json");
+                        response.getWriter().write("{\"message\": \"Unauthorized\"}");
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
