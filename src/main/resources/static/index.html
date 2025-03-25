@@ -400,7 +400,7 @@
 <!-- lessonModal -->
 <div class="modal fade" id="lessonModal" tabindex="-1" role="dialog" aria-labelledby="lessonModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content" style="overflow-y: auto; max-height: 95vh;">
+        <div class="modal-content" style="overflow-y: auto; max-height: 95dvh;">
             <div class="modal-header">
                 <h5 class="modal-title" id="lessonModalLabel"></h5>
                 <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close">
@@ -434,7 +434,7 @@
 <!-- prepareModal -->
 <div class="modal fade" id="prepareModal" tabindex="-1" role="dialog" aria-labelledby="prepareModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content" style="overflow-y: auto; max-height: 95vh;">
+        <div class="modal-content" style="overflow-y: auto; max-height: 95dvh;">
             <div class="modal-header d-flex align-items-center justify-content-between">
                 <button
                         @click="nextModal('prepareModal', 'lessonModal')"
@@ -543,13 +543,36 @@
 <!--shadowingModal-->
 <div class="modal fade" id="shadowingModal" tabindex="-1" role="dialog" aria-labelledby="shadowingModal" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content" style="overflow-y: auto; max-height: 95vh; background: linear-gradient(to bottom, #007bff, #6f42c1);">
+        <div class="modal-content" style="overflow-y: auto; max-height: 95dvh; background: linear-gradient(to bottom, #007bff, #6f42c1);">
             <div class="modal-header">
                 <h6 class="modal-title text-white"><i class="fab fa-rocketchat text-secondary me-2 text-white"></i>跟讀練習</h6>
                 <span class="text-white" @click="leaveShadowing">×</span>
             </div>
-            <div class="modal-body d-flex flex-column justify-content-center w-100 mt-4 mb-4" style="padding-top: 20px">
-                <div class="pt-2 pb-2 d-flex justify-content-center align-items-center w-100" style="background-color: #cfe2ff; border-radius: 15px 15px 0px 0px;">
+            <div class="modal-body d-flex flex-column justify-content-center w-100 mb-4" style="padding-top: 20px">
+                <div class="progress-wrapper d-flex align-items-center">
+                    <div class="progress-info">
+                        <div class="progress-percentage">
+                            <span class="text-sm font-weight-bold"></span>
+                        </div>
+                    </div>
+                    <div class="progress flex-grow-1"
+                         style="background-color: rgba(200, 200, 200, 0.2); border-radius: 10px; height: 10px;">
+                        <div class="progress-bar bg-success"
+                             role="progressbar"
+                             :style="'width: ' + (minPercent + (currentIndex / totalIndex) * (100 - minPercent)) + '%; ' +
+                                    'background: linear-gradient(90deg, #00FF00, #7FFF00); ' +
+                                    'box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2); ' +
+                                    'border-radius: 10px; ' +
+                                    'height: 100%;'"
+                             :aria-valuenow="minPercent + (currentIndex / (totalIndex - 0)) * (100 - minPercent)"
+                             aria-valuemin="20"
+                             aria-valuemax="100"
+                        >
+                        </div>
+                    </div>
+                    <span class="ms-2 text-white text-xs" x-text="currentIndex + 1"></span><span class="text-white text-xs">/5</span>
+                </div>
+                <div class="pt-2 pb-2 d-flex justify-content-center align-items-center w-100 mt-3" style="background-color: #cfe2ff; border-radius: 15px 15px 0px 0px;">
                     <img x-bind:src="partner.coverPath" class="avatar small me-2" style="width: 35px; height: 35px; border-radius: 50%;" alt="partner img">
                     <span class="text-center" style="color: #0d6efd; font-weight: 600;">跟著我重複一遍</span>
                 </div>
@@ -695,6 +718,8 @@
             switchBasic: false,
             switchAdvanced: false,
             currentIndex: 0,
+            totalIndex: 4,
+            minPercent: 20,
             shadowingAudioUrl: "",
             isRecording: false,
             isRecordCanceled: false,    // 用來判斷 cancelRecord and stopRecord
