@@ -29,9 +29,7 @@ public class PartnerServiceImpl implements PartnerService{
                 Arrays.asList(
                         "Neerja", "Aarav",
                         "Ada Multilingual", "Ollie Multilingual",
-                        "Emma Multilingual", "Brian Multilingual", "Jane", "Jason",
-                        "Guy", "Brandon", "Christopher", "Cora", "Jenny Multilingual",
-                        "Ryan Multilingual"
+                        "Emma Multilingual", "Jason", "Ryan Multilingual", "Jenny Multilingual"
                 ));
     }
 }

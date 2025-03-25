@@ -39,7 +39,7 @@ public class UserService {
             member.setCreationDate(sdf.format(new Date()));
             member.setProvider(authType);
             member.setRole(Role.STUDENT);
-            member.setPartnerId("6795b2cd007e72369f0db8a2");    // 預設為 Cora AI
+            member.setPartnerId("6795b2cd007e72369f0db8a6");    // 預設為 Jenny AI
             member.setChosenLevel(Level.EASY);                  // 預設為 EASY
             memberService.save(member);
             System.out.println("尚未註冊");
