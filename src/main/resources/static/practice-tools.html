@@ -369,65 +369,11 @@
 <script src="js/smooth-scrollbar.min.js"></script>
 <script src="js/jquery.min.js"></script>
 <script src="js/alpine.2.8.2.min.js"></script>
-<script>
-    var win = navigator.platform.indexOf('Win') > -1;
-    if (win && document.querySelector('#sidenav-scrollbar')) {
-      var options = {
-        damping: '0.5'
-      }
-      Scrollbar.init(document.querySelector('#sidenav-scrollbar'), options);
-    }
-
-    $(document).ready(function() {
-      $('#iconNavbarSidenav').click(function() {
-
-        $('body').toggleClass('g-sidenav-pinned');
-        $('#iconSidenav').toggleClass('d-none');
-        $('#sidenav-main').toggleClass('bg-white');
-
-        $('#iconSidenav').click(function() {
-          $('#iconNavbarSidenav').click();
-        });
-      });
-    });
-  </script>
+<script src="js/practice-tools.js"></script>
 <!-- Github buttons -->
 <script async defer src="js/buttons.js"></script>
 <!-- Control Center for Soft Dashboard: parallax effects, scripts for the example pages etc -->
 <script src="js/soft-ui-dashboard.min.js?v=1.0.3"></script>
-
-<script>
-    function loadData() {
-        return {
-            member: {},
-
-            async init() {
-                let _this = this;
-
-                $.ajax({
-                    url: "member/info",
-                    type: "get",
-                    dataType: "json",
-                    contentType: "application/json; charset=utf-8",
-                    success: function (response) {
-                        _this.member = response;
-                        console.log(_this.member)
-                    },
-                    error: function (xhr, status, error) {
-                        if (xhr.status === 401) {
-                            // 401 Unauthorized
-                            window.location.href = "sign-in.html";
-                        }
-                    }
-                });
-            },
-
-            choosePlan(unitNumber) {
-                location.href = "chatroom.html?chatroomType=FREE_TALK&action=LEGACY&unitNumber=" + unitNumber;
-            },
-        }
-    }
-</script>
 </body>
 
 </html>
