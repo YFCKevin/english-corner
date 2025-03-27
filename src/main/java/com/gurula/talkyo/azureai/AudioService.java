@@ -20,6 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
@@ -374,7 +375,7 @@ public class AudioService {
 
 
 
-    public String speechToText (String audioFilePath) throws ExecutionException, InterruptedException {
+    public String speechToText(String audioFilePath) throws InterruptedException {
 
         SpeechConfig speechConfig = SpeechConfig.fromSubscription(azureProperties.getAudio().getKey(), azureProperties.getAudio().getRegion());
         speechConfig.setSpeechRecognitionLanguage("en-US");
@@ -382,27 +383,36 @@ public class AudioService {
         AudioConfig audioConfig = AudioConfig.fromWavFileInput(audioFilePath);
         SpeechRecognizer speechRecognizer = new SpeechRecognizer(speechConfig, audioConfig);
 
-        final Future<SpeechRecognitionResult> task = speechRecognizer.recognizeOnceAsync();
-        final com.microsoft.cognitiveservices.speech.SpeechRecognitionResult speechRecognitionResult = task.get();
+        final CountDownLatch latch = new CountDownLatch(1);
+        final StringBuilder resultText = new StringBuilder();
 
-        if (speechRecognitionResult.getReason() == ResultReason.RecognizedSpeech) {
-            final String resultText = speechRecognitionResult.getText();
-            logger.info("RECOGNIZED: Text=" + resultText);
-            return resultText;
-        }
-        else if (speechRecognitionResult.getReason() == ResultReason.NoMatch) {
-            logger.info("NOMATCH: Speech could not be recognized.");
-        }
-        else if (speechRecognitionResult.getReason() == ResultReason.Canceled) {
-            CancellationDetails cancellation = CancellationDetails.fromResult(speechRecognitionResult);
-            logger.info("CANCELED: Reason=" + cancellation.getReason());
-
-            if (cancellation.getReason() == CancellationReason.Error) {
-                logger.info("CANCELED: ErrorCode=" + cancellation.getErrorCode());
-                logger.info("CANCELED: ErrorDetails=" + cancellation.getErrorDetails());
-                logger.info("CANCELED: Did you set the speech resource key and region values?");
+        speechRecognizer.recognized.addEventListener((o, e) -> {
+            if (e.getResult().getReason() == ResultReason.RecognizedSpeech) {
+                String recognizedText = e.getResult().getText();
+                logger.info("Recognized: " + recognizedText);
+                resultText.append(recognizedText).append(" ");
             }
+        });
+
+        speechRecognizer.canceled.addEventListener((o, e) -> {
+            if (e.getReason() == CancellationReason.Error) {
+                logger.error("Speech recognition canceled. ErrorDetails: " + e.getErrorDetails());
+            }
+            latch.countDown();
+        });
+
+        speechRecognizer.sessionStopped.addEventListener((o, e) -> latch.countDown());
+
+        speechRecognizer.startContinuousRecognitionAsync();
+
+        latch.await();
+
+        String recognizedText = resultText.toString().trim();
+        if (recognizedText.isEmpty()) {
+            logger.info("No speech recognized.");
+            return "";
         }
-        return "";
+
+        return recognizedText;
     }
 }
