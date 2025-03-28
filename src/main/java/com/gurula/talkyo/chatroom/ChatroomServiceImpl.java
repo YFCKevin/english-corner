@@ -817,7 +817,12 @@ public class ChatroomServiceImpl implements ChatroomService {
                 message.setVersion(1);
                 message.setBranch(branch);
                 message.setPreviewMessageId(messageId);
+                message.setCurrentLastMsg(true);
                 replyMsg = messageRepository.save(message);
+
+                historyMsgs = historyMsgs.stream()
+                        .peek(msg -> msg.setCurrentLastMsg(false)).toList();
+                messageRepository.saveAll(historyMsgs);
             }
         }
 
