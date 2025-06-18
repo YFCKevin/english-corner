@@ -16,7 +16,7 @@ spring:
     static-locations: file:/opt/talkyo/static/
   data:
     mongodb:
-      uri: mongodb://${db-username}:${db-password}@localhost:27017
+      uri: mongodb+srv://${db-username}:${mongo-db-password}@gurula.y2btcof.mongodb.net/?retryWrites=true&w=majority&appName=gurula  # mongodb://${db-username}:${db-password}@localhost:27017
       database: talkyo
   rabbitmq:
     host: localhost
