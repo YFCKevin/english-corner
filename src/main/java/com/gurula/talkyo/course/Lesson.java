@@ -56,10 +56,6 @@ public class Lesson {
         return lessonNumber;
     }
 
-    public void genLessonNumber() {
-        this.lessonNumber = CourseUtil.genLessonNumber();
-    }
-
     public String getCoverName() {
         return coverName;
     }
@@ -82,5 +78,9 @@ public class Lesson {
 
     public void setScenario(Scenario scenario) {
         this.scenario = scenario;
+    }
+
+    public void setLessonNumber(String lessonNumber) {
+        this.lessonNumber = lessonNumber;
     }
 }

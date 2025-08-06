@@ -9,6 +9,7 @@ import com.gurula.talkyo.azureai.PartnerRepository;
 import com.gurula.talkyo.course.dto.CourseRequestDTO;
 import com.gurula.talkyo.course.dto.LessonDTO;
 import com.gurula.talkyo.course.dto.LessonInfoDTO;
+import com.gurula.talkyo.course.utils.CourseUtil;
 import com.gurula.talkyo.exception.ResultStatus;
 import com.gurula.talkyo.member.Member;
 import com.gurula.talkyo.openai.LLMService;
@@ -69,8 +70,10 @@ public class CourseServiceImpl implements CourseService{
             Lesson lesson = new Lesson();
             lesson.setCourseId(finalNewCourse.getId());
             lesson.setName(l.getName());
-            lesson.genLessonNumber();
+            final String lessonNumber = CourseUtil.genLessonNumber();
+            lesson.setLessonNumber(lessonNumber);
             lesson.setDesc(l.getDesc());
+            lesson.setCoverName(lessonNumber + "_cover.png");
             final List<Sentence> sentenceList = l.getSentences().stream().map(s -> {
                 Sentence sentence = new Sentence();
                 sentence.genUnitNumber();
