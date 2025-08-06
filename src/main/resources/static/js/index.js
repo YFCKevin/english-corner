@@ -66,6 +66,7 @@
                     _this.partner = response.partner;
                 } catch (xhr) {
                     if (xhr.status === 401) {
+                        console.log(123)
                         window.location.href = "sign-in.html";
                     }
                 }
@@ -380,25 +381,35 @@
               }
           },
 
-          myVoice(el, rate) {
+          async myVoice(el, rate) {
               const audioUrl = $(el).attr("data-url");
-              if (audioUrl) {
-                  const audio = new Audio(audioUrl);
 
-                  audio.playbackRate = rate;
+              if (!audioUrl) {
+                  console.warn("沒有 audio URL");
+                  return;
+              }
 
-                  audio.play().then(() => {
-                      setTimeout(() => {
-                          audio.muted = false;
-                      }, 10);
-                  }).catch(error => console.error("播放音訊失敗"));
+              try {
+                  const AudioContext = window.AudioContext || window.webkitAudioContext;
+                  const audioContext = new AudioContext();
 
-                  // (可選) 添加播放結束事件監聽器
-                  audio.addEventListener('ended', function() {
-                      console.log('Audio playback finished.');
-                      // 在播放結束後執行一些操作，例如更改 icon 或顯示訊息
-                  });
+                  const response = await fetch(audioUrl);
+                  const arrayBuffer = await response.arrayBuffer();
 
+                  const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+
+                  const source = audioContext.createBufferSource();
+                  source.buffer = audioBuffer;
+                  source.playbackRate.value = rate; // 播放速度
+                  source.connect(audioContext.destination);
+
+                  source.start(0);
+
+                  source.onended = () => {
+                      console.log("音訊播放完畢");
+                  };
+              } catch (error) {
+                  console.error("Web Audio 播放失敗：", error);
               }
           },
 
@@ -407,5 +418,20 @@
               this.currentIndex = 0;
               $("#prepareModal").modal('show');
           },
+
+          next() {
+              if (this.currentIndex < this.basicSentences.length - 1) {
+                  this.currentIndex++;
+                  this.shadowingAudioUrl = "";
+              }
+
+          },
+          preview() {
+              if (this.currentIndex > 0) {
+                  this.currentIndex--;
+                  this.shadowingAudioUrl = "";
+              }
+          },
+
         }
     }
