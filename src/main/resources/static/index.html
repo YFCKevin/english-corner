@@ -580,7 +580,7 @@
                     <template x-if="switchBasic && basicSentences.length > 0">
                         <div class="d-flex align-items-center justify-content-between mb-5">
                             <!-- 左箭頭 -->
-                            <i @click="if (currentIndex > 0) currentIndex--"
+                            <i @click="preview"
                                :class="{'text-secondary': currentIndex === 0}"
                                :style="currentIndex === 0 ? 'pointer-events: none; opacity: 0.5;' : 'color: #0d6efd;'"
                                class="fas fa-chevron-left me-2"></i>
@@ -594,7 +594,7 @@
                             </div>
 
                             <!-- 右箭頭 -->
-                            <i @click="if (currentIndex < basicSentences.length - 1) currentIndex++"
+                            <i @click="next"
                                :class="{'text-secondary': currentIndex === basicSentences.length - 1}"
                                :style="currentIndex === basicSentences.length - 1 ? 'pointer-events: none; opacity: 0.5;' : 'color: #0d6efd;'"
                                class="fas fa-chevron-right ms-2"></i>
